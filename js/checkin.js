@@ -4,15 +4,14 @@
 // The sign-in event (community.js on the room service): 7 days, cumulative, one a Beijing day, each giving the next
 // decoration of event.rewards (read from the service - the rewards may change there, so nothing here hardcodes
 // their order). The service's clock decides: the device's is only corrected by it for the countdowns.
-// Ways in: the title screen (under the news sign, a red dot while today can be signed), the pause menu, and the
-// news panel (news.js opens CheckinScreen). All of them go away after the event ends; CheckinScreen still works.
+// Ways in: the title screen (a red dot while today can be signed) and the pause menu. Both go away after the
+// event ends; CheckinScreen still works.
 // ---------------------------------------------------------------------------
 const Checkin = (() => {
   const BJ = 8 * 3600e3, DAY = 86400e3;
   const dayKey = (t) => new Date(t + BJ).toISOString().slice(0, 10); // (the service's: a day in Beijing time)
   const bj = (t) => new Date(t + BJ); // read with getUTC*: Beijing time whatever the device's zone is
   const p2 = (n) => String(n).padStart(2, '0');
-  const tc = (k) => { if (typeof Telemetry !== 'undefined' && Telemetry.count) Telemetry.count(k); };
   // (the names when cosmetics.js has none: what the service gives today)
   const NAMES = { 'hat:straw': '草帽', 'cape:penguin': '企鹅披风', 'hat:tophat': '礼帽', 'pet:snowman': '小雪人', 'cape:penguinwalk': '企鹅动态披风', 'hat:crown': '皇冠', 'pre:potato': '土豆名字前缀' };
   const KINDS = { hat: '帽子', cape: '披风', pet: '宠物', pre: '名字前缀' };
@@ -115,11 +114,8 @@ const Checkin = (() => {
       if (!s || !s.layout) return;
       if ((typeof TitleScreen !== 'undefined' && s instanceof TitleScreen) || (typeof PauseScreen !== 'undefined' && s instanceof PauseScreen) || s instanceof CheckinScreen) s.layout();
     },
-    // where the title screen's button goes: under the news sign (news.js), else where the sign would be
+    // where the title screen's button goes (top right, under the logo on narrow screens)
     titleRect(u) {
-      if (typeof NewsBoard !== 'undefined' && NewsBoard.signRect) {
-        try { const s = NewsBoard.signRect(u); if (s) return { x: s.x, y: s.y + s.h + 4, w: s.w, h: 16 }; } catch (e) { }
-      }
       // (narrow: the logo reaches the right edge - under it, right of the menu buttons)
       if (u.w / 2 + 128 > u.w - 62) return { x: u.w - 60, y: 84, w: 54, h: 16 };
       return { x: u.w - 60, y: 66, w: 54, h: 16 };
@@ -146,7 +142,6 @@ const Checkin = (() => {
       }
       if (locked) { c.fillStyle = 'rgba(0,0,0,0.45)'; c.fillRect(x, y, size, size); }
     },
-    tc,
   };
   // the last status, so the ways in show before the service answers (read again as soon as the title opens)
   try { const s = JSON.parse(localStorage.getItem('mcjs-checkin') || 'null'); if (s && s.st && s.st.event) { C.st = s.st; C.skew = +s.skew || 0; } } catch (e) { }
@@ -172,7 +167,6 @@ class CheckinScreen extends MenuScreen {
     super(game, null); this.parent = parent; this.pauses = game.state === 'play' && !game.net; this.bgDim = 0.6;
     this.note = ''; this.noteBad = false; this.sel = null; this.got = null; this.busy = false; this.key = '';
     this.t0 = performance.now();
-    if (!again) Checkin.tc('checkin_open');
     this.asked = performance.now();
     Checkin.load(game, true);
   }
@@ -248,7 +242,6 @@ class CheckinScreen extends MenuScreen {
       for (let i = 0; i < 36; i++) sparks.push({ a: Math.random() * Math.PI * 2, v: 25 + Math.random() * 70, c: ['#FFD24A', '#FFF2B0', '#FFFFFF', '#9FD8FF'][i % 4], s: i % 3 ? 2 : 3 });
       this.got = { id: r.reward || Checkin.st.event.rewards[idx], idx, from: Math.min(from, idx - 1), t0: performance.now(), sparks, opened: false, landed: false, done: false, last: (r.days | 0) >= n };
       this.sel = null;
-      Checkin.tc('checkin_claim');
     } catch (e) {
       this.say(e.message, true);
       Checkin.load(this.game, true); // (already signed elsewhere, the event over: the card as it really is)
@@ -540,7 +533,7 @@ class CheckinScreen extends MenuScreen {
   }
 }
 
-// ---- the ways in: the title screen (under the news sign) and the pause menu, each with the red dot ----
+// ---- the ways in: the title screen and the pause menu, each with the red dot ----
 (() => {
   const tl = TitleScreen.prototype.layout;
   TitleScreen.prototype.layout = function () {

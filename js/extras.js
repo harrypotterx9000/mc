@@ -38,7 +38,7 @@ function hudMarker(ui, pos, label, color, small) {
 })();
 Extras.drawDeath = function (ui) {
   const g = ui.game, L = g.lastDeath, s = g.settings;
-  if (!L || !L.at || L.dim !== g.dim || (s.deathMarker === false) || (s.deathMarker === undefined && s.playerKind !== 'new') || g.player.deathTime > 0) return;
+  if (!L || !L.at || L.dim !== g.dim || s.deathMarker !== true || g.player.deathTime > 0) return;
   const d = Math.hypot(L.pos[0] - g.player.pos[0], L.pos[2] - g.player.pos[2]);
   if (Date.now() - L.at > 300e3 || d < 3) { if (d < 3) L.at = 0; return; }
   hudMarker(ui, L.pos, '死亡点', '#FF6060');
@@ -47,7 +47,7 @@ Extras.drawDeath = function (ui) {
 // ---- the minimap: the top blocks around the player, north up, one pixel a block, made twice a second ----
 const Minimap = {
   N: 64, cv: null, img: null, at: 0,
-  on(g) { const s = g.settings; return s.minimap === true || (s.minimap === undefined && s.playerKind === 'new'); },
+  on(g) { return g.settings.minimap === true; },
   rect(ui) { const s = this.N, sf = ui.safe ? ui.safe() : { l: 0, t: 0 }; return { x: 4 + sf.l, y: 4 + sf.t, w: s, h: s }; },
   update(g) {
     const N = this.N, w = g.world, p = g.player;
@@ -229,7 +229,6 @@ class ReconnectScreen extends MenuScreen {
       const n = ((g.reconnect && g.reconnect.n) || 0) + 1, name = this.name;
       g.reconnect = { room, n };
       g.leaveServer();
-      Telemetry.count && Telemetry.count('net:reconnect');
       g.ui.open(new ReconnectScreen(g, n, () => g.joinRoom(room, name)));
       return;
     }
@@ -465,7 +464,7 @@ class PhotoScreen extends MenuScreen {
     ];
   }
   data() { return this.cv.toDataURL('image/jpeg', 0.88); }
-  async share() { try { await Toy.sharePicture({ base64Data: this.data(), title: 'OpusMC 截图' }); this.note = '已打开分享'; Telemetry.count && Telemetry.count('photo_share'); } catch (e) { this.note = Toy.explain(e); } }
+  async share() { try { await Toy.sharePicture({ base64Data: this.data(), title: 'OpusMC 截图' }); this.note = '已打开分享'; } catch (e) { this.note = Toy.explain(e); } }
   async save() {
     if (this.inToy) { try { await Toy.saveImage({ base64Data: this.data() }); this.note = '已保存到相册'; return; } catch (e) { } }
     const a = document.createElement('a'); a.href = this.data(); a.download = 'OpusMC-' + Date.now() + '.jpg'; a.click(); this.note = '已下载';

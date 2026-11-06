@@ -1,7 +1,7 @@
 'use strict';
 // ---------------------------------------------------------------------------
 // The platform around the game (Toy SDK, account.js): the name a new account plays under, Bilibili's content check
-// on what players type for others (chat, room names, feedback, reports), the invite card (share, QR code), and the
+// on what players type for others (chat, room names, reports), the invite card (share, QR code), and the
 // page closing (leave the room, last statistics).
 // ---------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@
 // ---- Bilibili's content check on what others will read ----
 async function textOk(g, text, scene) {
   const r = await Toy.checkText(text, scene);
-  if (!r.passed) { Telemetry.count && Telemetry.count('text_blocked_' + scene); return false; }
+  if (!r.passed) return false;
   return true;
 }
 (() => {
@@ -28,13 +28,11 @@ async function textOk(g, text, scene) {
     if (!(await textOk(this.game, this.roomName, 'room_name'))) { this.say('房间名包含不合适的内容，换一个吧', true); return; }
     return cr.call(this);
   };
-  for (const Cls of [FeedbackScreen, ReportScreen]) {
-    const sub = Cls.prototype.submit;
-    Cls.prototype.submit = async function () {
-      if (this.text && String(this.text).trim() && !(await textOk(this.game, this.text, Cls === FeedbackScreen ? 'feedback' : 'report'))) { this.note = '内容包含不合适的词，请修改后再发送'; this.noteColor = '#FF5555'; if (this.say) this.say(this.note, true); return; }
-      return sub.call(this);
-    };
-  }
+  const sub = ReportScreen.prototype.submit;
+  ReportScreen.prototype.submit = async function () {
+    if (this.text && String(this.text).trim() && !(await textOk(this.game, this.text, 'report'))) { this.note = '内容包含不合适的词，请修改后再发送'; this.noteColor = '#FF5555'; if (this.say) this.say(this.note, true); return; }
+    return sub.call(this);
+  };
 })();
 
 // ---- 邀请卡片: the room's name and code, a QR code to scan, share it on Bilibili ----
@@ -60,7 +58,7 @@ class InviteCardScreen extends MenuScreen {
     this.widgets.push({ x: cx - 100, y: u.h - 28, w: 200, h: 20, label: '完成', onClick: () => this.game.ui.open(this.parent) });
   }
   async share() {
-    try { await Toy.share('index.html?room=' + this.R.code); this.note = '已打开分享'; Telemetry.count && Telemetry.count('invite_share'); }
+    try { await Toy.share('index.html?room=' + this.R.code); this.note = '已打开分享'; }
     catch (e) { this.note = Toy.explain(e); }
   }
   drawExtra(ui) {
@@ -98,7 +96,6 @@ class InviteCardScreen extends MenuScreen {
 Toy.onPageClose(() => {
   const g = typeof game !== 'undefined' && game;
   try { if (g && g.net) g.net.close && g.net.close(); } catch (e) { }
-  try { Telemetry.flush && Telemetry.flush(true); } catch (e) { }
 }).catch(() => { });
 
 // ---- announcements from the administrators (rooms/server.js announce): in the chat in gold and over the hotbar, for

@@ -139,11 +139,9 @@ class TouchControls {
       this.fsTried = true;
       const de = document.documentElement;
       if (!document.fullscreenElement && de.requestFullscreen) {
-        // (counted and sent first: a device that hangs here still tells)
-        if (typeof Telemetry !== 'undefined' && Telemetry.count) { Telemetry.count('fs_try'); Telemetry.flush && Telemetry.flush(false); }
         try {
           de.requestFullscreen({ navigationUI: 'hide' })
-            .then(() => { Telemetry.count && Telemetry.count('fs_ok'); if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(() => { });
+            .then(() => { if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(() => { });
         } catch (e) { }
       }
     }

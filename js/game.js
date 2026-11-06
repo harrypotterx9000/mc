@@ -1,4 +1,6 @@
 'use strict';
+// The build tag shown on the login/update screens.
+const GAME_BUILD = '2026.10.30';
 // ---------------------------------------------------------------------------
 // Game: state, main loop, chunk streaming, interaction, rendering glue
 // ---------------------------------------------------------------------------
@@ -218,7 +220,7 @@ class Game {
     this.worldTime = meta.time || 1000;
     this.weather = meta.weather || 0; this.rainTarget = meta.rainTarget || 0;
     this.adv = meta.adv || {}; this.stats = meta.stats || { kills: 0, placed: 0, mined: 0 };
-    this.tutorial = meta.tutorial ?? (meta.mode === 'survival' && !['mc', 'vet'].includes(this.settings.playerKind) ? 0 : -1); this.tutStat = { moved: 0 }; // (onboard.js: players who know the game skip it)
+    this.tutorial = meta.tutorial ?? -1; this.tutStat = { moved: 0 }; // (phase-1: no player-kind choice - new worlds start without the tutorial)
     let sp = meta.spawn;
     if (!sp) {
       if (meta.gen === 2) { const [x, z] = await this.genSpawn(); sp = [x, 200, z]; }
@@ -297,7 +299,6 @@ class Game {
         if (d && d.dirtySaved) for (const [cx, cz] of list) d.dirtySaved.add(ckey(cx, cz));
       }
       this.ui.message('保存失败: ' + e.message, '#FF5555');
-      if (typeof Telemetry !== 'undefined' && Telemetry.count) Telemetry.count('save_fail');
     }
   }
   async quitToTitle() {

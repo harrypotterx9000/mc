@@ -393,7 +393,6 @@ class Renderer {
     this.texArray = tex;
     initAnimTable();
     this.portalLayer = T('end_portal_marker');
-    try { this.texSelfTest(n, data); } catch (e) { }
 
     // ---- 2D images
     this.images = {};
@@ -841,42 +840,6 @@ class Renderer {
     M.armor_inner = P(64, 32, armour(0.5));
   }
 
-  // black blocks, items and grass sides on phones (players' feedback 2026-10-31, almost all Mali GPUs): a few opaque
-  // tiles below and past 2048 (the ones that were in the second array, black there) drawn through the terrain
-  // shaders' own lookup into a 1x1 target and read back; the result goes to the statistics (tex2_* still means the
-  // tiles past 2048, so the numbers compare with the days before TEX_STACK)
-  texSelfTest(n, data) {
-    const gl = this.gl, S = n > 2048 ? 2048 : 0;
-    const opaque = (from, to) => { const out = []; for (let k = from; k < to && out.length < 3; k++) { let ok = true; for (let i = k * 256; i < (k + 1) * 256; i += 17) if (data[i * 4 + 3] < 255) { ok = false; break; } if (ok) out.push(k); } return out; };
-    const tiles = [...opaque(1, S || n), ...(S ? opaque(S, n) : [])];
-    if (!tiles.length) return;
-    const p = compile(gl, `#version 300 es
-void main(){ gl_Position = vec4(vec2(gl_VertexID & 1, gl_VertexID >> 1) * 4.0 - 1.0, 0.0, 1.0); }`, `#version 300 es
-precision highp float; precision highp sampler2DArray;
-uniform sampler2DArray u_tex;
-uniform uint u_l; out vec4 o;
-void main(){ vec2 v_uv = vec2(0.53, 0.53); o = texture(u_tex, vec3(v_uv, float(u_l))); }`);
-    const fb = gl.createFramebuffer(), rt = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, rt); gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, 1, 1);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rt, 0);
-    gl.viewport(0, 0, 1, 1); gl.useProgram(p.p); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texArray); gl.uniform1i(p.u.u_tex, 0);
-    gl.bindVertexArray(null);
-    const px = new Uint8Array(4), res = [];
-    for (const k of tiles) {
-      gl.uniform1ui(p.u.u_l, k); gl.clearColor(1, 0, 1, 1); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      const i = (k * 256 + 8 * 16 + 8) * 4, d = Math.abs(px[0] - data[i]) + Math.abs(px[1] - data[i + 1]) + Math.abs(px[2] - data[i + 2]);
-      res.push({ second: !!S && k >= S, ok: d < 24, black: px[0] + px[1] + px[2] < 12 });
-    }
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.deleteFramebuffer(fb); gl.deleteTexture(rt); gl.deleteProgram(p.p);
-    gl.enable(gl.DEPTH_TEST);
-    const first = res.filter((r) => !r.second), second = res.filter((r) => r.second);
-    this.texTest = { first: first.every((r) => r.ok), second: second.length ? second.every((r) => r.ok) : null, black2: second.some((r) => r.black) };
-    const report = () => { if (typeof Telemetry === 'undefined' || !Telemetry.count) return setTimeout(report, 3000);
-      Telemetry.count('tex1_' + (this.texTest.first ? 'ok' : 'bad')); if (this.texTest.second !== null) Telemetry.count('tex2_' + (this.texTest.second ? 'ok' : this.texTest.black2 ? 'black' : 'bad')); };
-    setTimeout(report, 3000);
-  }
   // ---- vanilla lightmap ----------------------------------------------------------------------
   // 16x16 colours for every (block light, sky light) pair, rebuilt each frame like vanilla's
   // LightTexture: daylight darkening, bluish night sky light, warm flickering block light,

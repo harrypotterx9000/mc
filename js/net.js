@@ -1267,7 +1267,6 @@ class CreateRoomScreen extends FormScreen {
       // (a room whose save didn't arrive is not kept)
       if (code) RoomService.api('/api/rooms/' + code + '/delete', { key: RoomService.key() }).catch(() => { });
       this.busy = false; this.say(e.message, true); this.loadCap(); this.layout();
-      if (e.gate) this.game.ui.open(Account.loggedIn ? new UnlockScreen(this.game, this, e.message, () => this.game.ui.open(this)) : new LoginScreen(this.game, () => this.game.ui.open(this)));
     }
   }
   drawExtra(ui) {

@@ -1,158 +1,10 @@
 'use strict';
 // ---------------------------------------------------------------------------
-// The first time the game opens (game/UX_IDEAS.md「第一次进入的引导」): 0 the user agreement and privacy notice
-// (agreed to before playing; again when they change), 1 which kind of player (first time / played Minecraft /
-// played this version), 2 picture quality and shaders on big cards over the live title world (the device detected,
-// a few seconds measured, the best fit recommended), 3 logging in. What a player gets follows their kind: the
-// tutorial and situational tips, the "what is different here" overview, the minimap / death marker / recipe hints
-// on or off, what changed in an update.
+// The first time the game opens (game/UX_IDEAS.md「第一次进入的引导」): picture quality and shaders on big cards
+// over the live title world (the device detected, a few seconds measured, the best fit recommended), which device
+// (a phone goes on to the touch layout editor), logging in, and the "what is different here" overview. Phase 1
+// removed the first-run user agreement and the player-kind choice; new worlds start without the tutorial.
 // ---------------------------------------------------------------------------
-const LEGAL = {
-  v: 1,
-  agreement: [
-    '《用户协议》（2026 年 10 月 30 日生效）',
-    '1. 本游戏是 UP 主「土豆味小哲」独立制作的非官方作品，与 Mojang、微软无关；免费游玩。',
-    '2. 游戏中保留的部分原版素材（音效、模型、方块结构等）版权归原作者所有；我们原创的代码、界面、披风、玩法等受著作权法保护。',
-    '3. 禁止：逆向、反编译游戏代码；抓取后未经书面许可公开或分发；搭建仿冒服务器或镜像站；使用作弊程序、改包连接我们的服务器。',
-    '   违反的会被封号，必要时追究法律责任。',
-    '4. 联机时请文明游戏：不骂人、不刷屏、不破坏别人的建筑；房主可以踢人、禁言、封禁，我们也会处理举报。',
-    '5. 账号由你自己保管：个人识别码可以登录你的账号，请不要告诉别人。',
-    '6. 服务器可能维护或调整；云存档、房间按说明的时间清理。因不可抗力或第三方原因造成的数据损失，我们会尽力恢复但不承担责任。',
-    '7. 协议更新时会在游戏里再提示一次。问题和建议：游戏里的「反馈问题」，或 B站 私信 UP 主。',
-  ],
-  privacy: [
-    '《隐私说明》',
-    '我们收集：B站 昵称、头像链接和这个游戏专用的用户编号（toyOpenId，只存加密后的值）；你的游戏名、识别码（只存加密后的值）、',
-    '设置、皮肤和披风选择、解锁记录；云存档；进过的房间；IP 地址（防刷、限流，不长期保存）；',
-    '匿名的游戏统计（帧率、设备、显卡、报错，用来改进游戏，可以在 选项 → 遥测数据 里关掉）；你主动提交的反馈和截图。',
-    '用途：登录、联机、云存档、防止作弊和刷屏、改进游戏。不出售、不用于广告。',
-    '保存多久：云存档 7 天不玩删除；房间 30 天没人用删除；统计 180 天、反馈 365 天后删除。',
-    '删除：选项 → 账号 → 删除账号，会删掉账号、云存档和解锁记录（设备上的存档不受影响）。',
-  ],
-};
-
-// ---- step 0: the agreement: a window in the middle ("I have read and agree to 《用户协议》 and 《隐私说明》", the two
-// names links to the whole text); viewOnly: the whole text (from those links, or 选项), at: which part to start at ----
-class AgreementScreen extends MenuScreen {
-  constructor(game, next, viewOnly, at) {
-    super(game, viewOnly ? '用户协议和隐私说明' : null); this.next = next; this.viewOnly = viewOnly; this.pauses = false; this.titleY = 8; this.agree = false; this.scroll = 0;
-    this.updated = !viewOnly && (game.settings.legalV || 0) > 0 && game.settings.legalV < LEGAL.v;
-    if (viewOnly && at === 'privacy') { const L = this.lines(), i = L.findIndex((t) => t.startsWith('《隐私说明》')); this.scroll = clamp(i, 0, Math.max(0, L.length - this.rows())); }
-  }
-  // the window and its pieces: the check row's parts (box, words, the two links) and the button
-  box() {
-    const u = this.game.ui, w = Math.min(290, u.w - 16), h = 132;
-    return { x: Math.floor(u.w / 2 - w / 2), y: Math.floor(u.h / 2 - h / 2), w, h };
-  }
-  rowParts() {
-    const B = this.box(), parts = [['check', '我已阅读并同意'], ['agreement', '《用户协议》'], ['and', '和'], ['privacy', '《隐私说明》']];
-    const total = 12 + parts.reduce((s, p) => s + Font.width(p[1]), 0);
-    let x = Math.floor(B.x + B.w / 2 - total / 2) + 12;
-    const y = B.y + 70, out = [{ k: 'box', x: x - 12, y: y - 1, w: 9, h: 9 }];
-    for (const [k, t] of parts) { const w = Font.width(t); out.push({ k, t, x, y, w, h: 9 }); x += w; }
-    return out;
-  }
-  rowHit(mx, my) { return this.rowParts().find((p) => mx >= p.x - 1 && mx < p.x + p.w + 1 && my >= p.y - 2 && my < p.y + p.h + 2); }
-  mouseDown(ui, mx, my, button) {
-    if (!this.viewOnly && button === 0) {
-      const p = this.rowHit(mx, my);
-      if (p && (p.k === 'agreement' || p.k === 'privacy')) { Sound.click(); return this.game.ui.open(new AgreementScreen(this.game, () => this.game.ui.open(this), true, p.k)); }
-      if (p) { Sound.click(); this.agree = !this.agree; this.warn = 0; return; }
-    }
-    return super.mouseDown(ui, mx, my, button);
-  }
-  lines() {
-    const out = [], max = this.game.ui.w - 40;
-    for (const t of [...LEGAL.agreement, '', ...LEGAL.privacy]) {
-      if (!t) { out.push(''); continue; }
-      let s = t;
-      while (s.length) { let n = s.length; while (n > 1 && Font.width(s.slice(0, n)) > max) n--; out.push(s.slice(0, n)); s = s.slice(n); }
-    }
-    return out;
-  }
-  layout() {
-    const u = this.game.ui, cx = u.w / 2;
-    if (this.viewOnly) { this.widgets = [{ x: cx - 100, y: u.h - 26, w: 200, h: 20, label: '返回', onClick: () => this.done() }]; return; }
-    const B = this.box();
-    this.widgets = [{ x: cx - 70, y: B.y + B.h - 32, w: 140, h: 20, gold: true, label: '同意并继续', onClick: () => { if (!this.agree) { this.warn = performance.now(); return; } this.game.settings.legalV = LEGAL.v; this.game.saveSettings(); this.done(); } }];
-  }
-  drawWindow(ui) {
-    const c = ui.ctx, B = this.box(), cx = B.x + B.w / 2, m = ui.mouse;
-    ui.dim(0.35);
-    drawCard(c, B.x, B.y, B.w, B.h, false);
-    Font.center(c, this.updated ? '用户协议有更新' : '欢迎来到 OpusMC', cx, B.y + 10, '#FFFFFF');
-    const intro = this.updated ? ['协议内容有调整，请重新阅读并同意后继续游戏。'] : ['这是 UP 主「土豆味小哲」自制的非官方作品，免费游玩。', '开始之前，请阅读并同意下面的协议。'];
-    intro.forEach((t, i) => Font.center(c, fitText(t, B.w - 16), cx, B.y + 28 + i * 11, '#A0A0A0'));
-    // the check row: the box, the words, the two links (blue, underlined; lighter under the pointer)
-    const hit = this.rowHit(m.x, m.y);
-    for (const p of this.rowParts()) {
-      if (p.k === 'box') {
-        c.fillStyle = '#000000'; c.fillRect(p.x, p.y, p.w, p.h);
-        c.strokeStyle = hit && (hit.k === 'box' || hit.k === 'check') ? '#FFFFFF' : this.warn && performance.now() - this.warn < 1500 ? '#FF6060' : '#A0A0A0';
-        c.lineWidth = 1; c.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, p.h - 1);
-        if (this.agree) { c.fillStyle = '#55FF55'; c.fillRect(p.x + 2, p.y + 4, 2, 2); c.fillRect(p.x + 3, p.y + 5, 2, 2); c.fillRect(p.x + 5, p.y + 3, 1, 2); c.fillRect(p.x + 6, p.y + 2, 1, 2); }
-        continue;
-      }
-      const link = p.k === 'agreement' || p.k === 'privacy', on = hit === p || (hit && hit.k === p.k);
-      const col = link ? (on ? '#9FD0FF' : '#55AAFF') : '#E0E0E0';
-      Font.draw(c, p.t, p.x, p.y, col);
-      if (link) { c.fillStyle = col; c.fillRect(p.x, p.y + 9, p.w, 1); }
-    }
-    if (this.warn && performance.now() - this.warn < 1500) Font.center(c, '请先勾选「我已阅读并同意」', cx, B.y + 84, '#FF6060');
-    else Font.center(c, '点蓝色的名字可以查看全文', cx, B.y + 84, '#707070');
-  }
-  done() { const n = this.next; this.next = null; n && n(); }
-  wheel(d) { this.scroll = clamp(this.scroll - d * 3, 0, Math.max(0, this.lines().length - this.rows())); }
-  rows() { return Math.floor((this.game.ui.h - 24 - 34) / 10); }
-  drawExtra(ui) {
-    if (!this.viewOnly) return this.drawWindow(ui);
-    const c = ui.ctx, L = this.lines(), n = this.rows();
-    c.fillStyle = 'rgba(0,0,0,0.45)'; c.fillRect(12, 20, ui.w - 24, n * 10 + 6);
-    L.slice(this.scroll, this.scroll + n).forEach((t, i) => Font.draw(c, t, 18, 24 + i * 10, /^《/.test(t) ? '#FFD24A' : '#E0E0E0'));
-    if (L.length > n) Font.draw(c, `${this.scroll + n < L.length ? '↓ 滑动或滚动查看更多' : '— 完 —'}`, ui.w - 120, 24 + n * 10 - 9, '#808080');
-  }
-  onEsc() { if (this.viewOnly) this.done(); }
-}
-// (touch: dragging scrolls it - the touch layer scrolls screens that have wheel())
-
-// ---- step 1: which kind of player ----
-const PLAYER_KINDS = [
-  { id: 'new', title: '第一次玩 Minecraft', sub: '从头教我怎么玩', icon: 'grass_block' },
-  { id: 'mc', title: '玩过 Minecraft', sub: '看看这个网页版有什么不一样', icon: 'crafting_table' },
-  { id: 'vet', title: '这个版本我玩过', sub: '直接开始', icon: 'diamond_pickaxe' },
-];
-class PlayerKindScreen extends MenuScreen {
-  constructor(game, next) { super(game, '你是哪种玩家？'); this.next = next; this.pauses = false; this.titleY = 14; }
-  cards() {
-    const u = this.game.ui, w = Math.min(130, Math.floor((u.w - 24) / 3) - 6), h = Math.min(120, u.h - 80), y = Math.floor(u.h / 2 - h / 2) + 6;
-    return PLAYER_KINDS.map((k, i) => ({ ...k, x: Math.floor(u.w / 2 - (3 * w + 12) / 2) + i * (w + 6), y, w, h }));
-  }
-  layout() { this.widgets = this.cards().map((k) => ({ x: k.x, y: k.y, w: k.w, h: k.h, label: '', card: k, onClick: () => this.pick(k.id) })); }
-  pick(id) {
-    const s = this.game.settings;
-    s.playerKind = id;
-    // what each kind starts with (UX_IDEAS.md 各类玩家得到什么)
-    if (id === 'new') Object.assign(s, { tutorial: true, tips: true, recipeHints: true, minimap: true, deathMarker: true });
-    if (id === 'mc') Object.assign(s, { tutorial: false, tips: false, recipeHints: true, minimap: false, deathMarker: false });
-    if (id === 'vet') Object.assign(s, { tutorial: false, tips: false });
-    this.game.saveSettings();
-    Telemetry.count && Telemetry.count('kind_' + id);
-    const n = this.next; this.next = null; n && n();
-  }
-  draw(ui) {
-    super.draw(ui);
-    const c = ui.ctx;
-    for (const w of this.widgets) {
-      const k = w.card, hover = ui.hit(w);
-      drawCard(c, k.x, k.y, k.w, k.h, hover);
-      ui.drawItem && ui.drawItem(makeStack(k.icon, 1), Math.floor(k.x + k.w / 2 - 8), k.y + 14);
-      Font.center(c, fitText(k.title, k.w - 8), k.x + k.w / 2, k.y + 44, '#FFFFFF');
-      Font.center(c, fitText(k.sub, k.w - 8), k.x + k.w / 2, k.y + 58, '#A0A0A0');
-    }
-  }
-  onEsc() { }
-}
-
 // ---- step 2: quality and shaders, on the live title world ----
 const QUALITY_CARDS = [
   { id: 'low', name: '流畅', sub: '近处清楚、远处少', cost: 0.45 },
@@ -330,7 +182,6 @@ class DeviceScreen extends MenuScreen {
     // still brings them (a phone chosen as PC by mistake, feedback 2026-11-01), the mouse takes them away again
     if (phone) s.touch = true; else delete s.touch;
     s.touchPick = this.pick; g.touchAuto = undefined; g.saveSettings(); g.applySettings && g.applySettings();
-    Telemetry.count && Telemetry.count('device_' + this.pick + (this.pick === this.detected ? '' : '_changed'));
     const n = this.next; this.next = null;
     if (phone) g.ui.open(new TouchLayoutScreen(g, this, () => n && n()));
     else n && n();
@@ -352,27 +203,22 @@ class DeviceScreen extends MenuScreen {
   onEsc() { }
 }
 
-// ---- the whole first run, and the agreement again when it changes ----
+// ---- the whole first run ----
 const Onboarding = {
   start(g) {
-    const s = g.settings;
+    if (g.settings.onboarded) return;
     const login = () => {
       const after = () => this.afterLogin(g);
       if (Account.loggedIn || !RoomService.base()) return after();
       g.ui.open(new LoginScreen(g, after));
     };
     const device = () => g.ui.open(new DeviceScreen(g, login));
-    const quality = () => g.ui.open(new QualityScreen(g, device));
-    const kind = () => g.ui.open(new PlayerKindScreen(g, quality));
-    if (s.onboarded) { if ((s.legalV || 0) < LEGAL.v) g.ui.open(new AgreementScreen(g, () => g.ui.open(new TitleScreen(g)))); return; }
-    g.ui.open(new AgreementScreen(g, kind));
+    g.ui.open(new QualityScreen(g, device));
   },
   afterLogin(g) {
     const s = g.settings;
     s.onboarded = true; s.seenBuild = GAME_BUILD; g.saveSettings();
-    if (Account.loggedIn) Account.update({ onboard: { kind: s.playerKind } }).catch(() => { });
-    if (s.playerKind === 'new' || s.playerKind === 'mc') g.ui.open(new DifferencesScreen(g, () => g.ui.open(new TitleScreen(g))));
-    else g.ui.open(new TitleScreen(g));
+    g.ui.open(new DifferencesScreen(g, () => g.ui.open(new TitleScreen(g))));
   },
 };
 // on the title: the first run, or what changed since the last visit (players of this version)
@@ -383,8 +229,18 @@ const Onboarding = {
     const s = this.settings;
     if (!this.onboardChecked) {
       this.onboardChecked = true;
-      // (an invite link goes straight to the room; the agreement still comes first)
-      if (!s.onboarded || (s.legalV || 0) < LEGAL.v) setTimeout(() => Onboarding.start(this), 50);
+      // (an invite link goes straight to the room; the first-run setup waits until the title world has its chunks,
+      // so its benchmark never starts on a still-building scene)
+      if (!s.onboarded) {
+        const t0 = performance.now();
+        const start = () => {
+          if (!this.titleWorldReady || !this.titleWorldReady()) {
+            if (performance.now() - t0 < 8000) return setTimeout(start, 250);
+          }
+          Onboarding.start(this);
+        };
+        setTimeout(start, 300);
+      }
       else if (s.seenBuild !== GAME_BUILD && WHATS_NEW[GAME_BUILD]) setTimeout(() => this.ui.open(new WhatsNewScreen(this, () => this.ui.open(new TitleScreen(this)))), 50);
     }
     return r;
@@ -463,7 +319,7 @@ const Tips = {
   };
 })();
 
-// ---- in the options: the agreement, the tips, the first run again ----
+// ---- in the options: the tips, the first run again ----
 (() => {
   const lay = OptionsScreen.prototype.layout;
   OptionsScreen.prototype.layout = function () {
@@ -472,12 +328,11 @@ const Tips = {
     // the skin and account entries (vanilla's skin customisation slot; the resource packs slot, not supported here)
     for (const w of this.widgets) {
       if (w.label === '皮肤自定义…') Object.assign(w, { enabled: true, gold: true, label: '皮肤和披风…', tip: null, onClick: () => g.ui.open(new WardrobeScreen(g, this)) });
-      if (w.label === '资源包…') Object.assign(w, { enabled: true, label: '账号…', tip: ['登录、游戏名、识别码、解锁'], onClick: () => g.ui.open(new AccountScreen(g, this)) });
+      if (w.label === '资源包…') Object.assign(w, { enabled: true, label: '账号…', tip: ['登录、游戏名、识别码'], onClick: () => g.ui.open(new AccountScreen(g, this)) });
     }
     const y = Math.max(...this.widgets.filter((w) => w.y < u.h - 40).map((w) => w.y)) + 24;
     if (y < u.h - 50) this.widgets.push(
       { x: u.w / 2 - 155, y, w: 150, h: 20, label: () => '游戏提示：' + (s.tips ? '开' : '关'), tip: ['情景提示：天黑、饥饿、血量低、第一次死亡……'], onClick: () => { s.tips = !s.tips; g.saveSettings(); } },
-      { x: u.w / 2 + 5, y, w: 150, h: 20, label: '用户协议和隐私说明', onClick: () => g.ui.open(new AgreementScreen(g, () => g.ui.open(this), true)) },
     );
   };
 })();

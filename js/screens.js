@@ -96,17 +96,14 @@ class TitleScreen extends MenuScreen {
     this.widgets = [
       { x: cx - 100, y: l, w: 200, h: 20, label: '单人游戏', onClick: () => singleGate(g, () => g.ui.open(new WorldListScreen(g)), this) },
       { x: cx - 100, y: l + 24, w: 200, h: 20, label: '多人游戏', onClick: () => onlineGate(g, () => g.ui.open(new MultiplayerScreen(g, this)), this), tip: ['加入公开房间、用邀请码加入朋友的房间，或者自己开一个（4–10 人）'] },
-      { x: cx - 100, y: l + 48, w: 98, h: 20, label: '皮肤和装饰', gold: true, tip: ['换皮肤（也可以用正版玩家的皮肤）、穿上原创披风、帽子和宠物'], onClick: () => g.ui.open(new WardrobeScreen(g, this)) },
-      { x: cx + 2, y: l + 48, w: 98, h: 20, label: '反馈问题', tip: ['遇到 bug、卡顿，或者有建议，发给我们'], onClick: () => g.ui.open(new FeedbackScreen(g, this, null)) },
+      { x: cx - 100, y: l + 48, w: 200, h: 20, label: '皮肤和装饰', gold: true, tip: ['换皮肤（也可以用正版玩家的皮肤）、穿上原创披风、帽子和宠物'], onClick: () => g.ui.open(new WardrobeScreen(g, this)) },
       { x: cx - 124, y: l + 84, w: 20, h: 20, icon: 'icon_language', tip: ['游戏说明'], onClick: () => g.ui.open(new HelpScreen(g, this)) },
       { x: cx - 100, y: l + 84, w: 98, h: 20, label: '选项…', onClick: () => g.ui.open(new OptionsScreen(g, this)) },
       { x: cx + 2, y: l + 84, w: 98, h: 20, label: '退出游戏', onClick: () => quitGame(g) },
       { x: cx + 104, y: l + 84, w: 20, h: 20, icon: 'icon_accessibility', tip: ['全屏'], onClick: () => toggleFullscreen() },
     ];
-    // the account (top left) and, until everything is unlocked, the way to unlock it (top right)
+    // the account (top left; phase 1 removed the title's login and unlock prompts)
     if (Account.loggedIn) this.widgets.push({ x: 4, y: 4, w: Math.min(120, Font.width(Account.name) + 30), h: 18, label: fitText(Account.name, 110), tip: ['账号：游戏名、识别码、退出登录'], onClick: () => g.ui.open(new AccountScreen(g, this)) });
-    else this.widgets.push({ x: 4, y: 4, w: 60, h: 18, gold: true, label: '登录', tip: ['登录后可以联机、云存档、换皮肤和披风'], onClick: () => g.ui.open(new LoginScreen(g, () => g.ui.open(new TitleScreen(g)))) });
-    if (Account.loggedIn && !Account.allUnlocked()) this.widgets.push({ x: u.w - 112, y: 4, w: 108, h: 18, gold: true, label: '解锁披风和联机', onClick: () => g.ui.open(new UnlockScreen(g, this)) });
   }
   drawExtra(ui) {
     const c = ui.ctx, w = ui.w, lg = ui.img.logo, ed = ui.img.edition;
@@ -131,9 +128,7 @@ class TitleScreen extends MenuScreen {
       c.globalAlpha = 0.6; c.fillStyle = '#000'; c.fillRect(Math.floor(w / 2 - Font.width(q) / 2 - 4), l - 2, Font.width(q) + 8, 12); c.globalAlpha = 1;
       Font.center(c, q, w / 2, l, '#FFFF55');
     }
-    Font.draw(c, 'OpusMC · 仅在 B站 Toy 平台发布', 2, ui.h - 10, '#FFFFFF');
-    const t = '非官方作品-UP主自制toy';
-    Font.draw(c, t, ui.w - Font.width(t) - 2, ui.h - 10, '#FFFFFF');
+    Font.draw(c, 'OpusMC', 2, ui.h - 10, '#FFFFFF');
   }
 }
 
@@ -384,8 +379,6 @@ class OptionsScreen extends MenuScreen {
       sub(5, '聊天设置…', null),
       sub(6, '资源包…', null),
       sub(7, '辅助功能设置…', () => new OptionsListScreen(g, this, '辅助功能设置', 'access')),
-      sub(8, '遥测数据…', () => new TelemetryScreen(g, this)),
-      sub(9, '制作人员名单与致谢…', () => new HelpScreen(g, this)),
       { x: cx - 100, y: u.h - 27, w: 200, h: 20, label: '完成', onClick: () => this.done() },
     ];
   }
@@ -479,7 +472,6 @@ class PauseScreen extends MenuScreen {
       { x: cx - 102, y: y + 24, w: 98, h: 20, label: '进度', onClick: () => g.ui.open(new AdvancementsScreen(g, this)) },
       { x: cx + 4, y: y + 24, w: 98, h: 20, label: '统计信息', onClick: () => g.ui.open(new StatsScreen(g, this)) },
       { x: cx - 102, y: y + 48, w: 98, h: 20, label: '游戏说明', onClick: () => g.ui.open(new HelpScreen(g, this)) },
-      { x: cx + 4, y: y + 48, w: 98, h: 20, label: '反馈问题', tip: ['遇到 bug、卡顿，或者有建议，发给我们（会附上现在的画面）'], onClick: () => g.ui.open(new FeedbackScreen(g, this, feedbackShot(g))) },
       room && !roomMode ? null : { x: roomMode ? cx - 102 : cx + 4, y: roomMode ? y + 96 : y + 72, w: roomMode ? 204 : 98, h: 20, label: () => '模式：' + MODE_NAMES[g.mode], enabled: !!g.cheats || !!g.net, tip: g.cheats || g.net ? ['生存 → 创造 → 旁观（也可按 F3 + F4）'] : ['需要开启“允许命令”'], onClick: () => g.requestMode(MODE_NEXT[g.mode]) },
       { x: cx - 102, y: y + 72, w: 98, h: 20, label: '选项…', onClick: () => g.ui.open(new OptionsScreen(g, this)) },
       g.net && g.net.room ? { x: cx + 4, y: y + 72, w: 98, h: 20, label: '房间…', tip: ['邀请朋友、看在场的玩家；房主可以踢人、封禁、禁言'], onClick: () => g.ui.open(new RoomScreen(g, this)) } : null,

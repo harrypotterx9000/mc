@@ -147,16 +147,12 @@ class WardrobeScreen extends FormScreen {
   }
   // a sign-in reward not owned yet: to the sign-in card (checkin.js), else a line saying how
   toCheckin(id) {
-    if (this.giftOf(id) && typeof NewsBoard !== 'undefined') { NewsBoard.open(this.game, this, false); return; }
     if (typeof CheckinScreen !== 'undefined' && typeof Checkin !== 'undefined' && Checkin.shown()) this.game.ui.open(new CheckinScreen(this.game, this));
     else this.say('签到活动奖励：活动期间每天登录签到，累计签到就能领');
   }
   // how a locked sign-in reward is got: its day in the event's rewards as last read (checkin.js keeps it, also
   // across reloads; the server may change the order, so never hardcoded), else just that it's a reward
-  // an announcement's gift (news.js): the published announcement that gives it
-  giftOf(id) { return !!id && typeof NewsBoard !== 'undefined' && (NewsBoard.list || []).some((x) => x.gift === id && !x.draft); }
   evHow(id) {
-    if (this.giftOf(id)) return ['公告里的礼物', '点一下去领取'];
     const st = typeof Checkin !== 'undefined' && Checkin.st, R = st && st.event && Array.isArray(st.event.rewards) ? st.event.rewards : [];
     const i = R.indexOf(id);
     return [i >= 0 ? '签到第 ' + (i + 1) + ' 天' : '签到活动奖励', ...(typeof Checkin !== 'undefined' && Checkin.shown() ? ['点一下去签到'] : [])];
@@ -181,17 +177,17 @@ class WardrobeScreen extends FormScreen {
       if (Account.has('skin')) {
         this.addField('mojang', x0, yy + 36, W - 54, '正版玩家的皮肤（输入玩家名）', 16, nameOnly);
         this.widgets.push({ x: x0 + W - 50, y: yy + 36, w: 50, h: 20, label: () => (this.busy ? '…' : '使用'), enabled: !this.busy, onClick: () => this.useMojang() });
-      } else this.widgets.push({ x: x0, y: yy + 26, w: W, h: 20, gold: true, label: '三连解锁：用正版玩家的皮肤', onClick: () => g.ui.open(new UnlockScreen(g, this)) });
+      }
     } else if (this.tab === 'cape') {
       const items = [{ id: null, name: '不穿披风' }, ...Capes.list.filter((c) => !c.admin || Capes.unlocked(c.id))];
       items.forEach((c, i) => {
         const cx = x0 + (i % cols) * cell, cy = y0 + Math.floor(i / cols) * (cell + 12);
         const locked = c.id && !Capes.unlocked(c.id);
         // (the sign-in event's capes: owned once signed for, not unlocked by 三连 / following)
-        const how = c.ev ? this.evHow('cape:' + c.id) : [c.anim ? '关注 UP 主解锁' : '给视频三连解锁', '点一下去解锁'];
+        const how = c.ev ? this.evHow('cape:' + c.id) : ['暂未解锁'];
         this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell + 8, label: '', capeIcon: c.id, locked, sel: c.id === this.look.cape,
           tip: [c.name + (c.anim ? '（动态）' : ''), ...(locked ? how : [])],
-          onClick: () => { if (locked && c.ev) this.toCheckin('cape:' + c.id); else if (locked) g.ui.open(new UnlockScreen(g, this, c.anim ? '关注 UP 主就能穿上动态披风' : '给视频三连就能穿上静态披风')); else { this.look.cape = c.id; this.layout(); } } });
+          onClick: () => { if (locked && c.ev) this.toCheckin('cape:' + c.id); else if (!locked) { this.look.cape = c.id; this.layout(); } } });
       });
     } else {
       // hats, pets, name prefixes (cosmetics.js): 'none' first, then each with its icon; all sign-in rewards for now

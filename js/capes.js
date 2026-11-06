@@ -389,10 +389,10 @@ const Capes = (() => {
     { id: 'admender', name: '管理员·末影', anim: true, admin: true }, { id: 'admaurora', name: '管理员·极光', anim: true, admin: true },
     { id: 'admriver', name: '管理员·红河', anim: true, admin: true }, { id: 'admgold', name: '管理员·流金', anim: true, admin: true },
     { id: 'admvoid', name: '管理员·虚空', anim: true, admin: true },
-    // the sign-in event's rewards (ev: owned by the account, COMMUNITY_PLAN.md - cosmetics.js); last, so the unlock
-    // screen's sample capes (account.js: the first four of each kind) stay the same
+    // the sign-in event's rewards (ev: owned by the account, COMMUNITY_PLAN.md - cosmetics.js); last, so the
+    // ordinary capes keep their order in the wardrobe
     { id: 'penguin', name: '企鹅', anim: false, ev: true }, { id: 'penguinwalk', name: '摇摆企鹅', anim: true, ev: true },
-    // (the first announcement's gift: news.js, community.js)
+    // (an event reward given by the service: community.js)
     { id: 'goldapple', name: '金苹果', anim: true, ev: true },
   ];
   // the colours an administrator's wings throw off as sparks (wingFx): the crowns' sparks, border light and jewels

@@ -196,9 +196,6 @@ const Toy = (() => {
           last.videoActions = d; last.videoActionsHow = how;
           const t = tripleOf(d);
           if (t !== null) {
-            // (read, but not all three: what Bilibili answered goes along, to see its field names)
-            let raw = ''; if (!t.all) { try { raw = JSON.stringify(d).slice(0, 600); } catch (e) { } }
-            if (typeof Telemetry !== 'undefined' && Telemetry.event) { Telemetry.event('triple_ok', { how, all: t.all, raw }); if (!t.all && Telemetry.flush) Telemetry.flush(false); }
             return t;
           }
         } catch (e) { err = err || e; last.videoActionsErrs = (last.videoActionsErrs || []).concat([`${how}: ${e.code || ''} ${e.message}`]).slice(-8); }
@@ -227,9 +224,8 @@ const Toy = (() => {
           setTimeout(() => end(document.hidden), 1500);
         });
         for (const p of [{ type, id: String(id) }, { url }]) {
-          try { await jsb('toy.navigate', p); if (await left()) { if (typeof Telemetry !== 'undefined' && Telemetry.event) Telemetry.event('nav_native', { form: p.url ? 'url' : 'type' }); return; } } catch (e) { }
+          try { await jsb('toy.navigate', p); if (await left()) return; } catch (e) { }
         }
-        if (typeof Telemetry !== 'undefined' && Telemetry.event) { Telemetry.event('nav_web', { type }); if (Telemetry.flush) Telemetry.flush(false); }
       }
       return this.navigate(type, id);
     },

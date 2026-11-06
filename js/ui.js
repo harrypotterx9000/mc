@@ -650,7 +650,6 @@ class UI {
     }
     this.wantBlur = false;
     if (this.screen) this.screen.draw(this);
-    if (typeof UnlockSparks !== 'undefined') UnlockSparks.draw(this); // (account.js: something just unlocked)
     if (this.wantBlur !== !!this.blurOn) {
       this.blurOn = this.wantBlur;
       const st = g.canvas.style;

@@ -59,9 +59,8 @@ const DB = {
       let db, made = false;
       try { db = await this.req(ver, () => { made = true; }); }
       catch (e) { if (e && e.name === 'VersionError' && n < 4) { ver = undefined; continue; } throw e; } // (another page bumped it first)
-      if (made) this.note(ver ? 'save_db_repaired' : this.opens ? 'save_db_recreated' : 'save_db_new');
       const miss = Object.keys(this.STORES).filter((s) => !db.objectStoreNames.contains(s));
-      if (!miss.length) { if (!this.opens) try { localStorage.setItem('mcjs-db', '1'); } catch (e) { } return db; }
+      if (!miss.length) { return db; }
       ver = db.version + 1; try { db.close(); } catch (e) { }
       if (n >= 4) throw new Error('存档数据库缺少 ' + miss.join('、') + '，修复失败');
     }
@@ -83,12 +82,6 @@ const DB = {
       r.onblocked = () => { this.blocked = true; };
     });
   },
-  // what happened to the database (telemetry: how often it is new / gone mid-game / repaired; a device that had one
-  // and starts with a new one lost its worlds between two visits)
-  note(k) {
-    if (k === 'save_db_new') { let had = null; try { had = localStorage.getItem('mcjs-db'); } catch (e) { } if (had) k = 'save_db_gone'; }
-    if (typeof Telemetry !== 'undefined' && Telemetry.count) Telemetry.count(k);
-  },
   // the connection, or an error instead of waiting for ever (saving and quitting waits on it)
   wait() {
     if (this.db) return Promise.resolve(this.db);
@@ -102,7 +95,7 @@ const DB = {
   // Database server lost" and "Database deleted by request of the user" are UnknownErrors), a store missing
   // (NotFoundError - the reopen repairs it), a transaction aborted under it
   stale(e) { return !!e && (/^(InvalidStateError|NotFoundError|UnknownError|AbortError)$/.test(e.name) || /clos(ing|ed)|lost|deleted/i.test(e.message || '')); },
-  // what the player reads after "保存失败: " (the browser's words are English; telemetry: QuotaExceededError on 6 devices)
+  // what the player reads after "保存失败: " (the browser's words are English; QuotaExceededError is the common one)
   nice(e) {
     if (e && (e.name === 'QuotaExceededError' || e.code === 22 || /quota/i.test(e.message || ''))) {
       const q = new Error('存储空间不够了：删掉不玩的世界，或清理设备的存储空间 (QuotaExceededError)'); q.name = 'QuotaExceededError'; return q;

@@ -161,7 +161,6 @@ class LocalHost {
     g.entities.push(p.avatar);
     g.ui.message(`${p.name} 加入了游戏`, '#FFFF55');
     this.toAll({ t: 'chat', sys: true, text: `${p.name} 加入了游戏` }, p);
-    Telemetry.count && Telemetry.count('p2p_guest');
   }
   onMsg(p, m) {
     const g = this.g;
@@ -537,7 +536,7 @@ class LocalRoomScreen extends FormScreen {
     if (!RoomService.base()) { this.say('还没有配置游戏服务器', true); return; }
     this.busy = true; this.say('正在开房间…'); this.layout();
     const h = new LocalHost(g, this.code);
-    try { await h.open(); g.p2pHost = h; g.ui.hideInput(); g.ui.close(); g.ui.message(`本地房间已经开好：邀请码 ${this.code}（暂停 → 本地房间 可以复制邀请、查看在场的人）`, '#55FF55'); Telemetry.count && Telemetry.count('p2p_host'); }
+    try { await h.open(); g.p2pHost = h; g.ui.hideInput(); g.ui.close(); g.ui.message(`本地房间已经开好：邀请码 ${this.code}（暂停 → 本地房间 可以复制邀请、查看在场的人）`, '#55FF55'); }
     catch (e) { this.busy = false; this.say(e.message, true); this.layout(); }
   }
   drawExtra(ui) {
