@@ -10,8 +10,9 @@
 |---|---|
 | 仓库 | `D:\Projects\OpusMC` |
 | 分支 | `main` = `develop` |
-| 基线标签 | `v0.1.0-preproject` |
-| 原始标签 | `v0.0.0-original` |
+| 基线标签 | `v0.1.0-preproject` @ `3913860`（音效包提交 `1797e50` 在其后） |
+| 原始标签 | `v0.0.0-original` @ `6090828` |
+| 远程 | `origin = https://github.com/harrypotterx9000/mc.git`（待推送 `opusmc-init`） |
 | 工作区 | 干净 |
 
 ## 已完成
