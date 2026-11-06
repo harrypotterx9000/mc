@@ -28,7 +28,7 @@
 ```
 
 - 213 个类声明；**28 个文件**给 `Game.prototype` 加方法；19 个原型被跨文件补丁。扫描明细见 `research/dependency-analysis.md`。
-- 运行时懒加载（不在 90 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/emoji.webp`；音效包 `js/sound_events.js` + `sounds/sfx/*`（当前未随项目复制，回退到程序化合成音）。
+- 运行时懒加载（不在 90 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/emoji.webp`；音效包 `js/sound_events.js` + `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
 
 ## 3. 关键对象与状态归属（[事实]）
 

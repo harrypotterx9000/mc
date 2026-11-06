@@ -16,4 +16,10 @@
   - `docs/research/*`、`docs/testing/*`、`docs/phases/phase-00-initialization/*`
   - 标签 `v0.1.0-preproject`
 
+### phase-00 补充（同日）
+
+- `feat(assets)` 补入原版音效包：`js/sound_events.js`（617,453 B）+ `sounds/sfx/**/*.m4a`
+  （4,849 个文件，43,169,776 B），下载 0 失败；KNOWN_ISSUES K-01 关闭
+- `docs` 同步更新 STATUS / KNOWN_ISSUES / ARCHITECTURE / README
+
 > 说明：本阶段没有修改任何游戏逻辑；唯一源码改动是上述 1 行重定向删除。

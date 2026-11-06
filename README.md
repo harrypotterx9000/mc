@@ -17,6 +17,7 @@ node scripts/serve.mjs
 ```
 index.html        游戏页面
 js/               游戏源码（原始文件名与加载顺序）
+sounds/sfx/       原版音效（4,849 个 m4a）
 scripts/          本地开发脚本（静态服务器）
 docs/             项目文档
 server/           自建多人服务器（后续阶段）
