@@ -2,6 +2,30 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-00 复核与交接 — 2026-11-06 — docs 提交（仅文档）
+
+> 代码未变：`js/`、`index.html`、`scripts/`、`sounds/` 均未修改。
+> 本节记录的是阶段 0 收尾文档；已随本次 docs 提交进入仓库，提交信息：`docs: close phase-00 review and record phase-01 decisions`。哈希见 `git log -1`。
+
+- 新增文件：**无**
+- 删除文件：**无**
+- 修改文件：
+  - `docs/STATUS.md`：更新当前阶段、HEAD `e49a54c`、代码基线 `2798c08`、未完成阶段与整体状态
+  - `docs/ARCHITECTURE.md`：更正 `Game.prototype` 统计口径；新增 §9 阶段 0 复核补充（联机本质、无头边界、依赖陷阱、菜单归属）
+  - `docs/KNOWN_ISSUES.md`：新增阶段 0 发现的待解决项、未测试项、服务端/环境依赖与兼容性风险
+  - `docs/phases/phase-00-initialization/HANDOFF.md`：重写为当前交接（目标、完成情况、决策、测试、下一阶段前置）
+  - `docs/START-HERE.md`：同步基线、阶段状态、阶段 1 决策与入口
+  - `docs/DECISIONS.md`：新增 ADR-011（阶段 0 复核结论与阶段 1 边界）
+  - `docs/CHANGELOG.md`：本节
+- 关键函数/状态变化：**无**（没有改任何游戏源码）
+- 修改原因：阶段 0 结束，为下一次会话建立可靠上下文；记录已确认的 10 项决策与 1-A 边界
+- 验证：
+  - `GET /` 200，16,469 B；`GET /js/game.js` 200，186,140 B
+  - 无头 Edge 156 + SwiftShader：`game.state='title'`，WebGL2，0 游戏错误
+  - 无头创建世界：`play`，62 区块，4,783 ms，IndexedDB，`probe-world`，0 错误
+  - Node v26.13.0：核心世界生成加载成功，生成 98,304 方块区块（183 ms）
+- 未验证：真实 GPU/真机性能、手机/iOS、多人服务器、HTTPS/WSS、备份恢复
+
 ## phase-00 初始化 — 2026-11-06
 
 - `6090828` 导入原始 OpusMC 源码（构建 `47455601425408-v39426`）
