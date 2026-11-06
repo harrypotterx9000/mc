@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><script>(function(){try{
+var W=window;if(W.__TOY_PERF__){return;}
+var P=W.performance;if(!P||!P.getEntriesByType){return;}
+var M={fw:[],sent:false};W.__TOY_PERF__=M;
+M.pnow=function(){try{return P.now?P.now():(Date.now()-M.t0);}catch(e){return 0;}};
+M.head=Math.round(P.now?P.now():0);
+M.t0=Math.round((P.timeOrigin!==undefined&&P.timeOrigin!==null)?P.timeOrigin:
+ ((P.timing&&P.timing.navigationStart)||Date.now()));
+M.sid=(W.crypto&&W.crypto.randomUUID)?W.crypto.randomUUID():
+ (Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10));
+M.fcp=undefined;
+M.readFCP=function(){try{
+ if(M.fcp!==undefined){return M.fcp;}
+ var es=P.getEntriesByType("paint")||[];
+ for(var i=0;i<es.length;i++){
+  if(es[i].name==="first-contentful-paint"){M.fcp=Math.round(es[i].startTime);return M.fcp;}}
+}catch(e){}
+return M.fcp;};
+try{var po=new W.PerformanceObserver(function(l){try{
+ var es=l.getEntries();for(var i=0;i<es.length;i++){
+  if(es[i].name==="first-contentful-paint"&&M.fcp===undefined){M.fcp=Math.round(es[i].startTime);
+   try{if(M.onFCP){M.onFCP();}}catch(e){}}}
+}catch(e){}});
+try{po.observe({type:"paint",buffered:true});}catch(e){po.observe({entryTypes:["paint"]});}
+}catch(e){}
+M.probe=function(){try{
+ var hit=[];var d=document;
+ var add=function(k){if(hit.indexOf(k)<0){hit.push(k);}};
+ if(W.unityInstance||W.UnityLoader||W.createUnityInstance){add("unity");}
+ if(W.vm||W.Scratch||W.ScratchVM){add("scratch");}
+ if(W.cc||W.cocos){add("cocos");}
+ if(W.Godot){add("godot");}
+ if(W.PIXI){add("pixi");}
+ if(W.Phaser){add("phaser");}
+ if(W.THREE){add("three");}
+ if(W.BABYLON){add("babylon");}
+ if(W.WebAssembly&&W.Module&&(W.Module.asm||W.Module.wasmBinary||W._malloc)){add("wasm");}
+ if(W.Vue||d.querySelector&&d.querySelector("[data-v-app]")){add("vue");}
+ if(W.React||W.ReactDOM){add("react");}
+ for(var i=0;i<hit.length;i++){if(M.fw.indexOf(hit[i])<0){M.fw.push(hit[i]);}}
+}catch(e){}};
+M.kind=function(){try{
+ var cv=document.getElementsByTagName?document.getElementsByTagName("canvas"):[];
+ var engine=["unity","scratch","cocos","godot","pixi","phaser","three","babylon"];
+ var hasEngine=false;
+ for(var i=0;i<engine.length;i++){if(M.fw.indexOf(engine[i])>=0){hasEngine=true;break;}}
+ if(cv&&cv.length>0){return hasEngine?"canvas-engine":"canvas";}
+ return hasEngine?"dom-engine":"dom";
+}catch(e){return "unknown";}};
+M.collect=function(withKind){try{
+ var nav=(P.getEntriesByType("navigation")||[])[0]||{};
+ var o={toy_id:M.toyID,render_mode:M.renderMode,layer:M.layer,
+  session_id:M.sid,time_origin:M.t0};
+ var put=function(k,v){try{var x=Math.round(v||0);if(x>0){o[k]=x;}}catch(e){}};
+ put("ttfb",nav.responseStart);put("dcl",nav.domContentLoadedEventEnd);
+ put("load",nav.loadEventEnd);put("doc_bytes",nav.decodedBodySize);
+ put("head_ms",M.head);put("transfer_bytes",nav.transferSize);
+ put("encoded_bytes",nav.encodedBodySize);
+ if(withKind){M.probe();o.kind=M.kind();o.fw=M.fw.join(",");}
+ var fcp=M.readFCP();
+ if(fcp!==undefined){o.fcp=fcp;}
+ if(M.fcpEst!==undefined){o.fcp_est=M.fcpEst;}
+ if(M.selfArmed){put("ff_self",M.ffSelf);o.ff_self_src=M.ffSrc||(M.selfDone?"none":"pending");}
+ return o;
+}catch(e){return null;}};
+}catch(e){}})();(function(){try{
+var W=window;var M=W.__TOY_PERF__;if(!M){return;}
+var P=W.performance;if(!P){return;}
+M.fcpEst=undefined;
+M.armEst=function(){try{
+ if(M.estArmed){return;}M.estArmed=true;
+ if(!W.MutationObserver){return;}
+ var D=document;
+ var SKIP={SCRIPT:1,STYLE:1,LINK:1,META:1,HEAD:1,TITLE:1,NOSCRIPT:1,TEMPLATE:1};
+ var INK={IMG:1,SVG:1,VIDEO:1,INPUT:1,BUTTON:1,TEXTAREA:1,SELECT:1};
+ var vis=function(n){try{var s=W.getComputedStyle(n);
+  return !s||(s.display!=="none"&&s.visibility!=="hidden"&&s.opacity!=="0");
+ }catch(e){return true;}};
+ var scan=function(n,dep){try{
+  if(dep>14){return false;}
+  if(n.nodeType===3){return /\S/.test(n.nodeValue||"");}
+  if(n.nodeType!==1){return false;}
+  if(SKIP[n.tagName]){return false;}
+  if(!vis(n)){return false;}
+  if(INK[n.tagName]){return true;}
+  try{var s=W.getComputedStyle(n);
+   if(s&&s.backgroundImage&&s.backgroundImage!=="none"){return true;}}catch(e){}
+  var c=n.childNodes||[];
+  for(var i=0;i<c.length;i++){if(scan(c[i],dep+1)){return true;}}
+  return false;
+ }catch(e){return false;}};
+ var anc=function(n){try{var p=n.parentNode;
+  while(p&&p.nodeType===1){if(SKIP[p.tagName]||!vis(p)){return false;}p=p.parentNode;}
+  return true;
+ }catch(e){return true;}};
+ var ink=function(n){try{
+  if(!n||!D.body){return false;}
+  if(n!==D.body&&(!D.body.contains||!D.body.contains(n))){return false;}
+  if(!anc(n)){return false;}
+  return scan(n,0);
+ }catch(e){return false;}};
+ var now=function(){try{return Math.round(P.now?P.now():(Date.now()-M.t0));}catch(e){return 0;}};
+ var mark=function(){try{
+  if(M.fcpEst!==undefined){return;}
+  var set=function(){try{if(M.fcpEst===undefined){M.fcpEst=now();}}catch(e){}};
+  if(W.requestAnimationFrame){W.requestAnimationFrame(function(){try{setTimeout(set,0);}catch(e){set();}});}
+  else{setTimeout(set,16);}
+ }catch(e){}};
+ var both=function(){try{mark();if(M.selfMark){M.selfMark();}}catch(e){}};
+ var mo=new W.MutationObserver(function(rs){try{
+  for(var i=0;i<rs.length;i++){
+   var a=rs[i].addedNodes||[];
+   for(var j=0;j<a.length;j++){if(ink(a[j])){both();mo.disconnect();return;}}
+   if(rs[i].type==="characterData"&&ink(rs[i].target)){both();mo.disconnect();return;}}
+ }catch(e){}});
+ mo.observe(D,{childList:true,subtree:true,characterData:true});
+}catch(e){}};
+}catch(e){}})();(function(){try{
+var W=window;var M=W.__TOY_PERF__;if(!M){return;}
+var P=W.performance;if(!P){return;}
+M.ffSelf=undefined;M.ffSrc=undefined;M.cvs=[];
+var hit=function(src){try{
+ if(M.ffSelf!==undefined){return;}
+ M.ffSelf=Math.round(M.pnow());M.ffSrc=src;M.unhookCtx();
+ try{if(M.onSelf){M.onSelf();}}catch(e){}
+}catch(e){}};
+M.unhookCtx=function(){try{
+ var H=W.HTMLCanvasElement;
+ if(M.gcOrig&&H&&H.prototype&&H.prototype.getContext===M.gcWrap){H.prototype.getContext=M.gcOrig;}
+ M.gcOrig=null;M.gcWrap=null;M.cvs=[];
+}catch(e){}};
+M.selfMark=function(){try{
+ if(M.ffSelf!==undefined||!W.requestAnimationFrame){return;}
+ W.requestAnimationFrame(function(){try{
+  W.requestAnimationFrame(function(){try{hit("raf2");}catch(e){}});
+ }catch(e){}});
+}catch(e){}};
+M.armSelf=function(){try{
+ if(M.selfArmed){return;}M.selfArmed=true;
+ var H=W.HTMLCanvasElement;
+ if(!H||!H.prototype||typeof H.prototype.getContext!=="function"){return;}
+ var orig=H.prototype.getContext;
+ M.gcOrig=orig;
+ M.gcWrap=function(t){
+  var r=orig.apply(this,arguments);
+  try{if(r&&M.cvs.length<8){
+   var dup=false;
+   for(var i=0;i<M.cvs.length;i++){if(M.cvs[i].c===this){dup=true;break;}}
+   if(!dup){M.cvs.push({c:this,t:(""+t).toLowerCase(),x:r,bad:false});}}}catch(e){}
+  return r;};
+ H.prototype.getContext=M.gcWrap;
+}catch(e){}};
+M.probeCanvas=function(round){try{
+ if(M.ffSelf!==undefined){return;}
+ var D=document;var gl=false;var tainted=false;
+ for(var i=0;i<M.cvs.length;i++){
+  var q=M.cvs[i];var cv=q.c;var x=q.x;
+  if(q.t.indexOf("webgl")>=0||q.t.indexOf("webgpu")>=0){gl=true;continue;}
+  if(q.bad||q.t!=="2d"||!x||!x.getImageData||!cv){continue;}
+  if(D.body&&D.body.contains&&!D.body.contains(cv)){continue;}
+  if(!cv.clientWidth||!cv.clientHeight||!cv.width||!cv.height){continue;}
+  var w=cv.width,h=cv.height;
+  var pts=[[w>>1,h>>1],[0,0],[w-1,h-1],[w>>2,h>>2]];
+  var p=pts[(round||0)%pts.length];
+  try{
+   var d=x.getImageData(p[0],p[1],1,1).data;
+   if(d[3]!==0||d[0]!==0||d[1]!==0||d[2]!==0){hit("pixel");return;}
+  }catch(er){q.bad=true;if(er&&er.name==="SecurityError"){tainted=true;}}
+ }
+ if(M.ffSrc===undefined){if(gl){M.ffSrc="gl-blind";}else if(tainted){M.ffSrc="tainted";}}
+}catch(e){}};
+}catch(e){}})();(function(){try{
+var W=window;var M=W.__TOY_PERF__;if(!M){return;}
+var NS="toy-shell-ability";
+M.toyID=47455601425408;M.renderMode=2;
+M.layer="content";
+M.armEst();M.armSelf();
+try{var pn=0;var pt=M.pnow();var pdone=function(){try{clearInterval(pk);}catch(e){}
+ try{if(M.unhookCtx){M.unhookCtx();}}catch(e){}
+ M.selfDone=true;try{if(M.onSelf){M.onSelf();}}catch(e){}};
+var pk=setInterval(function(){try{
+ M.probeCanvas(pn);
+ if(M.ffSelf!==undefined||++pn>=12||
+  (M.pnow()-pt)>=3600){pdone();}
+}catch(e){pdone();}},300);}catch(e){}
+M.seq=0;
+var flush=function(rs,up){try{
+ if(up==="self"){if(M.sent3){return;}M.sent3=true;}
+ else if(up){if(M.sent2){return;}M.sent2=true;}
+ else{if(M.sent){return;}M.sent=true;}
+ var o=M.collect(true);if(!o){return;}
+ o.flush_reason=up?(up==="self"?"self":"up"):rs;o.seq=++M.seq;o.ns=NS;o.type="perf";
+ M.pendingOut=(o.ff_self_src==="pending");
+ if(W.parent&&W.parent!==W){W.parent.postMessage(o,"*");}
+}catch(e){}};
+try{var n=0;var tk=setInterval(function(){try{M.probe();if(++n>8||M.done){clearInterval(tk);}}catch(e){}},400);}catch(e){}
+var arm=function(){try{
+ var waited=0;
+ var stop=function(t){try{M.done=true;clearInterval(t);}catch(e){}};
+ var tick=setInterval(function(){try{
+  waited+=300;
+  if(M.readFCP()!==undefined){stop(tick);flush("fcp",M.sent);return;}
+  if(M.fcpEst!==undefined){flush("est",false);}
+  if(waited>=5000){stop(tick);flush("bound",false);}
+ }catch(e){stop(tick);flush("err",false);}},300);
+ M.onFCP=function(){try{
+  if(!M.sent||M.sent2){return;}
+  stop(tick);flush("fcp",true);
+ }catch(e){}};
+ M.onSelf=function(){try{
+  if(!M.sent||M.sent3||!M.pendingOut){return;}
+  flush("self","self");
+ }catch(e){}};
+}catch(e){flush("err",false);}};
+if(document.readyState==="complete"){arm();}
+else{W.addEventListener("load",arm,false);}
+}catch(e){}})();</script><script>if(window.self===window.top){window.location.replace("https://www.bilibili.com/toy/OpusMC/47455601425408-v39426/index.html");}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>OpusMC</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000;
+    touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+  #ui { pointer-events: none; }
+  #textinput { position: absolute; display: none; background: transparent; border: none; outline: none; color: transparent;
+    caret-color: transparent; font-family: monospace; padding: 0 2px; z-index: 5; }
+  #err { position: absolute; left: 10%; top: 30%; width: 80%; color: #fff; font: 18px sans-serif; white-space: pre-wrap; display: none; text-align: center; }
+  #boot { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font: 16px "Microsoft YaHei", sans-serif; background: #ef323d; }
+  #boot b { font-size: 30px; letter-spacing: 2px; margin-bottom: 18px; }
+  #bootbar { width: min(320px, 70vw); height: 10px; border: 2px solid #fff; padding: 2px; box-sizing: content-box; }
+  #bootbar i { display: block; height: 100%; width: 0; background: #fff; }
+  #boottext { margin-top: 10px; font-size: 14px; }
+  #bootnote { position: absolute; bottom: 14px; font-size: 12px; opacity: .85; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="ui"></canvas>
+<input id="textinput" type="text" autocomplete="off" spellcheck="false">
+<div id="boot"><b>OpusMC</b><div id="bootbar"><i></i></div><div id="boottext">正在加载… 0%</div><div id="bootnote">非官方作品 · 仅在 B站 Toy 平台发布</div></div>
+<script>
+  // the loading bar: the game's scripts as they arrive (how many there are: counted in this page itself), then the
+  // start-up (textures, the title world) creeping on until the title screen is up
+  (function () {
+    var bar = document.querySelector('#bootbar i'), txt = document.getElementById('boottext'), total = 90, got = 0, shown = 0;
+    try { fetch(location.href, { cache: 'force-cache' }).then(function (r) { return r.text(); }).then(function (t) { var n = (t.match(/<script src=/g) || []).length; if (n) total = n; }).catch(function () { }); } catch (e) { }
+    document.addEventListener('load', function (e) { if (e.target && e.target.tagName === 'SCRIPT' && e.target.src) got++; }, true);
+    (function step() {
+      var b = document.getElementById('boot'); if (!b || b.style.display === 'none') return;
+      var want = got < total ? 85 * got / total : 85 + 14 * (1 - Math.exp(-(performance.now() - (step.t || (step.t = performance.now()))) / 4000));
+      shown = Math.max(shown, Math.min(99, want));
+      bar.style.width = shown.toFixed(1) + '%';
+      txt.textContent = (got < total ? '正在加载… ' : '正在准备世界… ') + Math.floor(shown) + '%';
+      setTimeout(step, 100);
+    })();
+  })();
+</script>
+<div id="err"></div>
+<script src="js/assets.js"></script>
+<script src="js/font.js"></script>
+<script src="js/emoji.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/util.js"></script>
+<script src="js/worldgen_data.js"></script>
+<script src="js/worldgen.js"></script>
+<script src="js/blockdata.js"></script>
+<script src="js/itemdata.js"></script>
+<script src="js/recipedata.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/world.js"></script>
+<script src="js/mesher.js"></script>
+<script src="js/models.js"></script>
+<script src="js/vmodels.js"></script>
+<script src="js/render.js"></script>
+<script src="js/render2.js"></script>
+<script src="js/shaders.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/subtitles.js"></script>
+<script src="js/entity.js"></script>
+<script src="js/mobs2.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/save.js"></script>
+<script src="js/game.js"></script>
+<script src="js/terrain2.js"></script>
+<script src="js/features.js"></script>
+<script src="js/trees.js"></script>
+<script src="js/structures_data.js"></script>
+<script src="js/structgen.js"></script>
+<script src="js/structtypes.js"></script>
+<script src="js/gen_worker.js"></script>
+<script src="js/structures.js"></script>
+<script src="js/nbt.js"></script>
+<script src="js/anvil.js"></script>
+<script src="js/export.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/commands.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/dims.js"></script>
+<script src="js/nether_mobs.js"></script>
+<script src="js/village_mobs.js"></script>
+<script src="js/merchant.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/enchant.js"></script>
+<script src="js/workstations.js"></script>
+<script src="js/equip.js"></script>
+<script src="js/vehicles.js"></script>
+<script src="js/redstone.js"></script>
+<script src="js/itemuse.js"></script>
+<script src="js/entitydata.js"></script>
+<script src="js/etex.js"></script>
+<script src="js/emodel.js"></script>
+<script src="js/vmobs.js"></script>
+<script src="js/mobs_animals.js"></script>
+<script src="js/mobs_water.js"></script>
+<script src="js/mobs_hostile.js"></script>
+<script src="js/mobitems.js"></script>
+<script src="js/spawning.js"></script>
+<script src="js/draw2.js"></script>
+<script src="js/blockents.js"></script>
+<script src="js/decor.js"></script>
+<script src="js/items3.js"></script>
+<script src="js/specials.js"></script>
+<script src="js/raids.js"></script>
+<script src="js/cmdrun.js"></script>
+<script src="js/main.js"></script>
+<script src="js/touch.js"></script>
+<script src="js/perf.js"></script>
+<script src="js/netconfig.js"></script>
+<script src="js/net.js"></script>
+<script src="js/beacon.js"></script>
+<script src="js/cmdblock.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/toy.js"></script>
+<script src="js/account.js"></script>
+<script src="js/capes.js"></script>
+<script src="js/skins.js"></script>
+<script src="js/cloudsave.js"></script>
+<script src="js/social.js"></script>
+<script src="js/mobile.js"></script>
+<script src="js/onboard.js"></script>
+<script src="js/companion.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/cosmetics.js"></script>
+<script src="js/news.js"></script>
+<script src="js/checkin.js"></script>
+<script src="js/p2p.js"></script>
+<script src="js/panorama_data.js"></script>
+<script src="js/panorama.js"></script>
+<script>
+  // hide boot splash once the title screen is up
+  (function wait() { if (window.game && window.game.state !== 'boot') document.getElementById('boot').style.display = 'none'; else setTimeout(wait, 100); })();
+</script>
+</body>
+</html>
