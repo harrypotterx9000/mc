@@ -11,7 +11,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\Projects\OpusMC` |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 4：阶段 0 两个 docs 提交 + phase-01 代码提交 + phase-01 docs 收尾） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 5：阶段 0 两个 docs 提交 + phase-01 代码提交 + phase-01 docs 收尾） |
 | HEAD | phase-01 docs 收尾提交（哈希见 `git log -1`；父提交 `15154bd`） |
 | phase-01 代码提交 | **`15154bd`** |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
@@ -123,6 +123,19 @@ NOT TESTED：末影龙通关实际触发 `CreditsScreen`（只验证类与绘制
 - 真实登录后的账号界面、解锁状态同步、签到活动（需原服务/账号）
 - 末影龙通关后的 `CreditsScreen` 实机触发
 - HTTPS/WSS、NAT、反向代理、备份恢复
+
+## 尚未完成的阶段
+
+| 阶段 | 状态 | 内容 |
+|---|---|---|
+| phase-02 解锁移除 | 未开始 | 开放普通披风/皮肤/装饰；管理员款保持隐藏；活动款按 phase-02/03 时序处理 |
+| phase-03 访客模式 | 未开始 | 删除账号、登录、云存档、公告接口、签到、Toy 绑定 |
+| phase-04 浏览器 | 未开始 | 桌面/手机/平板兼容、触控、全屏、缓存与性能入口 |
+| phase-05 服务器 | 未开始 | 自建服务器、房间/邀请码、服务端权威同步、多人存档 |
+| phase-06 双存档 | 未开始 | 单人 IndexedDB 与多人服务器存档独立管理 |
+| phase-07 性能 | 未开始 | 区块/Worker/GPU/内存/网络优化，真实设备测量 |
+| phase-08 部署 | 未开始 | 先 LAN；HTTPS/WSS、公网、NAT 后续 |
+| phase-09 验收 | 未开始 | 全阶段回归、真机与发布验收 |
 
 ## 待办（下一阶段前）
 

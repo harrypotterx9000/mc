@@ -24,7 +24,13 @@
   - `js/ui.js`：删除 `UnlockSparks` 绘制
   - `js/p2p.js`、`js/render.js`、`js/save.js`、`js/touch.js`、`js/toy.js`：移除遥测计数、纹理自检、DB 记录与导航/全屏计数
 - K-27 后续：删除 `js/telemetry.js` 与全部 `Telemetry` 调用/包装；`GAME_BUILD` 移到 `js/game.js`；`js` 92 个、`index` 88 个脚本
+- 文档：
+  - 修改：`docs/ARCHITECTURE.md`、`CHANGELOG.md`、`DECISIONS.md`、`KNOWN_ISSUES.md`、`PROJECT_SPEC.md`、`START-HERE.md`、`STATUS.md`
+  - 新增：`docs/phases/phase-01-menu-cleanup/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`
+  - 删除：`docs/phases/phase-01-menu-cleanup/.gitkeep`
+- 关键函数/状态变化：删除 `AgreementScreen`/`PlayerKindScreen`/`UnlockScreen`/`FeedbackScreen`/`TelemetryScreen`；`onlineGate()` 直接放行；新世界 `tutorial=-1`；`playerKind`/`legalV`/`Telemetry` 移除；`GAME_BUILD` 移到 `js/game.js`；`ReportScreen` 内容检查保留。
 - 关键行为变化：首启两屏消失；公告/反馈/遥测/制作人员/协议入口消失；标题无登录与 B 站文案；多人不再要求账号/解锁；新世界默认无教程。
+- 修改原因：按用户 phase-01 冻结清单删除主菜单旧平台/解锁/公告/反馈/遥测入口；K-27 独立验收要求整体移除遥测；不进入 phase-02。
 - 验证：
   - 92 个 JS 全量 `node --check` 通过
   - 无头 Edge 156 + SwiftShader：首启 `QualityScreen`，标题 `TitleScreen`，0 个 `game.errLog` 错误
