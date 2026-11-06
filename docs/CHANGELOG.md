@@ -21,5 +21,8 @@
 - `feat(assets)` 补入原版音效包：`js/sound_events.js`（617,453 B）+ `sounds/sfx/**/*.m4a`
   （4,849 个文件，43,169,776 B），下载 0 失败；KNOWN_ISSUES K-01 关闭
 - `docs` 同步更新 STATUS / KNOWN_ISSUES / ARCHITECTURE / README
+- `docs: record sound pack commit, tags and remote state`（`791d16b`）
+- **首次远程推送**：`main → origin/opusmc-init`（`791d16b`），远程 `main` 未变（仍为 `6c476c0`）
+  - PR 入口：<https://github.com/harrypotterx9000/mc/pull/new/opusmc-init>
 
 > 说明：本阶段没有修改任何游戏逻辑；唯一源码改动是上述 1 行重定向删除。

@@ -48,6 +48,15 @@
 ## ADR-007 远程仓库以远程现状为准
 
 - 日期：2026-11-06
-- 决策：`https://github.com/harrypotterx9000/mc` 当前只有 1 个 README 提交，与本地历史无关；首次推送前先与用户确认策略（合并无关历史 / 新分支 / 其他），不允许强推。
+- 决策：`https://github.com/harrypotterx9000/mc` 当前只有 1 个 README 提交，与本地历史无关；首次推送采用**新分支 + PR**，不改远程 `main`，不允许强推。
 - 理由：避免覆盖远程内容或制造不可逆历史。
-- 状态：待用户确认（认证尚未进行）。
+- 状态：已执行（见 ADR-008）。
+
+## ADR-008 首次远程推送采用新分支 + PR
+
+- 日期：2026-11-06
+- 背景：本地历史与远程 `main` 无共同祖先（远程仅 `6c476c0` README）。
+- 决策：`git push -u origin main:opusmc-init`，远程新增 `opusmc-init` 分支；PR 由用户在 GitHub 上创建并合并；远程 `main` 在合并前保持不变。
+- 结果：`opusmc-init` 已推送（`791d16b`），远程 `main` 仍为 `6c476c0`；GCM 已有可用凭据，未出现交互弹窗。
+- 影响：本地 `main` 跟踪 `origin/opusmc-init`；PR 合并后需把 `origin/main` 拉回并重新对齐跟踪关系。
+

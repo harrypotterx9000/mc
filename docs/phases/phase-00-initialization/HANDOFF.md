@@ -19,8 +19,8 @@
 
 ## 未决问题
 
-- GitHub 首次推送策略：远程只有 1 个 README 提交，与本地历史无关；需用户决定（合并无关历史 / 新分支 / 其他），且认证未完成。
-- 音效包是否补入（`sounds/sfx`）。
+- PR 待用户在 GitHub 创建并合并：<https://github.com/harrypotterx9000/mc/pull/new/opusmc-init>
+  合并后需 `git fetch origin && git branch -u origin/main main`（或按合并结果调整）。
 - 手机性能与兼容性尚未测量。
 
 ## 交接方式
