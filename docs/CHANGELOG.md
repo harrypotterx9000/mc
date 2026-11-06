@@ -2,6 +2,36 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-01 主菜单清理 — 2026-11-06 — 提交 `15154bd`（代码）+ docs 收尾
+
+> phase-01 已验收；代码提交 `15154bd`，文档收尾为当前 HEAD（哈希见 `git log -1`）。
+
+- 新增文件：`docs/phases/phase-01-menu-cleanup/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`
+- 删除文件：`js/news.js`、`js/telemetry.js`
+- 修改文件（18）：
+  - `index.html`：删除 head 内 Toy 性能上报脚本、启动页脚、`js/news.js`/`js/telemetry.js` 引用、`#bootnote` CSS；脚本数 90 → 88
+  - `js/onboard.js`：删除 `AgreementScreen`/`LEGAL` 与 `PlayerKindScreen`/`PLAYER_KINDS`；首启从画质设置开始，等标题世界就绪后再打开
+  - `js/game.js`：新世界默认关教程（`meta.tutorial ?? -1`）；`GAME_BUILD` 从删除的 telemetry.js 移到这里
+  - `js/extras.js`：小地图/死亡点不再依赖 `playerKind`
+  - `js/screens.js`：删除标题登录/反馈/解锁入口与底部 B 站文案；删除选项遥测/制作人员入口；删除暂停反馈入口
+  - `js/cloudsave.js`：删除标题底部「登录后可以联机…」提示
+  - `js/social.js`：内容检查只包裹 `ReportScreen`
+  - `js/account.js`：删除 `UnlockScreen`、解锁入口/特效、`allUnlocked`、`online` 解锁状态；`onlineGate()` 直接放行（1-A）
+  - `js/net.js`：删除 gate 错误里的 `UnlockScreen` 回退
+  - `js/skins.js`：删除解锁按钮与公告礼物跳转；锁定披风不再打开解锁界面
+  - `js/checkin.js`：签到入口不再依赖公告吊牌位置
+  - `js/capes.js`：更新解锁/公告相关注释
+  - `js/ui.js`：删除 `UnlockSparks` 绘制
+  - `js/p2p.js`、`js/render.js`、`js/save.js`、`js/touch.js`、`js/toy.js`：移除遥测计数、纹理自检、DB 记录与导航/全屏计数
+- K-27 后续：删除 `js/telemetry.js` 与全部 `Telemetry` 调用/包装；`GAME_BUILD` 移到 `js/game.js`；`js` 92 个、`index` 88 个脚本
+- 关键行为变化：首启两屏消失；公告/反馈/遥测/制作人员/协议入口消失；标题无登录与 B 站文案；多人不再要求账号/解锁；新世界默认无教程。
+- 验证：
+  - 92 个 JS 全量 `node --check` 通过
+  - 无头 Edge 156 + SwiftShader：首启 `QualityScreen`，标题 `TitleScreen`，0 个 `game.errLog` 错误
+  - 创建世界 `play`、62 区块、`tutorial=-1`；暂停菜单无反馈；多人入口直接进入 `MultiplayerScreen`；衣柜打开正常
+  - 静态服务器 88 个脚本全部 200，`js/news.js`/`js/telemetry.js` 404 且不再请求；无 `/api/telemetry`
+- 未验证：真实 GPU/真机、登录后的账号界面、签到、结局 `CreditsScreen` 实机触发、多人服务器
+
 ## phase-00 复核与交接 — 2026-11-06 — docs 提交（仅文档）
 
 > 代码未变：`js/`、`index.html`、`scripts/`、`sounds/` 均未修改。

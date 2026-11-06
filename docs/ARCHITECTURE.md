@@ -1,13 +1,13 @@
 # OpusMC 架构说明（ARCHITECTURE）
 
-> 依据：`D:\Projects\OpusMC` 当前源码（90 个脚本，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
+> 依据：`D:\Projects\OpusMC` 当前源码（phase-01 后 88 个加载脚本、92 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
 > 标注：**[事实]** 源码可复核；**[实测]** 运行时读到；**[推断]** 未运行验证。
 
 ## 1. 总体形态
 
 单页 WebGL2 应用，无框架、无打包器：
 
-- `index.html` 按固定顺序加载 90 个 `<script>`，全部挂在全局作用域。
+- `index.html` 按固定顺序加载 **89** 个 `<script>`（phase-01 删除 `news.js` 后；原为 90），全部挂在全局作用域。
 - 数据文件（方块/物品/配方/结构/模型/贴图/字体）是构建脚本从原版数据生成的单行 JSON。
 - 功能模块通过**给共享原型打补丁**扩展（`Game`、`Renderer`、`Player`、`UI`、`World`、`Mob`…）。
 - 世界生成在 Web Worker（`gen_worker.js`），装饰/网格化在另一个 Worker（`chunk_worker.js`，按需创建）。
@@ -16,19 +16,19 @@
 ## 2. 分层与文件（[事实]）
 
 ```
-加载顺序（90）
+加载顺序（88）
 ├─ 资源/数据  assets, font, emoji, texts, worldgen_data, blockdata, itemdata,
 │             recipedata, structures_data, entitydata, etex, models, panorama_data, subtitles
 ├─ 内核       util → world → mesher → vmodels → render/render2 → shaders
 ├─ 内容       blocks → features → trees → structgen/structtypes → dims → mobs_* → items* → redstone
 ├─ 循环       game → terrain2 → perf
 ├─ 界面       ui → screens → commands → controls → touch → mobile → onboard
-└─ 平台       netconfig → net → beacon/cmdblock → telemetry → toy → account → capes/skins/cloudsave
-              → social → companion → extras → cosmetics → news → checkin → p2p → panorama
+└─ 平台       netconfig → net → beacon/cmdblock → toy → account → capes/skins/cloudsave
+              → social → companion → extras → cosmetics → checkin → p2p → panorama
 ```
 
-- 213 个顶层类声明；按 `Game.prototype.* =` 赋值扫描，**40 个文件、257 处、174 个方法名**（含包装器；旧口径“28 个加方法文件”不再作为准确计数）。扫描明细见 `research/dependency-analysis.md`。
-- 运行时懒加载（不在 90 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
+- **206 个顶层类声明**（phase-0 为 213；phase-01 删除 7 个界面/面板类）、**77 个 `*Screen` 类**（原 84）；按 `Game.prototype.* =` 赋值扫描，**40 个文件、257 处、174 个方法名**（含包装器；旧口径“28 个加方法文件”不再作为准确计数）。扫描明细见 `research/dependency-analysis.md`。
+- 运行时懒加载（不在 88 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
 
 ## 3. 关键对象与状态归属（[事实]）
 
@@ -37,7 +37,7 @@
 | `game` | `js/game.js` | `state, world, worldMeta, player, entities, ui, settings, genPool` | 几乎所有模块 |
 | `world` | `js/world.js` | `chunks, minY, gen2, W/H` | 渲染、实体、红石、结构、刷怪、存档 |
 | `player` | `js/entity.js` | `pos, inv, health, effects, mode` | UI、装备、网络、载具 |
-| `ui` | `js/ui.js` | `screen, chat, input, debug` | 输入、tick、渲染、遥测 |
+| `ui` | `js/ui.js` | `screen, chat, input, debug` | 输入、tick、渲染 |
 | `DB` | `js/save.js` | IndexedDB 封装 | 世界、云存档、P2P 主机 |
 | `Account` | `js/account.js` | `data, loggedIn` | 房间、云、皮肤、签到、公告 |
 | `RoomService` | `js/net.js` | 房间 API 封装 | 多人、P2P、云、签到、公告 |
@@ -76,7 +76,7 @@
 | `Game.tickFurnaces` | 3 | 熔炉/酿造/信标 |
 | `Game.loadDimData` | 2 | 维度加载 + 刷怪初始化 |
 | `Game.placeState` / `playerPose` / `netUse` | 各 2 | 方块状态 / 姿态 / 联机交互 |
-| `UI.open` | 2 | 红石唤醒 + 遥测计数 |
+| `UI.open` | 1 | 红石唤醒 |
 | `ChestScreen.close` | 1（被包） | 关闭时唤醒比较器 |
 
 ## 6. 联机与服务器现状（[事实]+[推断]）
@@ -115,10 +115,10 @@ server/
 
 | 项 | 实测 |
 |---|---|
-| `index.html` 脚本 | 90 个 `<script src>` |
-| `js/` | 94 个 `.js` + 1 个 `emoji.webp` |
-| 顶层类 | 213 个 |
-| `*Screen` 类 | 84 个 |
+| `index.html` 脚本 | 90（phase-0）；phase-01 后 **89** |
+| `js/` | 94 个 `.js` + 1 `emoji.webp`（phase-0）；phase-01 后 **92** 个 `.js` + 1 `emoji.webp` |
+| 顶层类 | 213（phase-0）；phase-01 后 **206** |
+| `*Screen` 类 | 84（phase-0）；phase-01 后 **77** |
 | 直接给 `Game.prototype` 赋值的文件 | 40 个 / 257 处 / 174 个方法名（含包装器） |
 | `NetClient` 入站消息 | 53 种（去重后） |
 | `NetClient` 出站消息 | 22 种 |
@@ -137,7 +137,7 @@ server/
 - `game.js` 仍有 14 处 DOM、`Renderer/UI/Sound/Particles/Font` 贯穿 `init/tick/render`；服务端不能直接 `node js/game.js`，需要无头 `Game` 垫片或抽取模拟层。
 - `Game.tick()` 内部会检查 `this.ui.screen`、调用 `Sound`/`this.particles`；服务端复用前必须为这些提供空实现，不能把 DOM/Canvas/WebGL 搬进服务器。
 
-### 9.4 删除/迁移依赖陷阱（阶段 1–3 必须查）
+### 9.4 删除/迁移依赖陷阱（phase-0 时点；phase-01 已处理 news/telemetry/feedback）
 
 | 陷阱 | 位置 | 后果 |
 |---|---|---|
@@ -150,7 +150,9 @@ server/
 | `p2p` 包装 `DB/World/Game` | `p2p.js:435-477` | 删/改本地房间必须逐项恢复或替换 |
 | `Game.tick` 加载顺序 | 10 个文件 | 后加载者包住先加载者；删文件会静默改变行为 |
 
-### 9.5 菜单/平台入口的准确归属
+### 9.5 菜单/平台入口的准确归属（phase-0 时点）
+
+> 以下行号为 phase-0 源码；phase-01 已删除首启两屏、公告面板、解锁面板、反馈面板与部分入口，见 §10。
 
 - 首启两屏在 `onboard.js`：`AgreementScreen`（标题“欢迎来到 OpusMC”）与 `PlayerKindScreen`（“你是哪种玩家？”）。
 - 公告在 `news.js`，通过 `TitleScreen.prototype.layout/drawExtra/mouseDown` 注入；与 `checkin.js` 的 `signRect`、`skins.js` 的礼物判断共享。
@@ -158,3 +160,57 @@ server/
 - 反馈入口在 `screens.js:100/482`、`telemetry.js:273`；`FeedbackScreen`/`postFeedback` 在 `telemetry.js`。
 - 选项三项：`screens.js:387`（遥测）、`screens.js:388`（制作人员名单）、`onboard.js:480`（用户协议/隐私）。
 - Toy 性能上报脚本在 `index.html:3-219`；启动页脚“仅在 B站 Toy 平台发布”在 `index.html:245`。
+
+## 10. 阶段 1 变更（2026-11-06，已完成；代码提交 `15154bd`）
+
+> phase-01 已验收并提交（`15154bd`）；文件计数、入口与调用链以此节为准。§9 是 phase-0 复核时点。
+
+### 10.1 文件与脚本
+
+- `index.html`：脚本 **90 → 88**；删除 `js/news.js`/`js/telemetry.js` 引用、head 内 Toy 性能上报内联脚本、启动页脚与 `#bootnote`。
+- `js/`：**94 → 92 个 `.js`**（删除 `news.js` 与 `telemetry.js`）+ `emoji.webp`；懒加载仍为 `chunk_worker.js`、`skins_data.js`、`vstates_data.js`、`sound_events.js`、`emoji.webp`。
+- 删除文件：`js/news.js`、`js/telemetry.js`。
+- 修改文件：`index.html`、`onboard.js`、`game.js`、`extras.js`、`screens.js`、`cloudsave.js`、`social.js`、`account.js`、`net.js`、`skins.js`、`checkin.js`、`capes.js`、`ui.js`、`p2p.js`、`render.js`、`save.js`、`touch.js`、`toy.js`。
+- K-27 后续：删除 `js/telemetry.js`；移除全部 `Telemetry` 调用/包装、`render.js` 的遥测纹理自检、`save.js` 的遥测 DB 记录、`social.js` 的页面关闭 flush。
+
+### 10.2 首启链
+
+```
+startTitle()
+  → 标题世界 setupWorld + TitleScreen
+  → 等 titleWorldReady()（最多 8 s）
+  → QualityScreen（画质/光影）→ DeviceScreen → LoginScreen（仍存在）
+  → Onboarding.afterLogin → DifferencesScreen → TitleScreen
+```
+
+- `AgreementScreen`、`LEGAL`、`legalV`、`PlayerKindScreen`、`PLAYER_KINDS`、`playerKind` 已删除。
+- 新世界 `tutorial = meta.tutorial ?? -1`；旧存档值保留。
+- 小地图/死亡点不再由 `playerKind` 决定；仅显式设置为开时显示。
+
+### 10.3 标题与菜单
+
+- `TitleScreen`：删除登录按钮、解锁按钮、反馈按钮；皮肤和装饰按钮改为整行宽；底部只保留 `OpusMC` 标识。
+- `OptionsScreen`：删除「遥测数据…」「制作人员名单与致谢…」；`onboard.js` 覆盖不再添加「用户协议和隐私说明」。
+- `PauseScreen`：删除「反馈问题」。
+- `FeedbackScreen`/`postFeedback`/`feedbackShot`/`FEEDBACK_KINDS`/`TelemetryScreen` 删除；`social.js` 只包裹 `ReportScreen`。
+- K-27 后续：`js/telemetry.js` 与全部 `Telemetry` 调用/包装删除；`GAME_BUILD` 移到 `js/game.js`；无 `/api/telemetry` 请求。
+
+### 10.4 公告、签到与衣柜
+
+- 公告：`NewsBoard`/`NewsScreen`/`NewsEditScreen` 随 `js/news.js` 删除；公告礼物领取与标题自动弹出消失。
+- 签到：`Checkin.titleRect` 不再读公告吊牌位置，使用标题右上角固定回退位置；暂停菜单入口保留。
+- 衣柜：删除「三连解锁」按钮、公告礼物跳转、锁定披风的 `UnlockScreen` 点击；锁定项显示「暂未解锁」且不可点。
+- 聊天里的管理员全服公告（`social.js`）保留，与已删除的公告板无关。
+
+### 10.5 联机门槛
+
+- `onlineGate()` 被替换为 `function onlineGate(g, then) { return then(); }`（1-A）。
+- 标题「多人游戏」、`p2p.js` 的本地房间入口均不再要求账号/关注/三连；`net.js` 的 gate 错误回退已删除。
+- `Account.checkUnlocks` 仍会后台更新披风/皮肤解锁状态，但不再弹解锁庆祝；`Account.allUnlocked`/`has('online')`/`UnlockSparks` 已删除。
+
+### 10.6 已知风险
+
+- 未解锁的非活动款披风/正版皮肤在 phase-02 前不可获得（K-28）。
+- 遥测模块已整体移除（K-27 已解决）。
+- 公告/反馈删除后，旧的 localStorage 键与云端接口数据成为死数据；不自动清理（K-31）。
+- 首启等待标题世界就绪，低端设备会先看到标题数秒（K-35）。

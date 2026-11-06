@@ -97,3 +97,37 @@
   - 阶段 3 删除账号/云存档/公告/签到；活动款装饰随签到一起删。
   - 阶段 5 不追求兼容原版 Java 代理协议；`NetClient` 仅保留遗留直连。
 - 状态：**已确认；阶段 1 尚未执行**。
+
+## ADR-012 阶段 1 主菜单删减的实施边界
+
+- 日期：2026-11-06
+- 背景：用户启动 phase-01，要求删除首启两屏、公告面板、解锁披风/联机面板、选项三项、主菜单指定文字与反馈面板；同时要求不切换 Git 分支、不扩大范围。
+- 决策：
+  1. 首启两屏整体删除：`AgreementScreen`/`LEGAL`/`legalV` 与 `PlayerKindScreen`/`PLAYER_KINDS`/`playerKind` 不再保留；首启从画质设置开始。删除两屏后首启在 50 ms 内自动打开画质基准，会在标题世界尚未建好时做 `readPixels`；改为等待 `titleWorldReady()`（最多 8 s）后再打开，避免 SwiftShader/低端设备卡死。
+  2. 新世界默认关教程（`meta.tutorial ?? -1`）；旧存档 `meta.tutorial` 保留。删除玩家类型后，小地图/死亡点默认改为仅显式开启时显示；情景提示 `settings.tips` 的值不受影响。
+  3. 公告模块整体删除 `js/news.js`；签到与聊天里的管理员全服公告保留；签到按钮改用标题右上角固定位置。浏览器里旧的 `mcjs-news*` 键作为死数据保留，不自动删除。
+  4. 删除 `UnlockScreen` 与所有入口（标题、账号、衣柜、锁定披风），并按 1-A 让 `onlineGate()` 直接放行；皮肤/披风的内部解锁数据保留到阶段 2 再统一开放。
+  5. 选项「遥测数据」与 `TelemetryScreen` 删除；`Telemetry` 核心与 `GAME_BUILD` 按 ADR-011 暂留，因此阶段 1 没有 UI 关闭入口，记录为 K-27，阶段 3 随账号/原服务整体移除。
+  6. 反馈整体删除：`FeedbackScreen`/`postFeedback`/`feedbackShot`/`FEEDBACK_KINDS` 与三处入口；`social.js` 的内容检查只保留 `ReportScreen`。举报功能保留。
+  7. 主菜单指定文字删除；`OpusMC` 品牌字样保留。`index.html` 头部 Toy 性能上报内联脚本一并删除（阶段 0 的 K-03）。
+  8. 本次按用户指令留在 `develop` 工作区，不创建/切换阶段分支、不提交；验收通过后再提交，验收不通过则按 ADR-009/§11.3 丢弃。
+- 影响：
+  - 阶段 2 仍需开放皮肤/披风/装饰，并处理管理员款与活动款时序。
+  - 阶段 1 中未解锁的非活动款披风/正版皮肤暂时没有解锁路径（阶段 2 开放）。
+  - 阶段 3 仍需删除账号、云存档、登录、公告接口、签到与 Toy（遥测已由 ADR-013 移除）。
+  - 旧设置里的 `playerKind`/`legalV` 不再读取，保留为死数据。
+- 状态：**已实施，独立验收通过；代码提交 `15154bd`**。
+  > 注：第 5 项“保留 Telemetry 核心”已被 ADR-013 取代（K-27，2026-11-06）。
+
+## ADR-013 K-27 遥测模块整体移除
+
+- 日期：2026-11-06
+- 背景：独立验收把 K-27（选项删除但 `Telemetry` 核心仍在、无 UI 关闭入口）列为必须处理项；用户明确“K-27 必须处理”。
+- 决策：
+  1. 删除 `js/telemetry.js` 及 `index.html` 中的引用；`Telemetry` 全局对象、`TELEMETRY_V` 与所有 `Telemetry.*` 调用全部移除。
+  2. `GAME_BUILD` 移到 `js/game.js`（`account.js`/`onboard.js` 仍可读取）。
+  3. 删除只为遥测服务的包装与逻辑：`Game.init/reportError/onPlayerDeath/loadWorld/createWorld`、`PerfMon.frame`、`UI.open`（遥测层）、`cmdExec`、`NetClient.onMessage/fail`；`render.js` 的纹理遥测自检；`save.js` 的 DB 遥测记录；`social.js` 页面关闭时的遥测 flush；`p2p/touch/toy/extras/checkin/account` 的计数调用。
+  4. `index.html` 脚本 89 → 88，`js/` 93 → 92；不再请求 `js/telemetry.js` 或 `/api/telemetry`。
+- 影响：阶段 1 不再发送任何匿名统计；无需再提供遥测关闭入口。旧 `settings.telemetry` 与 `mcjs-db` 成为死数据；阶段 3 不需要再清理遥测。
+- 验证：全量 `node --check` 92 个 `.js` 通过；无头浏览器 `Telemetry` undefined、无 telemetry 请求、`game.errLog` 为空；首启/标题/世界/暂停/多人/衣柜/签到（伪造状态）/账号（mock）/结局界面类与绘制回归通过。
+- 状态：**已实施，独立验收通过（K1）；代码提交 `15154bd`**。
