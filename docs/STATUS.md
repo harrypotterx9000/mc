@@ -12,7 +12,7 @@
 | 分支 | `main` = `develop` |
 | 基线标签 | `v0.1.0-preproject` @ `3913860`（音效包提交 `1797e50` 在其后） |
 | 原始标签 | `v0.0.0-original` @ `6090828` |
-| 远程 | `origin`：`main` 仍为 `6c476c0`（README）；本分支已推送为 **`opusmc-init` @ `791d16b`** |
+| 远程 | `origin`：`main` 仍为 `6c476c0`（README）；本分支已推送为 **`opusmc-init`**（首次推送 `791d16b`，其后文档提交继续快进） |
 | 工作区 | 干净 |
 
 ## 已完成
