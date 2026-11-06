@@ -34,7 +34,7 @@
 - 验证：
   - 92 个 JS 全量 `node --check` 通过
   - 无头 Edge 156 + SwiftShader：首启 `QualityScreen`，标题 `TitleScreen`，0 个 `game.errLog` 错误
-  - 创建世界 `play`、62 区块、`tutorial=-1`；暂停菜单无反馈；多人入口直接进入 `MultiplayerScreen`；衣柜打开正常
+  - 创建世界 `play`、61 区块、`tutorial=-1`；暂停菜单无反馈；多人入口直接进入 `MultiplayerScreen`；衣柜打开正常
   - 静态服务器 88 个脚本全部 200，`js/news.js`/`js/telemetry.js` 404 且不再请求；无 `/api/telemetry`
 - 未验证：真实 GPU/真机、登录后的账号界面、签到、结局 `CreditsScreen` 实机触发、多人服务器
 

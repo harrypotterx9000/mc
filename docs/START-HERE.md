@@ -28,7 +28,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\Projects\OpusMC` |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 5） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 6） |
 | HEAD | phase-01 docs 收尾提交（哈希见 `git log -1`；父提交 `15154bd`） |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
