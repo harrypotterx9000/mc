@@ -11,7 +11,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\Projects\OpusMC` |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 6：阶段 0 两个 docs 提交 + phase-01 代码提交 + phase-01 两个 docs 收尾） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 7：阶段 0 两个 docs 提交 + phase-01 代码提交 + phase-01 四个 docs 收尾） |
 | HEAD | phase-01 docs 收尾提交（哈希见 `git log -1`；父提交 `15154bd`） |
 | phase-01 代码提交 | **`15154bd`** |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
