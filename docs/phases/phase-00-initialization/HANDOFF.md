@@ -1,28 +1,41 @@
 # phase-00 初始化 · 交接（HANDOFF）
 
-## 当前状态
+- 状态：**phase-00 完成**；phase-01 未开始（用户要求暂缓）
+- 基线：`develop` = `2798c08`（PR #1 整合提交），工作区干净
+- 远程：PR #1 打开中（`main` ← `opusmc-integration`），远程 `main` 仍为 `6c476c0`
 
-- 阶段：phase-00 完成
-- 仓库：`D:\Projects\OpusMC`
-- 分支：`main` = `develop` = 基线提交
-- 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（基线）
-- 工作区：干净
+## 已完成
 
-## 下一阶段（phase-01 主菜单清理）
+1. 原始源码检查、备份（zip + SHA-256）与字节级导入（`v0.0.0-original`）
+2. 独立项目 `D:\Projects\OpusMC` 与独立 Git
+3. 原版 Edge 试玩（用户确认无问题）
+4. 源码复核 / 依赖分析 / 运行时分析（`docs/research/`）
+5. 文档体系与阶段目录
+6. 音效包补齐
+7. 首次推送与 PR #1
+8. 本地基线对齐到 PR #1 的整合提交
 
-开始前必须：
+## 按规则丢弃
 
-1. 读 `PROJECT_SPEC.md` §6 的删除清单，冻结"主菜单指定文字"的具体条目。
-2. 从 `develop` 创建 `phase/01-menu-cleanup`。
-3. 先列出涉及文件：`screens.js`（TitleScreen）、`news.js`、`skins.js`、`checkin.js`、`social.js`、`account.js` 的入口注入点。
-4. 每次删除后按 `testing/regression-checklist.md` 回归。
+- phase-01 的未验收改动（3 个文件）、stash、补丁、阶段分支与临时文档：**全部丢弃**。
+- 当前没有任何未验收的工作残留。
 
-## 未决问题
+## 下一阶段启动条件
 
-- PR 待用户在 GitHub 创建并合并：<https://github.com/harrypotterx9000/mc/pull/new/opusmc-init>
-  合并后需 `git fetch origin && git branch -u origin/main main`（或按合并结果调整）。
-- 手机性能与兼容性尚未测量。
+- 必须由用户明确发出"开始 phase-01"指令。
+- 启动时：读 `docs/START-HERE.md` 与 `docs/PROJECT_SPEC.md` §6；从 `develop` 建 `phase/01-menu-cleanup`；先写 PLAN 再改代码。
+- 验收后提交；合并到 `develop` 需用户确认。
+
+## PR #1 合并后的动作
+
+```powershell
+cd D:\Projects\OpusMC
+git fetch origin
+git branch -u origin/main main
+# 视合并结果对齐 develop（快进或合并），再继续 phase 分支
+```
 
 ## 交接方式
 
-新会话以本文件 + `STATUS.md` + 实际 `git log` 为准；不要重复输出完整功能分析。
+新会话以 `docs/START-HERE.md` + `docs/STATUS.md` + 实际 `git log`/`git status` 为准；
+不要重新导入源码、不要重建 PR、不要凭记忆推断仓库状态。

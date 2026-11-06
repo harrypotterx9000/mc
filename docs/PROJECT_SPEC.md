@@ -3,7 +3,7 @@
 > 本文件是 OpusMC 项目唯一的长期总规范。所有阶段的目标、边界与验收均以本文件为准；
 > 与本文件冲突的临时需求必须先更新本文件再实施。
 >
-> 版本：1.0（2026-11-06，phase-00 初始化）
+> 版本：1.1（2026-11-06，phase-00 完成 · 上下文交接）
 > 状态：生效
 
 ## 1. 项目定位
@@ -135,6 +135,35 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 - 认证：使用 Git Credential Manager 或 GitHub CLI 交互授权；**PAT 不得出现在代码、文档、URL、提交、日志、聊天中**。
 - 首次推送前必须确认远程现状与历史关系，并取得用户确认；禁止 force push。
 
-## 11. 当前阶段
 
-phase-00 初始化（见 `docs/phases/phase-00-initialization/`）。功能改造尚未开始。
+## 11. 基线与上下文交接
+
+### 11.1 当前基线
+
+- 开发基线：`2798c08`（`chore: integrate OpusMC project`），即 PR #1 的 `opusmc-integration` 内容。
+- 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（早期文档基线）、`v0.1.0-integration`（PR #1 内容基线）。
+- 远程：`https://github.com/harrypotterx9000/mc`；PR #1 打开中，远程 `main` 未变。
+- 合并后：先 `git fetch origin && git branch -u origin/main main`，再把 `develop` 对齐新的 `origin/main`，然后才开新的阶段分支。
+
+### 11.2 每个新会话的入口
+
+新会话必须先读 `docs/START-HERE.md`，再按其中顺序读本规范、STATUS、ARCHITECTURE、DECISIONS、KNOWN_ISSUES 与上一阶段 HANDOFF。
+不得凭记忆假设仓库状态，必须用 `git status` / `git log` / `git branch -vv` 核实。
+
+### 11.3 未验收改动不保留
+
+阶段改动只有在**用户明确验收通过**后才允许提交。
+未验收的改动（代码、文档、暂存区、stash、临时分支）一律丢弃，不留存、不带入下一阶段。
+本规则已于 2026-11-06 执行：phase-01 的未验收改动被整体丢弃。
+
+### 11.4 阶段启动与合并的确认点
+
+- 开始某阶段：需要用户明确指令。
+- 阶段完成：用户确认验收 → 自动提交到阶段分支。
+- 阶段分支 → `develop`：用户确认。
+- `develop` → `main`：用户确认。
+- 任何远程推送：先展示提交范围，等待确认；禁止强推。
+
+### 11.5 当前阶段
+
+phase-00 完成；phase-01 **未开始**，等待用户指令。
