@@ -62,19 +62,22 @@ window.addEventListener('pagehide', () => {
 // for everyone playing - in a room they come at once, otherwise the page asks once a minute; each shown once (the
 // last one seen kept in this browser), and on a page just opened only those of the last 10 minutes ----
 function showAnnounce(g, a) {
-  let seen = 0; try { seen = +localStorage.getItem('mcjs-announce') || 0; } catch (e) { }
+  const seen = +Platform.storage.local.get('mcjs-announce') || 0;
   if (!a || a.id <= seen) return;
-  try { localStorage.setItem('mcjs-announce', String(a.id)); } catch (e) { }
+  Platform.storage.local.set('mcjs-announce', String(a.id));
   g.ui.message('[公告] ' + a.text, '#FFAA00');
   g.ui.actionBar = { text: '公告：' + a.text, t: performance.now(), color: '#FFAA00' };
   Sound.ev && Sound.ev('block.note_block.bell', null, 0.6, 1.2);
 }
 (() => {
   const opened = Date.now();
+  // phase-04: off by default. The original room service is a third-party platform; a standalone single-player
+  // session does not ask it for announcements every minute. phase-05's own server turns this back on.
+  if (!window.NET_CONFIG || NET_CONFIG.announce !== true) return;
   setInterval(async () => {
     const g = typeof game !== 'undefined' && game;
     if (!g || g.state !== 'play' || g.net || typeof RoomService === 'undefined' || !RoomService.base()) return;
-    let seen = 0; try { seen = +localStorage.getItem('mcjs-announce') || 0; } catch (e) { }
+    const seen = +Platform.storage.local.get('mcjs-announce') || 0;
     try {
       const r = await RoomService.api('/api/announce?after=' + Math.max(seen, opened - 10 * 60e3));
       for (const a of r.list || []) showAnnounce(g, a);

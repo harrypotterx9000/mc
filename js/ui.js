@@ -91,7 +91,7 @@ const SHINE_BLUE = { top: ['rgba(96,176,255,0.92)', 'rgba(130,200,255,0.94)'], b
 // ---------------------------------------------------------------------------
 class UI {
   constructor(game, canvas) {
-    this.game = game; this.canvas = canvas; this.ctx = canvas.getContext('2d');
+    this.game = game; this.canvas = canvas; this.ctx = Platform.graphics.canvas2d(canvas);
     this.scale = 2; this.w = 320; this.h = 240;
     this.mouse = { x: 0, y: 0, down: false, button: -1 };
     this.screen = null; this.cursor = null;
@@ -515,7 +515,7 @@ class UI {
     // for a capture still in flight; g.noLockPause (scripted tests, which never get the lock) keeps playing instead
     // closed with Esc, though, the browser refuses the lock (a key press is no "user gesture" for it): a line asking
     // for a click instead of the same menu coming straight back (Mac, players' feedback 2026-10-31)
-    const unlocked = document.pointerLockElement !== g.canvas;
+    const unlocked = !Platform.input.isLocked(g.canvas);
     if (g.clickToResume && (!unlocked || this.screen || g.state !== 'play')) g.clickToResume = 0;
     if (g.clickToResume && !touchOn(g) && !g.lockFails) {
       const t = '点击画面继续游戏', tw = Font.width(t);

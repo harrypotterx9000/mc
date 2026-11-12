@@ -41,17 +41,17 @@ const GuestSession = (() => {
 
   function saveName(v) {
     name = cleanName(v);
-    try { if (name) localStorage.setItem(NAME_KEY, name); else localStorage.removeItem(NAME_KEY); } catch (e) { }
+    if (name) Platform.storage.local.set(NAME_KEY, name); else Platform.storage.local.remove(NAME_KEY);
     // the rest of the game still reads settings.netName; keep it in step (it is a preference, not an account)
     try { if (typeof game !== 'undefined' && game && game.settings) game.settings.netName = name; } catch (e) { }
     if (room) writeResume();
     return name;
   }
   function loadName() {
-    try { name = cleanName(localStorage.getItem(NAME_KEY)); } catch (e) { name = ''; }
+    name = cleanName(Platform.storage.local.get(NAME_KEY));
     if (!name) {
       // take the multiplayer name this browser already had, once, so existing players keep their name
-      try { const s = JSON.parse(localStorage.getItem('mcjs-settings') || '{}'); name = cleanName(s.netName); } catch (e) { }
+      try { const s = Platform.storage.local.getJSON('mcjs-settings', {}); name = cleanName(s.netName); } catch (e) { }
       if (name) saveName(name);
     }
   }
@@ -60,13 +60,13 @@ const GuestSession = (() => {
     catch (e) { return 'local_' + Math.random().toString(36).slice(2, 14) + Date.now().toString(36); }
   }
   function resumeRecord() {
-    try { return JSON.parse(sessionStorage.getItem(RESUME_KEY) || 'null'); } catch (e) { return null; }
+    try { return Platform.storage.session.getJSON(RESUME_KEY, null); } catch (e) { return null; }
   }
-  function clearResume() { try { sessionStorage.removeItem(RESUME_KEY); } catch (e) { } }
+  function clearResume() { Platform.storage.session.remove(RESUME_KEY); }
   function writeResume() {
     if (!room) { clearResume(); return; }
     const rec = { v: 1, name, room, pid: serverId || '', at: Date.now() };
-    try { sessionStorage.setItem(RESUME_KEY, JSON.stringify(rec)); } catch (e) { }
+    Platform.storage.session.setJSON(RESUME_KEY, rec);
   }
 
   loadName();

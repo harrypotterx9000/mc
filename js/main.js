@@ -4,13 +4,14 @@
 // ---------------------------------------------------------------------------
 function bindInput(g) {
   const canvas = g.canvas, ui = g.ui;
-  const locked = () => document.pointerLockElement === canvas;
+  const locked = () => Platform.input.isLocked(canvas);
   window.addEventListener('keydown', (e) => {
     if (document.activeElement === ui.input) return;
     Sound.init();
     const code = e.code;
     if (code === 'Escape' && !e.repeat) g.escHeld = performance.now();
-    if (['Space', 'Tab', 'F1', 'F3', 'F5', 'Slash', 'KeyQ'].includes(code) || (e.ctrlKey && ['KeyS', 'KeyD', 'KeyW', 'KeyA'].includes(code))) e.preventDefault();
+    // F11 is handled by the game binding below (the browser's own fullscreen would toggle twice)
+    if (['Space', 'Tab', 'F1', 'F3', 'F5', 'F11', 'Slash', 'KeyQ'].includes(code) || (e.ctrlKey && ['KeyS', 'KeyD', 'KeyW', 'KeyA'].includes(code))) e.preventDefault();
     if (ui.screen) {
       if (ui.key(e)) return;
       if (code === 'Escape' || (bindingsFor(g, code).includes('inventory') && ui.screen instanceof ContainerScreen)) {
@@ -54,7 +55,13 @@ function bindInput(g) {
   });
   // the browser refuses the mouse lock (some browsers and app web views never give it): played with the mouse free
   // instead of the pause menu coming back each time "back to game" is clicked (players' feedback 2026-10-31, ~10)
-  document.addEventListener('pointerlockerror', () => { g.lockFails = (g.lockFails || 0) + 1; });
+  document.addEventListener('pointerlockerror', () => {
+    g.lockFails = (g.lockFails || 0) + 1;
+    // say it once, instead of looking like a broken camera: the free-mouse fallback is used from now on
+    if (g.lockFails === 2 && !touchOn(g) && g.state === 'play') {
+      try { g.ui.message('这个浏览器不允许锁定鼠标，已改用自由鼠标模式：移动鼠标转视角，按 Esc 打开菜单', '#FFAA00'); } catch (e) { }
+    }
+  });
   const freeMouse = () => g.lockFails > 0 && !locked() && !touchOn(g);
   window.addEventListener('mousemove', (e) => {
     if ((locked() || freeMouse()) && !ui.screen && g.state === 'play') {
@@ -192,12 +199,24 @@ Renderer.prototype.playerPreview = function (game, ui, x, y, w, h, opts) {
 };
 
 window.addEventListener('load', async () => {
-  const g = window.game = new Game();
-  try { await g.init(); }
-  catch (e) {
+  // the compatibility layer runs first: a browser without WebGL2 (or opened as file://) gets a readable
+  // explanation instead of a half-initialised black page
+  const fatal = Platform.fatal();
+  if (fatal.length) { Platform.compat.show(); return; }
+  let g = null;
+  try {
+    g = window.game = new Game();
+    await g.init();
+    Platform.afterBoot(g);
+  } catch (e) {
     console.error(e);
-    const d = document.getElementById('err');
-    d.style.display = 'block';
-    d.textContent = '启动失败：' + (e && e.message || e) + '\n\n请使用最新版 Chrome / Edge / Firefox 浏览器打开，并确保已启用 WebGL2 / 硬件加速。';
+    Platform.record('boot', e);
+    // the overlay carries the capability report and the error; #err is the fallback if the overlay is missing
+    Platform.compat.show({ error: e, title: '启动失败', summary: '游戏初始化时出错。下面的能力报告和错误信息可用于排查；更新浏览器或开启硬件加速后重试。' });
+    const d = document.getElementById('err'), overlay = document.getElementById('compat');
+    if (d && (!overlay || overlay.hidden)) {
+      d.style.display = 'block';
+      d.textContent = '启动失败：' + (e && e.message || e) + '\n\n请使用最新版 Chrome / Edge / Firefox 浏览器打开，并确保已启用 WebGL2 / 硬件加速。';
+    }
   }
 });

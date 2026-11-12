@@ -7,7 +7,7 @@ const Sound = {
   ctx: null, master: null, sfx: null, noiseBuf: null,
   volume: 0.8, listener: { x: 0, y: 0, z: 0, yaw: 0 },
   init() {
-    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    if (this.ctx) { Platform.audio.resume(this.ctx); return; }
     // iPhones: web audio follows the ring / silent switch unless the page says it plays media (iOS 16.4+), or plays
     // through an <audio> element once (older) - with the switch on silent the game had no sound while videos did
     try {
@@ -19,7 +19,8 @@ const Sound = {
         const pr = a.play(); if (pr && pr.catch) pr.catch(() => { });
       }
     } catch (e) { }
-    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    this.ctx = Platform.audio.create();
+    if (!this.ctx) return;
     const c = this.ctx;
     this.master = c.createGain(); this.master.gain.value = 1; this.master.connect(c.destination);
     this.sfx = c.createGain(); this.sfx.gain.value = this.volume; this.sfx.connect(this.master);
@@ -150,7 +151,7 @@ Object.assign(Sound, {
     if (window.SOUNDS) { this.packReady = true; this.predecode(); return; }
     const embedded = location.protocol === 'file:';
     const s = document.createElement('script');
-    s.src = embedded ? 'js/sounds.js' : 'js/sound_events.js';
+    s.src = Platform.resource(embedded ? 'js/sounds.js' : 'js/sound_events.js');
     s.onload = () => {
       if (!embedded && window.SOUND_EVENTS) window.SOUNDS = { events: SOUND_EVENTS, files: null };
       this.packReady = !!window.SOUNDS; this.predecode();
@@ -182,14 +183,14 @@ Object.assign(Sound, {
       const bin = atob(b64), arr = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       data = Promise.resolve(arr.buffer);
-    } else data = fetch('sounds/sfx/' + name + this.ext).then(r => r.ok ? r.arrayBuffer() : null);
+    } else data = fetch(Platform.resource('sounds/sfx/' + name + this.ext)).then(r => r.ok ? r.arrayBuffer() : null);
     const dec = (ab) => ab && new Promise((res) => this.ctx.decodeAudioData(ab, res, () => res(null)));
     let came = false;
     const p = data.then(ab => { came = !!ab; return dec(ab); })
       .catch(() => null)
       // a file that came but would not decode: this browser can't read that kind, the other kind from now on
       .then(buf => { if (buf || !came || SOUNDS.files || this.switched) return buf; this.switched = true; this.ext = this.ext === '.m4a' ? '.ogg' : '.m4a';
-        return fetch('sounds/sfx/' + name + this.ext).then(r => r.ok ? r.arrayBuffer() : null).then(dec).catch(() => null); })
+        return fetch(Platform.resource('sounds/sfx/' + name + this.ext)).then(r => r.ok ? r.arrayBuffer() : null).then(dec).catch(() => null); })
       .then(buf => { this.pending.delete(name); if (buf) this.remember(name, buf); return buf; });
     this.pending.set(name, p);
     return p;

@@ -1045,8 +1045,9 @@ const RoomService = {
   // this browser's own key: rooms it made and names it took belong to it
   key() {
     const make = () => [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
-    try { let k = localStorage.getItem('mcjs-room-key'); if (!k) { k = make(); localStorage.setItem('mcjs-room-key', k); } return k; }
-    catch (e) { return this._k || (this._k = make()); }
+    let k = Platform.storage.local.get('mcjs-room-key');
+    if (!k) { k = make(); Platform.storage.local.set('mcjs-room-key', k); }
+    return k;
   },
   // bytes sent as they are (a save for a room), with the upload's progress (0-1)
   upload(path, bytes, progress) {

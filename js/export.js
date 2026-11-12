@@ -27,7 +27,7 @@ const RoomExport = (() => {
     if (self.VSTATES) return Promise.resolve();
     return new Promise((res, rej) => {
       const s = document.createElement('script');
-      s.src = 'js/vstates_data.js'; s.onload = res; s.onerror = () => rej(new Error('方块数据加载失败，请检查网络'));
+      s.src = Platform.resource('js/vstates_data.js'); s.onload = res; s.onerror = () => rej(new Error('方块数据加载失败，请检查网络'));
       document.head.appendChild(s);
     });
   }

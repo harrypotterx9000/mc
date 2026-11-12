@@ -156,13 +156,16 @@ class WorldListScreen extends MenuScreen {
       { onInput: (v) => { this.filter = v; this.sel = -1; this.scroll = 0; this.layout(); }, onEsc: () => this.onEsc(), max: 32 });
   }
   play() { const w = this.shown()[this.sel]; if (w) { this.game.ui.hideInput(); this.game.loadWorld(w.id); } }
-  // the browser's file picker: a world folder, or a .zip of one
+  // the browser's file picker: a world folder, or a .zip of one (Platform.files handles the cancel path and
+  // browsers without folder picking fall back to the .zip picker)
   pick(folder) {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    if (folder) { inp.webkitdirectory = true; inp.multiple = true; } else inp.accept = '.zip,application/zip';
-    inp.onchange = () => { if (inp.files && inp.files.length) { this.game.ui.hideInput(); this.game.ui.open(new ImportScreen(this.game, this, inp.files)); } };
-    inp.click();
+    const dir = !!folder && Platform.files.directoryPick;
+    Platform.files.pick({ directory: dir, multiple: dir, accept: dir ? '' : '.zip,application/zip' }).then((files) => {
+      if (!files || !files.length) return;
+      this.game.ui.hideInput();
+      this.game.ui.open(new ImportScreen(this.game, this, files));
+      if (folder && !dir) this.game.ui.message('这个浏览器不能选择文件夹，请改选打包好的 .zip 世界存档', '#FFAA00');
+    });
   }
   del() {
     const w = this.shown()[this.sel]; if (!w) return;
@@ -420,7 +423,7 @@ class OptionsListScreen extends MenuScreen {
       bt(() => '云：' + (s.clouds ? '高品质' : '关'), own(() => s.clouds = !s.clouds)),
       sl(() => '亮度：' + (s.gamma < 0.01 ? '昏暗' : s.gamma > 0.99 ? '明亮' : Math.round(s.gamma * 100) + '%'), s.gamma, v => s.gamma = v),
       bt(() => '界面尺寸：' + (s.guiScale || '自动'), () => { s.guiScale = (s.guiScale + 1) % 5; setTimeout(() => g.ui.resize(), 0); }),
-      bt(() => '全屏：' + onoff(!!document.fullscreenElement), () => toggleFullscreen()),
+      bt(() => '全屏：' + onoff(Platform.display.isFullscreen()), () => toggleFullscreen()),
       bt(() => '视角摇晃：' + onoff(s.bobbing), () => s.bobbing = !s.bobbing),
       bt('平滑光照：开', () => { }, { enabled: false }),
       bt('复制性能报告', () => copyText(PerfMon.report(g, null, 0)).then(ok => g.ui.message(ok ? '性能报告已复制到剪贴板' : '无法写入剪贴板，报告已输出到浏览器控制台', '#FFFF55')),
@@ -753,13 +756,17 @@ Game.prototype.setMode = function (m, quiet) {
 // later, says how.
 async function quitGame(g) {
   const sc = g.ui.screen;
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+  if (Platform.display.isFullscreen()) Platform.display.exit();
   try { window.close(); } catch (e) { }
   setTimeout(() => { if (!document.hidden && g.ui.screen === sc && sc) sc.quitTip = performance.now(); }, 600);
 }
 
+// fullscreen lives in Platform.display (vendor prefixes, iOS's missing element fullscreen, keyboard lock)
 function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().then(() => { if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Escape']).catch(() => { }); }).catch(() => { });
-  } else document.exitFullscreen();
+  if (!Platform.display.supported) {
+    const g = typeof game !== 'undefined' ? game : null;
+    if (g && g.ui) g.ui.message('这个浏览器不支持网页全屏。iPhone / iPad 可以先把游戏“添加到主屏幕”，再从主屏幕打开。', '#FFAA00');
+    return;
+  }
+  Platform.display.toggle().then((on) => { if (on) Platform.display.lockKeys(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Escape']); });
 }

@@ -44,8 +44,13 @@ class Game {
     this.lastTap = {};
     this.sleepFade = 0;
   }
-  loadSettings() { try { return JSON.parse(localStorage.getItem('mcjs-settings') || '{}'); } catch (e) { return {}; } }
-  saveSettings() { try { localStorage.setItem('mcjs-settings', JSON.stringify(this.settings)); } catch (e) { } }
+  loadSettings() {
+    try {
+      const v = Platform.storage.local.getJSON('mcjs-settings', {});
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch (e) { return {}; }
+  }
+  saveSettings() { try { Platform.storage.local.setJSON('mcjs-settings', this.settings); } catch (e) { } }
 
   async init() {
     this.canvas = document.getElementById('gl');
@@ -2909,13 +2914,10 @@ void main(){ vec4 t = texture(u_tex, v_uv); if (t.a * v_col.a < 0.01) discard; o
     // a screen closed with Esc: the lock is taken when the key comes up - taken while it was down, the browser read
     // that same Esc as leaving the lock and the pause screen opened again (Mac, players' feedback 2026-10-31)
     if (this.escHeld && performance.now() - this.escHeld < 1500) { this.escCapture = true; return; }
-    const c = this.canvas, swallow = (p) => { if (p && p.catch) p.catch(() => { }); };
-    try {
-      const r = c.requestPointerLock(this.settings.rawInput !== false ? { unadjustedMovement: true } : undefined);
-      if (r && r.catch) r.catch(() => { try { swallow(c.requestPointerLock()); } catch (e) { } });
-    } catch (e) { try { swallow(c.requestPointerLock()); } catch (e2) { } }
+    // Platform.input keeps the unadjustedMovement request and its plain fallback in one place
+    Platform.input.request(this.canvas, { unadjustedMovement: this.settings.rawInput !== false });
   }
-  releasePointer() { if (document.pointerLockElement) document.exitPointerLock(); }
+  releasePointer() { Platform.input.exit(); }
 }
 
 const WOOL_RGB = [[1, 1, 1], [0.95, 0.55, 0.2], [0.75, 0.3, 0.75], [0.4, 0.6, 0.85], [0.9, 0.85, 0.2], [0.5, 0.8, 0.2], [0.95, 0.6, 0.7], [0.3, 0.3, 0.3], [0.6, 0.6, 0.6], [0.2, 0.55, 0.6], [0.5, 0.25, 0.7], [0.2, 0.3, 0.65], [0.45, 0.3, 0.2], [0.35, 0.45, 0.2], [0.65, 0.2, 0.2], [0.1, 0.1, 0.1]];

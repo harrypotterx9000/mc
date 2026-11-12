@@ -12,45 +12,81 @@
 //   - 60 / 90 / 120 fps on high refresh phones, back to 60 when the phone heats up and cannot keep up
 // ---------------------------------------------------------------------------
 const Stage = {
-  rot: false, el: null, inset: { top: 0, right: 0, bottom: 0, left: 0 },
+  rot: false, el: null, inset: { top: 0, right: 0, bottom: 0, left: 0 }, pw: 0, ph: 0,
   init() {
     if (this.el) return;
     const el = this.el = document.createElement('div'); el.id = 'stage';
     el.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden';
     document.body.insertBefore(el, document.body.firstChild);
     for (const id of ['gl', 'ui', 'textinput']) { const c = document.getElementById(id); if (c) el.appendChild(c); }
-    addEventListener('resize', () => this.update());
+    addEventListener('resize', () => this.schedule());
     addEventListener('orientationchange', () => setTimeout(() => this.update(), 200));
+    // the visible viewport changes with the phone's URL bar and the on-screen keyboard; the game follows it
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', () => this.schedule());
+      visualViewport.addEventListener('scroll', () => this.schedule());
+    }
+    if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', () => setTimeout(() => this.update(), 200));
     this.update();
   },
+  // browser UI sliding in and out fires many viewport events: resize once per frame, not once per event
+  schedule() {
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => { this._raf = 0; this.update(); });
+  },
+  // the visible viewport in CSS pixels (visualViewport excludes the phone's browser bars when they slide in)
+  size() {
+    const v = Platform.display.viewport();
+    return { w: v.w, h: v.h };
+  },
+  // CSS env(safe-area-inset-*) through Platform; measured on every resize / orientation change
+  measure() {
+    this.inset = Platform.display.safeArea();
+    return this.inset;
+  },
   want() {
-    const g = typeof game !== 'undefined' && game;
-    return !!g && TouchDevice.kind === 'phone' && g.settings.rotatePortrait !== false && innerHeight > innerWidth * 1.05;
+    const g = typeof game !== 'undefined' && game, s = this.size();
+    return !!g && TouchDevice.kind === 'phone' && g.settings.rotatePortrait !== false && s.h > s.w * 1.05;
   },
   update() {
     if (!this.el) return;
-    const rot = this.want(), s = this.el.style, I = this.inset;
+    const ins = this.measure();
+    const v = Platform.display.viewport(), rot = this.want();
+    // scrolling a phone's URL bar can fire many events with the same size: do not clear the UI canvas for nothing
+    const key = v.w + 'x' + v.h + ':' + v.dpr + ':' + rot + ':' + ins.top + ',' + ins.right + ',' + ins.bottom + ',' + ins.left;
+    if (key === this._key) return;
+    this._key = key;
+    const s = this.el.style, { w, h } = v;
+    this.pw = w; this.ph = h;
     if (rot) {
-      s.left = '0px'; s.top = '0px'; s.width = innerHeight + 'px'; s.height = innerWidth + 'px';
-      s.transformOrigin = '0 0'; s.transform = `translateX(${innerWidth}px) rotate(90deg)`;
+      // held upright, the whole game is turned on its side: its stage is w wide by h tall before the turn
+      s.left = '0px'; s.top = '0px'; s.width = h + 'px'; s.height = w + 'px';
+      s.transformOrigin = '0 0'; s.transform = `translateX(${w}px) rotate(90deg)`;
     } else {
       // (the whole screen: a notch's safe area only keeps the controls and the HUD clear, UI.safe; leaving it all
       // black put a long black bar along the top)
-      s.transform = ''; s.left = '0px'; s.top = '0px'; s.width = '100%'; s.height = '100%';
+      s.transform = ''; s.left = '0px'; s.top = '0px'; s.width = w + 'px'; s.height = h + 'px';
     }
-    const was = this.rot; this.rot = rot;
-    if (was !== rot || true) { const g = typeof game !== 'undefined' && game; if (g && g.renderer) g.resize(); }
+    this.rot = rot;
+    const g = typeof game !== 'undefined' && game;
+    if (g && g.renderer) g.resize();
   },
-  w() { return this.el ? this.el.clientWidth : innerWidth; },
-  h() { return this.el ? this.el.clientHeight : innerHeight; },
+  w() { return this.el ? this.el.clientWidth : this.pw; },
+  h() { return this.el ? this.el.clientHeight : this.ph; },
   // a point on the page -> the stage's own (unturned) pixels
-  toStage(cx, cy) { return this.rot ? [cy, innerWidth - cx] : [cx, cy]; },
+  toStage(cx, cy) { return this.rot ? [cy, this.pw - cx] : [cx, cy]; },
+  // the safe area in the stage's own coordinates. A page turned 90° clockwise maps the page's top edge to the
+  // stage's left, its right edge to the stage's top, its bottom to the right and its left to the bottom.
+  safe() {
+    const I = this.inset;
+    if (!this.rot) return { t: I.top, l: I.left, r: I.right, b: I.bottom };
+    return { t: I.right, l: I.top, r: I.bottom, b: I.left };
+  },
 };
-// the safe area in interface pixels (none while the page is turned by CSS: the turned stage is all safe)
+// the safe area in interface pixels (also while the page is turned by CSS: the notch moves to a side)
 UI.prototype.safe = function () {
-  const I = Stage.inset, k = this.dpr / this.scale;
-  if (Stage.rot || !I) return { t: 0, l: 0, r: 0, b: 0 };
-  return { t: Math.ceil(I.top * k), l: Math.ceil(I.left * k), r: Math.ceil(I.right * k), b: Math.ceil(I.bottom * k) };
+  const I = Stage.safe(), k = this.dpr / this.scale;
+  return { t: Math.ceil(I.t * k), l: Math.ceil(I.l * k), r: Math.ceil(I.r * k), b: Math.ceil(I.b * k) };
 };
 (() => {
   // the HUD up off the bottom edge, the chat in from the left one
@@ -82,6 +118,7 @@ UI.prototype.resize = function () {
 UI.prototype.toGui = function (ev) { const [x, y] = ev.stage ? [ev.clientX, ev.clientY] : Stage.toStage(ev.clientX, ev.clientY); return [x * this.dpr / this.scale, y * this.dpr / this.scale]; };
 (() => {
   const P = TouchControls.prototype;
+  // touch events are turned into stage pixels once (see turn below); this only scales stage pixels to UI pixels
   P.gui = function (cx, cy) { const k = this.ui.dpr / this.ui.scale; return [cx * k, cy * k]; };
   const turn = (e) => ({ target: e.target, preventDefault: () => e.preventDefault(), changedTouches: [...e.changedTouches].map((t) => { const [x, y] = Stage.toStage(t.clientX, t.clientY); return { identifier: t.identifier, clientX: x, clientY: y }; }) });
   for (const k of ['onStart', 'onMove']) { const f = P[k]; P[k] = function (e) { return f.call(this, turn(e)); }; }
@@ -357,7 +394,7 @@ addEventListener('load', () => {
 })();
 
 // ---- vibration: a block broken, being hurt ----
-const buzz = (g, ms) => { if (touchOn(g) && g.settings.vibrate !== false && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) { } };
+const buzz = (g, ms) => { if (touchOn(g) && g.settings.vibrate !== false) Platform.input.vibrate(ms); };
 (() => {
   const bb = Game.prototype.breakBlock;
   Game.prototype.breakBlock = function (x, y, z, natural, silent) { const r = bb.call(this, x, y, z, natural, silent); if (!natural && !silent) buzz(this, 15); return r; };

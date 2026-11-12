@@ -281,8 +281,9 @@ class VertexArena {
 class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
-    const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
-    if (!gl) throw new Error('WebGL2 不可用');
+    // the platform layer checks WebGL2 up front, watches a lost context and reports it readably
+    const gl = Platform.graphics.webgl2(canvas);
+    if (!gl) throw new Error('WebGL2 不可用：请更新浏览器并开启硬件加速');
     this.gl = gl;
     this.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     // more tiles than one texture array may hold: two or more to a layer (?texsplit=N in the address tries a cap of N)

@@ -2,11 +2,15 @@
 // ---------------------------------------------------------------------------
 // Persistence: IndexedDB, falling back to localStorage, then to memory
 // ---------------------------------------------------------------------------
+// localStorage through Platform.storage: a browser that blocks it (private mode, a sandboxed frame) gets the
+// per-page shadow instead of a thrown exception and a dead save path
 const LS = {
-  ok: (() => { try { const k = '__mcjs_test'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } })(),
-  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
-  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
-  keys(prefix) { const out = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(prefix)) out.push(k); } return out; },
+  get ok() { return Platform.storage.local.available; },
+  get(k) { return Platform.storage.local.getJSON(k); },
+  // a failed browser write must still be an error for the world-save path (the memory shadow is a fallback
+  // for settings/appearance, not a claim that a world reached the disk)
+  set(k, v) { if (!Platform.storage.local.setJSON(k, v)) throw new Error('本地存储写入失败（空间不足或被浏览器禁止）'); },
+  keys(prefix) { return Platform.storage.local.keys(prefix); },
 };
 
 const DB = {
@@ -19,6 +23,7 @@ const DB = {
   // comes up and what reads or saves waits for the connection (wait)
   open() {
     return new Promise((res) => {
+      if (!Platform.caps.indexedDB) { this.backend = LS.ok ? 'local' : 'memory'; res(false); return; }
       let done = false, t = 0;
       const fin = (ok) => { if (done) return; done = true; clearTimeout(t); if (ok) { this.ok = true; this.backend = 'idb'; } else this.backend = LS.ok ? 'local' : 'memory'; res(ok); };
       t = setTimeout(() => fin(true), 8000);
@@ -154,8 +159,8 @@ const DB = {
       await this.tx('worlds', 'readwrite', s => s.delete(id));
       for (const sid of [id, id + '~nether', id + '~end']) await this.tx('chunks', 'readwrite', s => s.delete(IDBKeyRange.bound(sid + ':', sid + ':￿')));
     } else if (this.backend === 'local') {
-      localStorage.removeItem('mcjs:w:' + id);
-      for (const sid of [id, id + '~nether', id + '~end']) for (const k of LS.keys('mcjs:c:' + sid + ':')) localStorage.removeItem(k);
+      Platform.storage.local.remove('mcjs:w:' + id);
+      for (const sid of [id, id + '~nether', id + '~end']) for (const k of LS.keys('mcjs:c:' + sid + ':')) Platform.storage.local.remove(k);
     } else {
       this.mem.worlds.delete(id);
       for (const k of [...this.mem.chunks.keys()]) if (k.startsWith(id + ':') || k.startsWith(id + '~')) this.mem.chunks.delete(k);

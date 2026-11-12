@@ -135,14 +135,13 @@ class TouchControls {
     // first tap in touch mode in a world: go fullscreen in landscape, like an app. Not on the first-run screens (it
     // was the very first tap, on the agreement - players on tablets and learning phones: 「一点同意就卡死」, feedback
     // 2026-11-02) and not inside an app's own web view, whose container is fullscreen already
-    if (this.on() && !this.fsTried && !cancel && this.g.state === 'play' && !/BiliApp/i.test(navigator.userAgent)) {
+    if (this.on() && !this.fsTried && !cancel && this.g.state === 'play') {
       this.fsTried = true;
-      const de = document.documentElement;
-      if (!document.fullscreenElement && de.requestFullscreen) {
-        try {
-          de.requestFullscreen({ navigationUI: 'hide' })
-            .then(() => { if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(() => { });
-        } catch (e) { }
+      // Android Chrome can go fullscreen and lock landscape; iPhone/iPad Safari has no element fullscreen,
+      // so Platform returns false there and the CSS-turned stage stays in charge
+      if (Platform.display.supported && !Platform.display.isFullscreen()) {
+        Platform.display.request(document.documentElement, { navigationUI: 'hide' })
+          .then((ok) => { if (ok) return Platform.display.lockLandscape(); });
       }
     }
   }
@@ -377,15 +376,15 @@ class TouchControls {
         s.holdBtn = touchHoldUse(p.inv.held) && !g.targetEntity ? 2 : 0;
         if (s.holdBtn === 2) { g.mouseBtn[2] = true; g.useCd = 0; }
         else { g.mouseBtn[0] = true; g.mouseClicked0 = true; g.attackCd = Math.min(g.attackCd, 0); if (!g.target && !g.targetEntity) p.swing(); }
-        if (navigator.vibrate) try { navigator.vibrate(10); } catch (e) { }
+        Platform.input.vibrate(10);
       }
       if (s.kind === 'hotbar' && !s.dropped && now - s.t0 >= 600 && this.playing()) {
         s.dropped = true; pressAction(g, 'drop', { ctrlKey: true }); // hold a slot: drop the whole stack
-        if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) { }
+        Platform.input.vibrate(20);
       }
       if (s.kind === 'menu' && s.mode === 'pending' && now - s.t0 >= 350 && this.ui.screen instanceof ContainerScreen) {
         s.mode = 'long'; this.synth('down', s, 2, true); this.synth('move', s); // long press = right click
-        if (navigator.vibrate) try { navigator.vibrate(10); } catch (e) { }
+        Platform.input.vibrate(10);
       }
     }
   }

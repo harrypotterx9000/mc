@@ -13,7 +13,7 @@ const Skins = (() => {
   let presetsP = null;
   function presets() {
     if (self.SKIN_PRESETS) return Promise.resolve(self.SKIN_PRESETS);
-    if (!presetsP) presetsP = new Promise((res) => { const s = document.createElement('script'); s.src = 'js/skins_data.js'; s.onload = () => res(self.SKIN_PRESETS || []); s.onerror = () => res([]); document.head.appendChild(s); });
+    if (!presetsP) presetsP = new Promise((res) => { const s = document.createElement('script'); s.src = Platform.resource('js/skins_data.js'); s.onload = () => res(self.SKIN_PRESETS || []); s.onerror = () => res([]); document.head.appendChild(s); });
     return presetsP;
   }
   // an image -> a 64 x 64 skin canvas (vanilla SkinTextureDownloader.processLegacySkin for 64 x 32 ones)
@@ -44,8 +44,9 @@ const Skins = (() => {
       let src, slim = false;
       if (id.startsWith('p:')) { const s = (await presets()).find((q) => q.id === id.slice(2)); if (!s) throw new Error('没有这个皮肤'); src = s.png; slim = s.slim; }
       else if (id.startsWith('m:')) {
-        let v = null; try { v = JSON.parse(localStorage.getItem('mcjs-skin-' + id.slice(2).toLowerCase()) || 'null'); } catch (e) { }
-        if (!v || Date.now() - v.at > 86400e3) { v = await RoomService.api('/api/skin?name=' + encodeURIComponent(id.slice(2))); v.at = Date.now(); try { localStorage.setItem('mcjs-skin-' + id.slice(2).toLowerCase(), JSON.stringify(v)); } catch (e) { } }
+        const skinKey = 'mcjs-skin-' + id.slice(2).toLowerCase();
+        let v = Platform.storage.local.getJSON(skinKey, null);
+        if (!v || Date.now() - v.at > 86400e3) { v = await RoomService.api('/api/skin?name=' + encodeURIComponent(id.slice(2))); v.at = Date.now(); Platform.storage.local.setJSON(skinKey, v); }
         src = 'data:image/png;base64,' + v.png; slim = v.slim;
       } else throw new Error('皮肤编号不对');
       const cv = normalize(await loadImg(src)); cv.slim = slim;
@@ -75,8 +76,9 @@ const Skins = (() => {
     return { skin: str(s.skin), slim: !!s.slim, cape: str(s.cape), hat: str(s.hat), pet: str(s.pet), pre: str(s.pre) };
   };
   let saved = null;
-  try { const v = JSON.parse(localStorage.getItem(LOOK_KEY) || 'null'); if (v) saved = clean(v); } catch (e) { }
-  function persist(l) { saved = clean(l); try { localStorage.setItem(LOOK_KEY, JSON.stringify(saved)); } catch (e) { } }
+  const storedLook = Platform.storage.local.getJSON(LOOK_KEY, null);
+  if (storedLook) saved = clean(storedLook);
+  function persist(l) { saved = clean(l); Platform.storage.local.setJSON(LOOK_KEY, saved); }
   function currentLook() { return saved; }
   let preview = null;
   function lookOf(g, e) {

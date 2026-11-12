@@ -178,7 +178,13 @@ class InlineGenWorker {
 }
 InlineGenWorker.frame = 0;
 const newGenWorker = () => {
-  if (!GenPool.inline) { try { return new Worker('js/gen_worker.js'); } catch (e) { GenPool.inline = true; console.info('worldgen: workers unavailable (' + e.name + '), generating in the page'); } }
+  if (!GenPool.inline) {
+    // Platform.workers resolves the script against this page and returns null when Worker is unavailable
+    const w = Platform.workers.create('js/gen_worker.js');
+    if (w) return w;
+    GenPool.inline = true;
+    console.info('worldgen: workers unavailable, generating in the page');
+  }
   return new InlineGenWorker();
 };
 
@@ -267,8 +273,9 @@ class ChunkWorker {
   constructor(game) {
     this.game = game; this.ready = false; this.failed = false; this.epoch = 0; this.world = null;
     this.meshCb = new Map(); this.nextId = 1;
-    if (location.protocol === 'file:' || typeof Worker === 'undefined') { this.failed = true; return; }
-    try { this.w = new Worker('js/chunk_worker.js'); } catch (e) { this.failed = true; return; }
+    if (location.protocol === 'file:' || !Platform.workers.supported) { this.failed = true; return; }
+    this.w = Platform.workers.create('js/chunk_worker.js');
+    if (!this.w) { this.failed = true; return; }
     this.w.onmessage = (e) => { this.lastMsg = performance.now(); this.onMessage(e.data); };
     this.w.onerror = (e) => { if (e && e.preventDefault) e.preventDefault(); this.fail(e && e.message); };
   }

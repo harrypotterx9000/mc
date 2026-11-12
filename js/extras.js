@@ -463,7 +463,8 @@ class PhotoScreen extends MenuScreen {
   }
   data() { return this.cv.toDataURL('image/jpeg', 0.88); }
   async save() {
-    const a = document.createElement('a'); a.href = this.data(); a.download = 'OpusMC-' + Date.now() + '.jpg'; a.click(); this.note = '已下载';
+    const ok = Platform.files.downloadDataURL(this.data(), 'OpusMC-' + Date.now() + '.jpg');
+    this.note = ok ? '已下载' : '这个浏览器不允许直接下载，请长按图片保存';
   }
   drawExtra(ui) {
     const c = ui.ctx, W = ui.w - 40, H = Math.min(ui.h - 50, W * this.cv.height / this.cv.width), w = H * this.cv.width / this.cv.height;
@@ -541,7 +542,7 @@ const TITLE_SCENES = [
 ];
 (() => {
   const thumbs = new Map();
-  const thumbOf = (id) => { if (!thumbs.has(id)) { let im = null; try { const d = localStorage.getItem('mcjs-scene-' + id); if (d) { im = new Image(); im.src = d; } } catch (e) { } thumbs.set(id, im); } return thumbs.get(id); };
+  const thumbOf = (id) => { if (!thumbs.has(id)) { let im = null; const d = Platform.storage.local.get('mcjs-scene-' + id); if (d) { im = new Image(); im.src = d; } thumbs.set(id, im); } return thumbs.get(id); };
   const de = TitleScreen.prototype.drawExtra;
   TitleScreen.prototype.drawExtra = function (ui) {
     const g = this.game, S = g.titleScene;
@@ -563,7 +564,7 @@ const TITLE_SCENES = [
           g.ui.screen = null; g.render(1, t); g.ui.screen = this;
           const cv = document.createElement('canvas'); cv.width = 192; cv.height = Math.round(192 * g.canvas.height / g.canvas.width);
           const x = cv.getContext('2d'); x.filter = 'blur(2px)'; x.drawImage(g.canvas, 0, 0, cv.width, cv.height);
-          localStorage.setItem('mcjs-scene-' + S.id, cv.toDataURL('image/jpeg', 0.7));
+          Platform.storage.local.set('mcjs-scene-' + S.id, cv.toDataURL('image/jpeg', 0.7));
         } catch (e) { }
       }
     }
