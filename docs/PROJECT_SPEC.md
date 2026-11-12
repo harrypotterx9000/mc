@@ -3,7 +3,7 @@
 > 本文件是 OpusMC 项目唯一的长期总规范。所有阶段的目标、边界与验收均以本文件为准；
 > 与本文件冲突的临时需求必须先更新本文件再实施。
 >
-> 版本：1.6（2026-11-12，phase-05 自建服务器实现、测试与修复复核完成并已验收）
+> 版本：1.8（2026-11-12，phase-06 双存档已验收；代码 `b4833b8`；docs 收尾为当前 HEAD）
 > 状态：生效
 
 ## 1. 项目定位
@@ -67,6 +67,16 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 
 两种存档独立管理，互不覆盖。phase-05 的自建房间用 `srv~<邀请码>` 世界标识，**不写入**单人 IndexedDB；
 服务器存档/备份/恢复说明见 `server/README.md`。
+
+phase-06 进一步明确：
+
+- 单人世界仍用 `mc-js-clone`（`worlds`/`chunks`，keyPath `id`），不加账号依赖；世界 ID 唯一，
+  同名世界不覆盖。
+- 服务器世界只写 `server/data/worlds/room-<code>/world.json`，不进浏览器 IndexedDB；
+  单人列表不显示服务器世界。
+- 服务器 `world.json` 解析失败或结构无效时回退最新可读备份并写回；记录 `dir` 必须与房间目录一致。
+- 旧本地世界（`gen=1/2`）不需要迁移；旧云存档残留不迁移、不删除（无法安全恢复）。
+- 断线、刷新、离开房间都不删除服务器世界；异常退出最多丢失 `autosaveSeconds` 内改动。
 
 ## 6. 功能改造清单（阶段 1–3 执行）
 
@@ -145,8 +155,8 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 ### 11.1 当前基线
 
 - 开发基线：`2798c08`（`chore: integrate OpusMC project`），即 PR #1 的 `opusmc-integration` 内容。
-- 当前 HEAD：phase-05 代码 `817bad3`；docs 收尾为当前 HEAD（基线 `3b8b2e0`）；phase-04 代码 `553ceed`，phase-03 代码 `025cba8` 已提交并推送。phase-01 代码 `15154bd`，phase-02 代码 `a9dc47b`。
-- 工作区：`D:\ds\REA\opusmc`；phase-05 实现、测试与修复复核完成，**已验收（2026-11-12）、代码 `817bad3`；docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04/05。
+- 当前 HEAD：phase-06 代码 `b4833b8`；docs 收尾为当前 HEAD；phase-05 代码 `817bad3`；phase-04 代码 `553ceed`；phase-03 代码 `025cba8`；phase-02 代码 `a9dc47b`；phase-01 代码 `15154bd`。
+- 工作区：`D:\ds\REA\opusmc`；phase-05 已验收、代码 `817bad3`、已推送 `origin/opusmc-integration`；**phase-06 已验收（2026-11-12）、代码 `b4833b8`、docs 收尾为当前 HEAD、未推送**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04/05/06。
 - 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（早期文档基线）、`v0.1.0-integration`（PR #1 内容基线）。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 打开中，远程 `main` 未变。
 - 合并后：先 `git fetch origin && git branch -u origin/main main`，再把 `develop` 对齐新的 `origin/main`，然后才开新的阶段分支。
@@ -166,6 +176,7 @@ phase-02 的改动已实现、测试、验收并提交（代码 `a9dc47b`，2026
 phase-03 客户端改造已完成、验收结束，代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD。
 phase-04 已实现、测试、独立验收与用户验收完成（带真实移动端豁免、K-39 延期）；代码 `553ceed` 已提交并推送 `origin/opusmc-integration`（见 §11.9/§11.10、ADR-017）。
 phase-05 已实现、测试与修复复核（服务端 62/62、双浏览器 18/18、单人回归 6/6），**已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`**（见 §11.11、ADR-018/019）。
+phase-06 已实现、测试与验收完成（服务端双存档 22/22、浏览器 31/31、phase-05 回归 62/62 + 18/18 + 6/6），**已验收（2026-11-12）；代码 `b4833b8`；docs 收尾为当前 HEAD；未推送**（见 §11.12、ADR-020）。
 
 ### 11.4 阶段启动与合并的确认点
 
@@ -188,6 +199,7 @@ phase-03 回归 33/33。用户明确不补测真实 Android/iOS；K-39 留 phase
 phase-05（自建服务器）**实现、测试与修复复核完成并已验收（2026-11-12）**；代码 `817bad3`，docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`。
 服务端集成 62/62、双浏览器 E2E 18/18、单人回归 6/6；修复复核 F-A 1257/1257、F-B 7/7、F-C 18/18、F-D 35/35、F-E/F-F 6/6；真实 LAN 双设备、公网/TLS、长时间/压力未测。
 详见 §11.11、ADR-018/019 与 `docs/phases/phase-05-server/`。
+phase-06（双存档）**实现、测试与验收完成**（2026-11-12）；代码 `b4833b8`，docs 收尾为当前 HEAD，未推送。服务端双存档 22/22、浏览器双存档 31/31、旧存档样本复验、phase-05 回归 62/62 + 18/18 + 6/6；数据库结构未改；旧云存档只保留不迁移。详见 §11.12、ADR-020 与 `docs/phases/phase-06-dual-save/`。
 
 ### 11.6 phase-01 执行约束（2026-11-06）
 
@@ -260,3 +272,24 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
   启动/停止/状态/端口占用实测。详见 `docs/phases/phase-05-server/TEST_REPORT.md`。
 - 已知问题：K-67…K-80；不得把这些边界写成“完整服务端模拟/完整反作弊/公网可用”。
 - 后续：用户验收 → 提交（范围先确认）；不自动进入 phase-06。
+
+### 11.12 phase-06 执行结果（2026-11-12）
+
+- 状态：**实现、测试与验收完成（2026-11-12）；代码 `b4833b8`；docs 收尾为当前 HEAD；未推送**；分支 `develop`。
+- 修改：`js/save.js`（`srv~` 纵深防御、唯一世界 ID、列表过滤）、`js/game.js`（唯一 ID；
+  `saveWorld/quitToTitle/captureIcon` 保护）、`js/anvil.js`（导入唯一 ID）、`js/mp.js`
+  （`server:true`、清理 `srv~` 元数据、界面说明）、`js/screens.js`（单人/多人/离开房间存档提示）、
+  `server/storage.mjs`（结构无效也回退备份、恢复写回、`dir` 一致性）、`server/README.md`。
+- 新增：`docs/phases/phase-06-dual-save/{PLAN,TEST_REPORT,HANDOFF}.md`；删除该目录 `.gitkeep`。
+- 本地存档：`mc-js-clone` 数据库/仓库/keyPath/编码不变；创建、加载、保存、删除、列表、刷新恢复；
+  同名世界不覆盖；不依赖服务器/账号。
+- 服务器存档：每房 `world.json` + 定时/关闭/异常保存 + 备份轮换；语法或结构损坏回退备份并写回；
+  每房隔离；`SIGKILL` 后恢复最近定时存档。
+- 冲突：`srv~` 不进浏览器；服务器世界不进单人列表；断线/刷新/离开不删除服务器世界；同名不覆盖。
+- 旧存档：修改前真实样本复验；旧 `gen=1/2` 世界可读可保存；旧云存档残留不迁移、不删除。
+- 测试：服务端双存档 22/22、浏览器双存档 31/31、phase-05 回归 62/62 + 18/18 + 6/6；
+  91 JS + 9 mjs `node --check`；87 页面脚本；`git diff --check`；LF/无 BOM。
+- 边界：旧云存档无法恢复；服务器世界无统一下载/列表；在线备份恢复无 UI；异常退出最多丢
+  `autosaveSeconds`；真实 LAN/公网/TLS/压力/长时间运行未测；K-73 跨版本未做。
+- 已知问题：K-81…K-86（`docs/KNOWN_ISSUES.md`）。
+- 后续：已验收并提交 `b4833b8` + docs 收尾；未推送；不自动进入 phase-07。

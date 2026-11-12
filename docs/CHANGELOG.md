@@ -1,6 +1,45 @@
 # 变更记录（CHANGELOG）
 
-格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
+格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更；待验收阶段变更明确标注“工作区变更，未提交”。
+
+## phase-06 双存档系统 — 2026-11-12 — 已验收；代码 `b4833b8` + docs 收尾
+
+> 起点 HEAD `41042c7`；phase-05 代码 `817bad3`。代码提交 `b4833b8`，docs 收尾为当前 HEAD。
+> 本阶段 15 个修改文件（7 个代码/服务器说明 + 8 个项目文档）+ 1 个删除 + 3 个新增阶段文档。
+> 服务端双存档 22/22、浏览器双存档 31/31、旧存档样本复验、phase-05 回归 62/62 + 18/18 + 6/6。
+> 旧云存档只保留不迁移；服务器世界仍为 `seed + 覆盖层`。**未推送。**
+
+- 修改文件：
+  - 代码/服务器说明（7）：`js/anvil.js`、`js/game.js`、`js/mp.js`、`js/save.js`、`js/screens.js`、
+    `server/storage.mjs`、`server/README.md`
+  - 项目文档（8）：`README.md`、`docs/{STATUS,ARCHITECTURE,DECISIONS,KNOWN_ISSUES,PROJECT_SPEC,START-HERE,CHANGELOG}.md`
+- 删除文件：`docs/phases/phase-06-dual-save/.gitkeep`（占位文件；目录已有阶段文档）
+- 新增文件：`docs/phases/phase-06-dual-save/{PLAN,TEST_REPORT,HANDOFF}.md`
+- 关键变化：
+  - `js/save.js`：新增 `DB.isServerWorld`（`srv~`）、`DB.newWorldId`（时间戳 + 随机后缀 + 唯一性检查）；
+    `listWorlds` 过滤 `srv~`；`getWorld/loadChunks/chunkKeys/getChunk` 对 `srv~` 返回空；
+    `putWorld/putChunks/deleteWorld` 对 `srv~` 空操作。数据库名/仓库/keyPath/编码未变。
+  - `js/game.js`：`createWorld` 用 `DB.newWorldId`；`saveWorld/quitToTitle/captureIcon` 对 `srv~` 世界跳过本地保存。
+  - `js/anvil.js`：原版存档导入使用同一唯一 ID 分配器。
+  - `js/mp.js`：服务器世界元数据 `server:true`；`cleanup()` 清除 `srv~` 元数据；界面说明服务器/单人存档分开。
+  - `js/screens.js`：单人列表“仅保存在此浏览器”；单人/多人/创建/离开房间的存档提示。
+  - `server/storage.mjs`：`world.json` 解析失败**或结构无效**都回退最新可读备份；恢复后原子写回
+    （`world_recovered_from_backup` + `world_recovered_written`）；`dir` 与目录名不一致拒绝加载
+    （`world_dir_mismatch`）。
+  - `server/README.md`：双存档隔离、损坏恢复/写回、日志事件说明。
+- 修改原因：phase-06 要求本地/服务器双存档明确隔离、同名不覆盖、断线/刷新不丢服务器世界、旧存档保护；
+  phase-05 已有服务器存储，但客户端防线只在 `mp.js`、`world.json` 结构无效时不回退备份，恢复后也不写回。
+- 验证：
+  - 服务端双存档 **22/22 PASS**（同房名隔离/定时保存/断线存活/重启恢复/备份/语法+结构损坏回退写回/
+    异常退出）。
+  - 浏览器双存档 **31/31 PASS**（旧存档/本地 CRUD/刷新/同名/服务器同名隔离/`srv~` 防线/房间刷新恢复/
+    离开/断线）。
+  - phase-05 回归：服务端 **62/62**、双浏览器 **18/18**、单人 **6/6**；91 JS + 9 mjs `node --check`；
+    `index.html` 87 脚本；`git diff --check`；LF/无 BOM。
+  - 旧存档：改造前创建的两个同名世界（`gen=1/2`、旧 `cloud` 字段、旧键）在改造后可读、可继续保存。
+- 未验证：旧云存档恢复/迁移、服务器世界下载/统一列表、在线备份回滚 UI、跨版本存档、真实 LAN/公网/TLS/
+  压力/长时间运行；异常退出最多丢失 `autosaveSeconds`。
+- 状态：**已验收（2026-11-12）；代码 `b4833b8`；docs 收尾为当前 HEAD；未推送。** 详见 `docs/phases/phase-06-dual-save/`、ADR-020。
 
 ## phase-05 自建服务器 — 2026-11-12 — 已验收；代码 `817bad3` + docs 收尾
 

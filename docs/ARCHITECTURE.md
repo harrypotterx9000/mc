@@ -1,6 +1,6 @@
 # OpusMC 架构说明（ARCHITECTURE）
 
-> 依据：`D:\ds\REA\opusmc` 当前源码（phase-05 后 87 个加载脚本、91 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 运行时探针 + 本机服务器实测。
+> 依据：`D:\ds\REA\opusmc` 当前源码（phase-06 后仍 87 个加载脚本、91 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 运行时探针 + 本机服务器实测。
 > 标注：**[事实]** 源码可复核；**[实测]** 运行时读到；**[推断]** 未运行验证。
 
 ## 1. 总体形态
@@ -524,3 +524,63 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
   修复复核 F-A 1257/1257、F-B 7/7、F-C 18/18、F-D 35/35、F-E/F-F 6/6。
 - 未测：真实 LAN 双设备、公网/TLS、长时间/压力、真实 GPU/移动端、服务端生物/红石/战斗。
 - 已知边界：K-67…K-80（`docs/KNOWN_ISSUES.md`）。
+
+## 15. 阶段 6 变更（2026-11-12，已验收；代码 `b4833b8`；docs 收尾为当前 HEAD）
+
+> 本节是 phase-06 的实现事实。数据库结构、页面脚本数（87）和服务器模块数均未变；
+> 改动集中在存档边界、恢复路径和界面说明。
+
+### 15.1 存储矩阵
+
+| 世界 | 标识 | 位置 | 权威 | 不进入 |
+|---|---|---|---|---|
+| 单人世界 | `w` + 时间戳 + 随机后缀 | 浏览器 IndexedDB `mc-js-clone`（`worlds` / `chunks`） | 本浏览器 | `server/data/` |
+| 服务器房间世界 | `srv~<邀请码>` | `server/data/worlds/room-<code>/world.json` | 服务器 | 浏览器 IndexedDB |
+| 旧云存档残留 | 无（旧账号字段） | 本地 `cloud` 字段 / `mcjs-cloud-dirty-*` / `mcjs-account` | 无（只保留） | 不迁移、不删除 |
+
+两种世界即使名称相同也使用不同 ID/目录；删除、保存、刷新都只作用于各自的存储。
+
+### 15.2 本地存档（`js/save.js`）
+
+- `DB.isServerWorld(id)`：`srv~` 前缀判断。
+- `DB.newWorldId()`：唯一 ID（时间戳 + 随机后缀 + 存在性检查）；`Game.createWorld` 与
+  `VanillaImport.run` 共用。
+- `listWorlds` 过滤 `srv~`；`getWorld/loadChunks/chunkKeys/getChunk` 对 `srv~` 返回空；
+  `putWorld/putChunks/deleteWorld` 对 `srv~` 空操作。这是 `mp.js` 之外的**第二层**防线，
+  防止加载顺序/包装错误把服务器世界写进单人库。
+- 泄漏的 `srv~` 记录只从列表隐藏，不在本地删除（服务器数据不在浏览器里被“清理”）。
+- 数据库名、`worlds`（keyPath `id`）、`chunks`、区块编码未变；旧世界无需迁移。
+
+### 15.3 客户端保存路径（`js/game.js`、`js/mp.js`）
+
+- `Game.saveWorld` / `quitToTitle` / `captureIcon` 遇到 `srv~` 世界不写本地；`mp.js` 仍在
+  房间内把 `saveWorld` 改为 `pstate`、`quitToTitle` 改为离开房间。
+- `MPClient.buildMeta()` 加 `server:true`（仅内存）；`cleanup()` 清除对应 `g.worldMeta`，
+  避免断线/失败后残留 `srv~` 元数据。
+- `Game.createWorld` 与导入不再用毫秒时间戳直接作 ID。
+
+### 15.4 服务器存档（`server/storage.mjs`）
+
+- `loadAll` 对 `world.json`：
+  - 解析失败 → 最新可读备份；
+  - 解析成功但 `_validRecord` 失败 → 最新可读备份；
+  - 恢复成功 → 原子写回 `world.json`（日志 `world_recovered_from_backup` +
+    `world_recovered_written`），损坏文件不会成为新备份；
+  - `record.dir !== 目录名` → `world_dir_mismatch`，拒绝加载（不跨房）。
+- 保留 phase-05 的原子写、按房串行、60 秒定时保存、关闭保存、备份轮换/保留、信号/异常关闭流程。
+- 异常退出最多丢失 `autosaveSeconds` 内改动；本阶段用 1 秒配置验证“最近定时保存可恢复”。
+
+### 15.5 界面区分（`js/screens.js`、`js/mp.js`）
+
+- 标题入口提示：单人世界只在本浏览器；服务器房间世界在服务器，和单人存档分开。
+- 单人世界列表标题：`选择世界（仅保存在此浏览器）`；创建按钮提示写 IndexedDB。
+- 自建服务器界面：`房间世界保存在服务器；与单人世界同名也不会互相覆盖`。
+- 暂停菜单“离开房间”提示：房间世界仍在服务器，可凭邀请码再次加入。
+
+### 15.6 测试与边界
+
+- 服务端双存档 22/22；浏览器双存档 31/31；旧存档样本复验；phase-05 回归 62/62 + 18/18 + 6/6；
+  91 JS + 9 mjs `node --check`；87 页面脚本；`git diff --check`。
+- 旧云存档不迁移/不删除；服务器世界不提供浏览器下载或统一列表；在线恢复备份无 UI；
+  真实 LAN/公网/TLS/压力/长时间运行未测；K-73 跨版本仍未做。
+- 已知新增边界：K-81…K-86（`docs/KNOWN_ISSUES.md`）。
