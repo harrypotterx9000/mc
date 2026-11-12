@@ -2,6 +2,50 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-03 彻底移除账号系统并建立访客模式 — 2026-11-12 — 提交 `025cba8`（代码）+ docs 收尾
+
+> 代码提交 `025cba8`；docs 收尾为当前 HEAD。phase-03 代码已推送 `origin/opusmc-integration`；docs 收尾随后推送。未合并、未强推、未打标签。客户端核心 10/10 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL。
+
+- 新增文件：`js/guest.js`（`GuestSession`）；`docs/phases/phase-03-guest-mode/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`、`ACCEPTANCE.md`
+- 删除文件：`js/account.js`（510 行）、`js/toy.js`（335 行）、`js/cloudsave.js`（323 行）、`js/checkin.js`（566 行）
+- 修改文件（15）：
+  - `index.html`：删除 4 个脚本引用，新增 `js/guest.js`（`netconfig` 后、`net` 前）；脚本 88 → **85**；加载条总数 85
+  - `js/ui.js`：新增 `drawCard`（原 `account.js` 的公共绘图函数）
+  - `js/skins.js`：删除账号外观接管/`Account.update`/签到锁定分支；保留 `mcjs-look` 与保存/刷新恢复；前缀预览用 `GuestSession.displayName`
+  - `js/capes.js`：删除 `Account.data.skin` 回退
+  - `js/cosmetics.js`：名字前缀识别用 `GuestSession.name`
+  - `js/net.js`：`hello` 无 token；昵称输入始终显示；`login.eid → GuestSession.connected`；`leaveServer(keepGuest)`；删除账号特权/`sup` 判断
+  - `js/p2p.js`：host/join 无 token；昵称统一 `GuestSession`；本地房间连接状态迁移；删除 `onlineGate`
+  - `js/screens.js`：单人/多人直接放行；删除标题账号按钮与 Toy 退出分支
+  - `js/onboard.js`：首启画质 → 设备 → 差异说明；删除登录步骤与账号选项；文案改访客/本地存档
+  - `js/social.js`：删除 Toy 内容检查/二维码/分享/页面关闭桥；保留邀请卡复制与管理员公告；`pagehide` 离房
+  - `js/mobile.js`：删除 Toy 容器/安全区桥；保留 CSS 横屏与触控
+  - `js/extras.js`：照片条删除账号名/B站文案/二维码；保留保存图片
+  - `js/audio.js`、`js/perf.js`、`js/touch.js`：清理旧平台注释
+- 关键函数/状态变化：
+  - 删除 `Account`、`Toy`/`ToyError`、`CloudSave`、`Checkin`、`LoginScreen`、`CodeShowScreen`、`CodeLoginScreen`、`AccountScreen`、`FrozenScreen`、`AdminScreen`、`ToyDiagScreen`、`FollowGateScreen`、`CloudScreen`、`CloudConflictScreen`、`CheckinScreen`、`singleGate`、`onlineGate`、`g_netName`、`ACCOUNT_SETTINGS`。
+  - 新增 `GuestSession`：`name`、`playerId`、`roomId`、`connection`、`resumeInfo()`、`beginConnect()`、`connected(id)`、`disconnected()`、`leaveRoom()`；localStorage `mcjs-guest-name`、sessionStorage `mcjs-guest-resume`。
+  - `Game.joinRoom`/`joinServer` 建会话；`NetClient` 在 `login` 时接收服务器临时 ID；异常断开保留 5 分钟提示，主动离开清除。
+- 关键行为变化：
+  - 不再有注册/登录/密码/邮箱/手机号/识别码/账号资料/账号绑定/B站登录/Toy 身份/关注/三连/解锁判断/账号云存档/签到。
+  - 玩家用昵称进入多人；临时玩家 ID 由服务器按房间会话分配；单人无需任何身份。
+  - 全部外观仍免费；外观只保存在本设备；活动款装饰保留。
+  - 单人继续 IndexedDB；多人存档留给 phase-05 服务器。
+- 修改原因：用户 phase-03 指令；PROJECT_SPEC §2/§3/§6/§11；ADR-003/ADR-015。
+- 验证：
+  - 89 个 `.js` 全量 `node --check` 通过；`git diff --check` 通过；`index.html` 85 个脚本
+  - 无头 Edge 157 + SwiftShader：核心运行时 **33/33 PASS**；首启 **1/1 PASS**；0 FAIL；`game.errLog` 为空；0 未捕获异常
+  - `Account`/`Toy`/`CloudSave`/`Checkin`/`LoginScreen`/`AccountScreen` 均为 `undefined`
+  - 无 `/api/account`、`/api/cloud`、`/api/event`、`/api/gate`、`/api/checkin`、`/api/news` 或 Bilibili 请求
+  - 昵称可中文并本地保存；加入参数正确；`GuestSession` 服务器 ID/重连/离房状态正确
+  - 18 皮肤 + 23 披风 + 3 帽子 + 1 宠物 + 1 前缀全部可用、0 锁定；活动款与 8 装饰保留
+  - 游客外观保存 → 刷新恢复；单人世界创建/保存 → 刷新恢复
+  - 独立验收：主验收 47 PASS / 1 BLOCKED；手机 9 PASS；真实连接/P2P 主机 8 PASS；照片/关闭 3 PASS；TTL 1 PASS；合计 **68 PASS / 0 FAIL / 1 BLOCKED**
+  - 独立验收额外发现 1 个非阻断 UI FAIL（F-1：同名昵称时满员房间被误判为「我的房间」）；客户端核心 10/10 通过，端到端未宣称完成
+  - 截图/结果：`D:\ds\REA\_work\phase03-*`；详细：`docs/phases/phase-03-guest-mode/{TEST_REPORT,ACCEPTANCE}.md`
+- 未验证：真实房间加入/P2P 客人互连（原服务 403）、实际断线重连握手、phase-05 服务器签发临时 ID、两名玩家互看昵称/外观、真实 GPU/真机、`/api/skin`、管理员公告轮询、旧 `mcjs-room-key`、手机安全区（K-48）。
+- 状态：**已实现、已测试、验收结束；代码已提交 `025cba8` 并推送；docs 收尾为当前 HEAD；F-1 与 BLOCKED 项留 phase-05。**
+
 ## phase-02 取消皮肤、装饰和多人游戏解锁机制 — 2026-11-12 — 提交 `a9dc47b`（代码）+ docs 收尾
 
 > 代码提交 `a9dc47b`；docs 收尾为当前 HEAD（见 `git log -1`）。工作区已干净；未推送/未合并。

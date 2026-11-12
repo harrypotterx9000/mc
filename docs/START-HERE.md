@@ -1,45 +1,47 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-12（phase-02 已完成、已验收、已提交；等待 phase-03 指令）
+> 最后更新：2026-11-12（phase-03 客户端改造完成、验收结束；代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：**phase-00 完成；phase-01 完成并验收；phase-02 完成、验收并提交；phase-03 未开始。**
-- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-01 代码 `15154bd`；phase-02 代码 `a9dc47b`；docs 收尾为当前 HEAD。
-- 工作区：**干净**；代码与文档已提交；无 stash、无未跟踪文件。
-- 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；phase-01/02 都在 `develop`。
+- 现状：**phase-00 完成；phase-01 完成并验收；phase-02 完成、验收并提交；phase-03 客户端改造完成、验收结束（代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD；端到端 BLOCKED）；phase-04 未开始。**
+- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-01 代码 `15154bd`；phase-02 代码 `a9dc47b`；phase-03 代码 `025cba8`；docs 收尾为当前 HEAD。
+- 工作区：docs 收尾后干净；phase-03 代码与文档均已提交。
+- 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；phase-01/02/03 都在 `develop`。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 仍打开，未推送/未合并。
 
-> **路径注意**：phase-01 文档写的是 `D:\Projects\OpusMC`；phase-02 的提交只在 `D:\ds\REA\opusmc`。
-> `D:\Projects\OpusMC` **没有** phase-02 改动；如以那份为准，需要用户确认后单独同步。
+> **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；phase-02/03 只在 `D:\ds\REA\opusmc`。
+> 如以 `D:\Projects\OpusMC` 为准，需要用户确认后单独同步，禁止直接覆盖。
 
 ## 2. 阅读顺序
 
 1. `docs/START-HERE.md`（本文件）
-2. `docs/PROJECT_SPEC.md` —— 长期总规范（§6 全开放；§11.7 phase-02 约束）
+2. `docs/PROJECT_SPEC.md` —— 长期总规范（§3 访客身份；§11.8 phase-03 约束）
 3. `docs/STATUS.md` —— 当前阶段、Git、测试与待办
-4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§11 phase-02 变更
-5. `docs/DECISIONS.md` —— ADR-001…014（ADR-014 为 phase-02）
-6. `docs/KNOWN_ISSUES.md` —— K-01…K-41、NOT TESTED
-7. `docs/phases/phase-02-unlock-removal/HANDOFF.md` —— 本阶段交接
-8. `docs/phases/phase-02-unlock-removal/TEST_REPORT.md` —— 测试结果
-9. `docs/phases/phase-02-unlock-removal/ACCEPTANCE.md` —— 独立验收报告
-10. `docs/phases/phase-01-menu-cleanup/HANDOFF.md` —— 上一阶段历史
+4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§12 phase-03 变更
+5. `docs/DECISIONS.md` —— ADR-001…015（ADR-015 为 phase-03）
+6. `docs/KNOWN_ISSUES.md` —— K-01…K-50、NOT TESTED
+7. `docs/phases/phase-03-guest-mode/HANDOFF.md` —— 本阶段交接
+8. `docs/phases/phase-03-guest-mode/ACCEPTANCE.md` —— 独立验收报告（68 PASS / 1 BLOCKED / 1 非阻断 UI FAIL）
+9. `docs/phases/phase-03-guest-mode/TEST_REPORT.md` —— 实现阶段测试结果
+10. `docs/phases/phase-03-guest-mode/PLAN.md` —— 实施计划
+11. `docs/phases/phase-02-unlock-removal/HANDOFF.md` —— 上一阶段历史
 
 ## 3. Git 现实（以实际仓库为准）
 
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 9） |
-| HEAD | phase-02 docs 收尾（见 `git log -1`；代码提交 `a9dc47b`） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步） |
+| HEAD | docs 收尾为当前 HEAD（见 `git log -1`） |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01 代码 | `15154bd` |
-| phase-02 | **已提交 `a9dc47b`**（docs 收尾为 HEAD） |
+| phase-02 代码 | `a9dc47b` |
+| phase-03 代码 | `025cba8` |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
-| 远程 | PR #1 未合并；`origin/main=6c476c0`；未推送 |
+| 远程 | phase-03 已推送 `origin/opusmc-integration`；PR #1 未合并；未强推 |
 
 ## 4. 运行方式
 
@@ -52,41 +54,43 @@ node scripts\serve.mjs      # 仅 127.0.0.1:8080，零依赖
 - 直接双击 `index.html`（file://）不可用：浏览器禁止 Worker，地形会卡死。
 - 端口占用：`$env:PORT=8081; node scripts\serve.mjs`。
 - 仓库里没有 `启动游戏.bat`；`game.js` 的提示是旧文案，阶段 5/8 再补或改。
+- 无头测试：Edge 157 + `--headless=new --use-angle=swiftshader --remote-debugging-port=9445`；测试脚本在仓库外 `D:\ds\REA\_work\phase03-*.mjs`。
 
 ## 5. 当前边界（务必遵守）
 
-- 不擅自开始 phase-03 或任何游戏功能改造；每个阶段必须等用户明确指令。
-- **未验收的改动不保留**：phase-02 已验收并提交 `a9dc47b`；后续未验收改动仍按 ADR-009/§11.3 丢弃。
+- 不擅自开始 phase-04 或任何游戏功能改造；每个阶段必须等用户明确指令。
+- **已提交/已推送的改动仍不得改写历史**：phase-03 代码 `025cba8` 已提交并推送；docs 收尾随后提交/推送；不重写、不强推。
 - 不新增强制账号/登录；不引入永久账号体系。
 - 合并、推送、历史重写都必须用户确认；禁止 force push。
 - 没有实测的功能一律标 **NOT TESTED**；推断不得写成事实。
 
-## 6. phase-02 已完成内容（已验收并提交）
+## 6. phase-03 已完成内容（客户端核心）
 
-1. 全部 18 款预设皮肤、正版玩家皮肤输入、23 款披风、3 顶帽子、1 个宠物、1 个名字前缀直接可用。
-2. 披风包括 7 款普通 + 13 款管理员（`adm*` / 王冠）+ 3 款活动（企鹅/摇摆企鹅/金苹果）；**不再有解锁判定**。
-3. `Capes.unlocked()`、`Cosmetics.owned()/has()`、`Skins.lookOf()`、衣柜保存等真实权限判断已改；不是只隐藏锁定图标。
-4. 无账号也可保存外观（`mcjs-look`），刷新恢复；登录后接管一次账号外观并继续同步账号。
-5. 多人入口未登录直接打开；不要求登录/关注/三连/识别码；邀请码控制保留。
-6. 账号模块保留到 phase-03；`Account.checkUnlocks()` 不再被调用，账号界面不再显示三连/关注状态。
+1. 删除 `js/account.js`、`js/toy.js`、`js/cloudsave.js`、`js/checkin.js`：账号、B站登录、识别码、关注/三连、账号资料/API/绑定、Toy 身份、账号云存档、签到、云端存档界面全部移除。
+2. 新增 `js/guest.js` 的 `GuestSession`：昵称（`mcjs-guest-name`）、服务器临时 ID、房间 ID、连接状态、5 分钟 `sessionStorage` 重连提示；没有注册/登录/密码/邮箱/手机号/永久账号。
+3. 服务器临时 ID 来自现有协议 `login.eid`；未连接时只暴露 `local_...` 占位并标记 `serverAssigned=false`；phase-05 自建服务器必须签发/校验自己的 ID。
+4. 多人界面始终显示昵称输入；加入时传昵称 + 邀请码；`hello`/`host`/`join` 不再发送账号 token。
+5. 外观继续全部开放（18 皮肤 / 23 披风 / 3 帽子 / 1 宠物 / 1 前缀）；只保存在本设备 `mcjs-look`；活动款披风与 8 个装饰保留。
+6. 首启：画质 → 设备 → 差异说明 → 标题，不再出现登录；标题/选项/暂停无账号/登录/签到入口。
+7. 单人继续 IndexedDB；多人存档留给 phase-05 服务器。
 
-## 7. 测试结果（phase-02）
+## 7. 测试结果（phase-03）
 
-- 92 个 `js/*.js` 全量 `node --check` 通过；`index.html` 仍 88 个脚本；`git diff --check` 通过。
-- 无头 Edge 157 + SwiftShader：自动回归 **27/27 PASS**，独立验收 **35 项运行时检查 PASS**；`game.errLog` 结束为空；无 JS 异常。
-- 18 皮肤 / 23 披风 / 3 帽子 / 1 宠物 / 1 前缀全部可点、可预览；全部披风纹理构建并逐一应用到玩家。
-- 游客保存 → 刷新恢复；模拟账号接管；正版皮肤无账号读取（mock `/api/skin`）。
-- 未登录多人界面直接打开；空邀请码拒绝、有效邀请码才 `joinRoom`。
-- 末影龙通关结局补测 **8/8 PASS**：进入末地 → 击杀 → 返回传送门 → `CreditsScreen`（4510 行）→ Esc 回主世界。发现 `renderDist=4` 下返回传送门不生成（K-41，未修复）。
-- 独立验收：35 项运行时检查 PASS；真实联机/真实账号依赖 BLOCKED；详细见 `docs/phases/phase-02-unlock-removal/ACCEPTANCE.md`。
-- 截图/结果：`D:\ds\REA\_work\phase02-*`；详细：`docs/phases/phase-02-unlock-removal/TEST_REPORT.md`。
+- 89 个 `js/*.js` 全量 `node --check` 通过；`index.html` 85 个脚本；`git diff --check` 通过。
+- 无头 Edge 157 + SwiftShader：核心运行时 **33/33 PASS**；首启 **1/1 PASS**；0 FAIL；`game.errLog` 为空；0 未捕获异常。
+- 无 `/api/account`、`/api/cloud`、`/api/event`、`/api/gate`、`/api/checkin`、`/api/news` 请求；无 Bilibili/bilitoy 请求。
+- `Account`/`Toy`/`CloudSave`/`Checkin`/`LoginScreen`/`AccountScreen` 均 `undefined`。
+- 昵称可中文并本地保存；加入参数正确；`GuestSession` 服务器 ID/短期重连信息/离房状态正确。
+- 游客保存外观 → 刷新恢复；单人世界创建/保存 → 刷新恢复；活动款保留。
+- 截图/结果：`D:\ds\REA\_work\phase03-*`；详细：`docs/phases/phase-03-guest-mode/TEST_REPORT.md`。
+- 独立验收：**68 PASS / 0 FAIL / 1 BLOCKED**（旧房间服务 403、真实 P2P 客人、实际重连）；另 1 个非阻断 UI FAIL（F-1，同名昵称房间所有权）。详见 `docs/phases/phase-03-guest-mode/ACCEPTANCE.md`；**客户端核心 10/10 通过，端到端 phase-03 未宣称完成**。
 
 ## 8. 目录与证据
 
 ```
 D:\ds\REA\opusmc\
-  index.html        游戏页面（88 个脚本）
-  js\               92 个 .js + emoji.webp
+  index.html        游戏页面（85 个脚本）
+  js\               89 个 .js + emoji.webp
   sounds\sfx\       4,849 个原版音效（43.2 MB）
   scripts\serve.mjs 本地静态服务器
   docs\             项目文档与阶段记录
@@ -94,8 +98,8 @@ D:\ds\REA\opusmc\
 ```
 
 - 原始源码备份：`D:\ds\REA\_backup\opusmc-original-2026-11-06.zip`（如仍存在）
-- phase-02 截图/结果：`D:\ds\REA\_work\phase02-*.png`、`phase02-test-result.json`
-- 测试脚本：`D:\ds\REA\_work\phase02-test.mjs`（在仓库外，不随项目提交）
+- phase-03 截图/结果：`D:\ds\REA\_work\phase03-*.png`、`phase03-test-result.json`、`phase03-onboard-result.json`
+- 测试脚本：`D:\ds\REA\_work\phase03-test.mjs`、`phase03-onboard.mjs`（在仓库外，不随项目提交）
 - 历史分析报告：`docs/research/*.md`
 
 ## 9. 已知噪音（不是新 bug）
@@ -108,8 +112,9 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-phase-02 已结束实现、测试、验收并提交 `a9dc47b`。下一步：
-
-1. 等待用户明确发送“执行阶段 3”，不得提前修改账号/登录/签到/Toy。
-2. 如用户要求，另行确认并同步 `D:\Projects\OpusMC`（不要覆盖未确认的副本）。
-3. 合并/推送/PR 操作仍需用户确认；禁止强推。
+1. **phase-03 代码已提交 `025cba8` 并推送；docs 收尾提交/推送后工作区干净**；不要重写历史。
+2. 合并/PR 操作需用户另行确认；不要强推。
+3. 如用户要求，另行确认并同步 `D:\Projects\OpusMC`（不要覆盖未确认的副本）。
+4. phase-05 自建服务器必须处理：临时玩家 ID 签发/校验、真实短时重连、房间所有权（F-1）、`/api/skin`、管理员公告、旧 `mcjs-room-key`、服务端权威外观/移动/存档。
+5. 合并/推送/PR 操作仍需用户确认；禁止强推。
+6. 不提前开始 phase-04；等待用户明确指令。

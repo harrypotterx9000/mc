@@ -152,3 +152,24 @@
   - 活动款装饰在 phase-03 是否随签到删除需用户确认；当前全部开放。
 - 验证：92 个 JS `node --check`；无头 Edge 27/27 自动检查通过；18 皮肤 + 23 披风（13 管理员 + 3 活动）+ 3 帽子 + 1 宠物 + 1 前缀全部可点/预览/渲染；游客保存刷新恢复；多人入口无登录门槛且邀请码控制保留；`game.errLog` 为空。详见 `docs/phases/phase-02-unlock-removal/TEST_REPORT.md`。
 - 状态：**已实施、已测试、验收结束、已提交 `a9dc47b`；docs 收尾为当前 HEAD**。
+
+## ADR-015 phase-03 彻底移除账号系统与访客身份
+
+- 日期：2026-11-12
+- 背景：用户启动 phase-03，明确要求彻底移除账号系统（`js_account.js`/`Account`、Bilibili 登录、Toy 身份、B 站 UID、关注/三连、解锁判断、账号 API/界面/绑定、账号云存档、相关资源），建立最小访客身份（昵称 + 服务器临时 ID + 房间 + 连接状态 + 短期重连），迁移皮肤/披风/联机/P2P/云存档/界面；不得新建注册/登录；不得进入 phase-04；验收前不提交。
+- 决策：
+  1. **整文件删除，不做空壳保留**：`js/account.js`、`js/toy.js`、`js/cloudsave.js`、`js/checkin.js` 删除；`index.html` 脚本 88 → 85；不创建任何替代账号模块。
+  2. **`GuestSession` 只做会话身份**：`js/guest.js` 负责昵称（`mcjs-guest-name`）、服务器临时 ID、房间 ID、连接状态、5 分钟 `sessionStorage` 重连提示；不包含注册、登录、密码、邮箱、手机号、永久账号或资料库。
+  3. **服务端权威 ID**：`NetClient` 收到 `login.eid` 时调用 `GuestSession.connected(eid)`；未连接只暴露 `local_...` 占位并标记 `serverAssigned=false`。客户端不把昵称或本地随机 ID 当作已认证身份；phase-05 自建服务器必须签发并校验自己的临时 ID。
+  4. **外观留在本设备**：保留 `mcjs-look`；删除账号外观接管与 `Account.update` 同步；衣柜锁定/签到分支删除；活动款装饰（企鹅/金苹果等）继续可用，不随签到删除。
+  5. **多人保留房间能力**：昵称输入始终显示；邀请码、公开房间、直接连接、本地 P2P 房间保留；`hello`/`host`/`join` 不再发送账号 token；旧 `mcjs-room-key` 作为浏览器房间管理凭据保留到 phase-05。**房间所有权不能用昵称推断**（F-1）；phase-05 用服务端身份判断。
+  6. **Toy 平台桥整体移除**：资料/关注/三连/内容检查/分享/二维码/容器模式/页面关闭由浏览器能力替代或删除；管理员聊天公告与旧房间服务轮询保留（与账号无关）。
+  7. **不扩展范围**：`/api/skin` 正版皮肤查询、旧房间服务 403、K-41 末地问题不在本阶段处理；不改渲染/世界生成/红石。
+  8. **流程**：留在 `develop` 工作区，不新建/切换/重置分支；不提交、不推送；验收通过后才提交，未通过按 ADR-009/§11.3 丢弃。
+- 影响：
+  - 账号、B站登录、识别码、关注/三连、管理员账号、冻结名单、Toy 诊断、云端存档、签到界面全部消失；旧 `mcjs-account`、`cloud` 元数据、`mcjs-cloud-dirty-*` 成为死数据（不自动清理）。
+  - 多人界面改为昵称；`GuestSession` 成为昵称/会话 ID/连接状态的唯一入口。
+  - 首启从画质 → 设备 → 差异说明 → 标题，不再出现登录。
+  - 真实房间加入/P2P 互连、phase-05 服务器签发 ID 仍未验证。
+- 验证：89 个 JS `node --check`；无头 Edge 157 实现测试核心 33/33 PASS、首启 1/1 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL；`Account`/`Toy`/`CloudSave`/`Checkin`/登录界面类均 `undefined`；无 `/api/account`、`/api/cloud`、`/api/event`、`/api/gate`、`/api/checkin` 或 Bilibili 请求；游客外观保存/刷新恢复；单人创建/保存/刷新；活动款保留；`game.errLog` 为空。详见 `docs/phases/phase-03-guest-mode/{TEST_REPORT,ACCEPTANCE}.md`。
+- 状态：**已实施、已测试、验收结束；代码提交 `025cba8` 并推送；docs 收尾为当前 HEAD；F-1 与真实联机/重连留 phase-05**。

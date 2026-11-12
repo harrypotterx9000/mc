@@ -1,13 +1,13 @@
 # OpusMC 架构说明（ARCHITECTURE）
 
-> 依据：`D:\Projects\OpusMC` 当前源码（phase-01 后 88 个加载脚本、92 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
+> 依据：`D:\ds\REA\opusmc` 当前源码（phase-03 后 85 个加载脚本、89 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
 > 标注：**[事实]** 源码可复核；**[实测]** 运行时读到；**[推断]** 未运行验证。
 
 ## 1. 总体形态
 
 单页 WebGL2 应用，无框架、无打包器：
 
-- `index.html` 按固定顺序加载 **89** 个 `<script>`（phase-01 删除 `news.js` 后；原为 90），全部挂在全局作用域。
+- `index.html` 按固定顺序加载 **85** 个 `<script>`（phase-03：88 − 4 删除 + 新增 `guest.js`），全部挂在全局作用域。
 - 数据文件（方块/物品/配方/结构/模型/贴图/字体）是构建脚本从原版数据生成的单行 JSON。
 - 功能模块通过**给共享原型打补丁**扩展（`Game`、`Renderer`、`Player`、`UI`、`World`、`Mob`…）。
 - 世界生成在 Web Worker（`gen_worker.js`），装饰/网格化在另一个 Worker（`chunk_worker.js`，按需创建）。
@@ -16,19 +16,20 @@
 ## 2. 分层与文件（[事实]）
 
 ```
-加载顺序（88）
+加载顺序（85）
 ├─ 资源/数据  assets, font, emoji, texts, worldgen_data, blockdata, itemdata,
 │             recipedata, structures_data, entitydata, etex, models, panorama_data, subtitles
 ├─ 内核       util → world → mesher → vmodels → render/render2 → shaders
 ├─ 内容       blocks → features → trees → structgen/structtypes → dims → mobs_* → items* → redstone
 ├─ 循环       game → terrain2 → perf
 ├─ 界面       ui → screens → commands → controls → touch → mobile → onboard
-└─ 平台       netconfig → net → beacon/cmdblock → toy → account → capes/skins/cloudsave
-              → social → companion → extras → cosmetics → checkin → p2p → panorama
+└─ 平台       netconfig → guest → net → beacon/cmdblock → capes/skins
+              → social → companion → extras → cosmetics → p2p → panorama
 ```
 
-- **206 个顶层类声明**（phase-0 为 213；phase-01 删除 7 个界面/面板类）、**77 个 `*Screen` 类**（原 84）；按 `Game.prototype.* =` 赋值扫描，**40 个文件、257 处、174 个方法名**（含包装器；旧口径“28 个加方法文件”不再作为准确计数）。扫描明细见 `research/dependency-analysis.md`。
-- 运行时懒加载（不在 88 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
+- **194 个顶层类声明**（phase-02 为 206；phase-03 删除 12 个账号/Toy/云/签到类）、**66 个 `*Screen` 类**（原 84；phase-01 −7、phase-03 −11）；按 `Game.prototype.* =` 赋值扫描沿用 phase-0 的 **40 个文件、257 处、174 个方法名**（含包装器）。
+- 运行时懒加载（不在 85 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
+- phase-03 删除：`js/account.js`、`js/toy.js`、`js/cloudsave.js`、`js/checkin.js`；新增 `js/guest.js`。
 
 ## 3. 关键对象与状态归属（[事实]）
 
@@ -39,8 +40,9 @@
 | `player` | `js/entity.js` | `pos, inv, health, effects, mode` | UI、装备、网络、载具 |
 | `ui` | `js/ui.js` | `screen, chat, input, debug` | 输入、tick、渲染 |
 | `DB` | `js/save.js` | IndexedDB 封装 | 世界、云存档、P2P 主机 |
-| `Account` | `js/account.js` | `data, loggedIn` | 房间、云、皮肤、签到、公告 |
-| `RoomService` | `js/net.js` | 房间 API 封装 | 多人、P2P、云、签到、公告 |
+| `Account`（已删除） | — | phase-03 移除；无替代账号 | — |
+| `GuestSession` | `js/guest.js` | `name, playerId, roomId, connection` | 多人界面、NetClient、P2P、外观前缀、聊天 |
+| `RoomService` | `js/net.js` | 房间 API 封装 | 多人、P2P、公告、正版皮肤查询 |
 | `NetClient` | `js/net.js` | WS 连接、玩家表 | 联机 UI、命令方块、皮肤、社交 |
 | `Sound` | `js/audio.js` | 音频上下文、监听者 | 全模块音效 |
 | `FX` / `DynRes` / `PerfMon` | `js/shaders.js` / `js/perf.js` | 光影与性能状态 | 渲染、HUD |
@@ -63,7 +65,7 @@
 **世界加载**：`createWorld/loadWorld → DB.getWorld → initDims → genSetup → GenPool(worker)`
 → `genReceive → finishFromWorker → finishChunk → Mesher → Renderer`；卸载时 `saveWorld → DB.putChunks`
 
-**联机**：`NetClient.connect → WS → hello{name,version,proto,room,key,token} → 服务端权威消息（53 种 case）`
+**联机**：`NetClient.connect → WS → hello{name,version,proto,room,key}（无账号 token）→ 服务端 login{eid} → GuestSession.connected(eid) → 服务端权威消息`
 
 ## 5. 跨文件补丁矩阵（[事实]，改动必查）
 
@@ -82,6 +84,7 @@
 ## 6. 联机与服务器现状（[事实]+[推断]）
 
 - 客户端只实现协议的一半：发 `hello/tick/交互/聊天/窗口`，收 53 类消息。
+- **phase-03 起没有账号、token 或 Bilibili 身份**：`hello` 只带昵称/房间/浏览器房间 key；`login.eid` 作为房间会话的服务器临时 ID 交给 `GuestSession`（phase-05 自建服务器必须自己签发/校验）。
 - 注释指向 `multiplayer/proxy` 与 `multiplayer/rooms`，但**仓库内没有任何创建服务器的代码**（扫描：0 个文件监听端口）。
 - 现有房间服务地址 `https://xz.honghemc.cn:8443`（`js/netconfig.js`），属于原作者；本项目将替换为自建服务器。
 - **推断**：自建服务器需要新增：权威世界模拟（或复用现有单机逻辑跑在 Node）、房间/身份、协议编解码、状态同步、服务器存档、规则校验。
@@ -103,9 +106,9 @@ server/
 ## 8. 已知架构风险
 
 1. Monkey Patch 依赖加载顺序，删文件会静默改变行为（`guard()` 会吞异常，只留日志）。
-2. 平台模块（Toy/Account/Net/Cloud/News/Checkin）与主循环耦合在标题界面与暂停界面，删除需同步改 UI。
+2. 平台模块（Guest/Net/Game/外观）与主循环耦合在标题、多人、外观界面；删改需同步改 UI（phase-03 已完成账号/Toy/云/签到的删除）。
 3. `Game.tick` 的包装链让"删功能"比"加功能"更容易出错，阶段改造必须先列补丁清单。
-4. 无构建系统，任何新模块都必须手工加入 `index.html` 且注意顺序。
+4. 无构建系统，任何新模块都必须手工加入 `index.html` 且注意顺序；`guest.js` 必须在 `net.js` 之前。
 
 ## 9. 阶段 0 复核补充（2026-11-06，未改代码）
 
@@ -217,7 +220,8 @@ startTitle()
 
 ## 11. 阶段 2 变更（2026-11-12，已实现/已测试/已验收；代码提交 `a9dc47b`）
 
-> 本阶段不新增文件、不改 `index.html` 脚本顺序；脚本数仍 88，`js/` 仍 92 个 `.js`。
+> 本节记录 phase-02 完成时点；其中“账号仍保留”“保存同步账号”“hello 发送 token”等描述已被
+> phase-03 取代，当前实现以 §12 为准。本阶段不新增文件、不改 `index.html` 脚本顺序；脚本数仍 88，`js/` 仍 92 个 `.js`。
 
 ### 11.1 外观权限模型
 
@@ -262,5 +266,47 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
 - 原房间服务 `xz.honghemc.cn:8443` 在本机 403：公开房间列表不可用；真实加入未测（phase-05 自建服务器）。
 - 原房间服务可能仍按 `adm*` 校验披风；客户端已开放，服务端未改（不在本仓库）。
 - 正版皮肤查询仍调用 `/api/skin`（Mojang 代理）；权限已开放，数据源仍依赖外部服务。
-- 本地外观仅本设备；换设备需登录账号（phase-03 之后按访客模式另行设计）。
-- 首启仍保留登录步骤（可离线游玩），属于 phase-03。
+- 本地外观仅本设备；换设备不再有账号同步（访客模式定位）。
+
+## 12. 阶段 3 变更（2026-11-12，已实现/已测试/验收结束；代码提交 `025cba8`；docs 收尾为当前 HEAD）
+
+> 本阶段删除 4 个模块、新增 1 个模块；`index.html` 脚本 88 → 85，`js/` 92 → 89 个 `.js`。
+
+### 12.1 账号系统整体移除
+
+- 删除 `js/account.js`（510 行）：`Account` 单例、`LoginScreen`、`CodeShowScreen`、`CodeLoginScreen`、`AccountScreen`、`FrozenScreen`、`AdminScreen`、`ToyDiagScreen`、`FollowGateScreen`、`singleGate`、`onlineGate`、`g_netName`、`ACCOUNT_SETTINGS`、`drawCard`/`drawIcon`、`xhr`、`Account` 对 `RoomService`/`Game.saveSettings` 的包装。
+- 删除 `js/toy.js`（335 行）：B站 Toy SDK、`ToyError`、mock 面板、资料/关注/三连、内容检查、分享、二维码、容器模式、页面关闭事件。
+- 删除 `js/cloudsave.js`（323 行）：账号云存档、云端存档界面、云冲突、云状态/过期提示、`DB.putChunks` 脏块记录、`Game.quitToTitle`/`loadWorld`/`startTitle`/`WorldListScreen`/`TitleScreen` 包装。
+- 删除 `js/checkin.js`（566 行）：签到状态、签到界面、`/api/account/checkin`、`/api/event`、奖励/穿戴入口、标题/暂停签到补丁。
+- `drawCard` 移到 `js/ui.js`；标题账号按钮、选项「账号…」、首启登录步骤删除。
+
+### 12.2 访客身份 `GuestSession`
+
+- `js/guest.js` 在 `netconfig.js` 后、`net.js` 前加载。
+- `name`：1–16 字符，去控制字符/引号；本地 `mcjs-guest-name`，镜像 `settings.netName`；首次加载可从旧 `settings.netName` 接管一次。
+- `playerId`：只有 `connected(id)`/`beginConnect` 后的网络层调用会写入；未连接时 `local_...` 且 `serverAssigned=false`。
+- `roomId`：`beginConnect(code)` → 规范化房间码；`leaveRoom()` 清空。
+- `connection`：`idle` / `connecting` / `connected` / `disconnected`。
+- `mcjs-guest-resume`（sessionStorage，5 分钟）：房间、昵称、服务器 ID、时间；`resumeInfo()` 只给提示，不自动认证；主动离开清除。
+
+### 12.3 外观与多人迁移
+
+- `Skins`：删除账号外观接管/`Account.update`；保留 `mcjs-look` 六项与保存/恢复；衣柜锁定/签到分支删除；保存提示「已保存在这台设备上」。
+- `Capes.of`：只读 `Skins.look()`；`Cosmetics.preName` 用 `g.net.name` / `GuestSession.name`。
+- `NetClient`：`hello` 无 token；`login.eid → GuestSession.connected`；`fail` 保留短期重连信息；`leaveServer(keepGuest)` 区分主动/异常断开。
+- `MultiplayerScreen`：昵称输入始终显示；`okName()` 写 `GuestSession`；删除 `sup`/`mine` 账号判断；房间满员只允许房主本人进入。
+- `p2p`：`host`/`join` 无 token；昵称统一 `GuestSession`；本地房间 `beginConnect/connected/disconnected/leaveRoom`。
+- `social`：邀请卡只保留复制链接/邀请码；Toy 内容检查删除；`pagehide` 离开房间并保留重连提示；管理员聊天公告轮询保留。
+- `mobile`：Toy 容器/安全区桥删除；保留 CSS 横屏、触控和 `UI.safe()`（默认 0）。
+- `extras`：照片条去掉账号名/B站文案/二维码，保留保存图片。
+
+### 12.4 风险与边界
+
+- 现有 `login.eid` 是旧房间服务分配的实体 ID；phase-05 自建服务器必须改为自己的房间会话 ID，并校验客户端不得自称。
+- 本地 P2P 主机没有服务端 ID，`GuestSession` 只给 provisional `local_...`；不能当认证身份。
+- **房间所有权不能用昵称推断**：`MultiplayerScreen` 的 `mine` 在同名昵称时会误判满员房间（F-1/K-47）；phase-05 必须用服务端身份/所有权。
+- 实际断线重连握手未实现；`mcjs-guest-resume` 只是 5 分钟提示（K-50）。
+- 真实房间/P2P 加入未测（原服务 403/CORS）；真实 P2P 客人连接 BLOCKED。
+- 旧 `mcjs-room-key` 仍是浏览器本地房间管理凭据（不是玩家账号），phase-05 替换；旧 `mcjs-account`/`cloud` 元数据为死数据，不自动清理。
+- 正版皮肤仍走 `/api/skin`（不属于账号 API，K-36）；管理员公告轮询仍走旧房间服务。
+- 移除 Toy 容器后手机安全区为 0（K-48）；Toy 内容检查移除后内容治理归 phase-05（K-49）。
