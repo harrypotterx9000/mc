@@ -4,7 +4,8 @@
 // skin looked up by name (the room service asks Mojang: skin and arm model, never their cape). Classic (4 px) or slim
 // (3 px) arms, the second layer, old 64 x 32 skins turned into 64 x 64 like vanilla; the first-person arm uses the
 // skin too. In a room the web players tell each other what they wear (a 'look' message the room service passes on).
-// Presets are free; a premium player's skin needs 三连 (Account.has('skin')); keeping a choice needs an account.
+// Every preset, every premium player's skin, every cape and every decoration is free (phase-02: no unlock checks);
+// the look chosen here is kept on this device and, when an account is logged in, also synced to it.
 // ---------------------------------------------------------------------------
 const Skins = (() => {
   const canv = new Map();   // id -> 64 x 64 canvas
@@ -66,16 +67,29 @@ const Skins = (() => {
     load(id).catch(() => { });
     return 'steve';
   }
-  // this player's look: the preview being chosen, else the account's (a premium skin only once 三连 is done)
+  // this player's look: what is being previewed in the wardrobe, else the look kept on this device (an account's
+  // look is taken over once when it is logged in). No skin or decoration needs an unlock (phase-02)
+  const LOOK_KEY = 'mcjs-look';
+  const str = (v) => (typeof v === 'string' && v ? v : null);
+  const clean = (l) => {
+    const s = l && typeof l === 'object' ? l : {};
+    return { skin: str(s.skin), slim: !!s.slim, cape: str(s.cape), hat: str(s.hat), pet: str(s.pet), pre: str(s.pre) };
+  };
+  let saved = null, savedFor = null;
+  try { const v = JSON.parse(localStorage.getItem(LOOK_KEY) || 'null'); if (v) saved = clean(v); } catch (e) { }
+  function persist(l) { saved = clean(l); try { localStorage.setItem(LOOK_KEY, JSON.stringify(saved)); } catch (e) { } }
+  // (a logged-in account's own look replaces this device's once per account; after that this device's save is used)
+  function takeAccountLook() {
+    if (typeof Account === 'undefined' || !Account.loggedIn || !Account.data) { savedFor = null; return; }
+    const key = String(Account.data.id || Account.data.name || '?');
+    if (savedFor === key) return;
+    savedFor = key;
+    if (Account.data.skin) persist(Account.data.skin);
+  }
+  function currentLook() { takeAccountLook(); return saved; }
   let preview = null;
   function lookOf(g, e) {
-    if (e === g.player) {
-      if (preview) return preview;
-      const s = Account.data && Account.data.skin;
-      if (!s) return null;
-      if (s.skin && s.skin.startsWith('m:') && !Account.has('skin')) return { skin: null, slim: false, cape: s.cape };
-      return s;
-    }
+    if (e === g.player) return preview || currentLook();
     return e.look || null;
   }
   function initModels(r) {
@@ -97,6 +111,8 @@ const Skins = (() => {
     armOf(g, left) { const l = lookOf(g, g.player); if (l && l.slim) { initModels(g.renderer); return left ? 'arm_left_slim' : 'arm_slim'; } return left ? 'arm_left' : 'arm'; },
     setPreview(l) { preview = l; },
     preview() { return preview; },
+    look: currentLook,
+    saveLook(l) { persist(l); },
     // what this player wears, for the others in a room (and the decorations it owns: cosmetics.js)
     mine(g) { const l = lookOf(g, g.player) || {}; return { skin: l.skin || null, slim: !!l.slim, cape: Capes.of(g, g.player), ...(typeof Cosmetics !== 'undefined' ? Cosmetics.mine(g) : {}) }; },
   };
@@ -134,16 +150,16 @@ const Skins = (() => {
 class WardrobeScreen extends FormScreen {
   constructor(game, parent) {
     super(game, '皮肤和装饰', parent); this.titleY = 8;
-    const s = (Account.data && Account.data.skin) || {};
+    const s = Skins.look() || {};
     this.look = { skin: s.skin || null, slim: !!s.slim, cape: s.cape || null, hat: s.hat || null, pet: s.pet || null, pre: s.pre || null };
+    this.saved = { ...this.look };
     this.tab = 'skin'; this.page = 0; this.mojang = s.skin && s.skin.startsWith('m:') ? s.skin.slice(2) : ''; this.list = [];
     this.yaw = 0.5; this.drag = null; this.busy = false;
     Skins.presets().then((l) => { this.list = l; for (const p of l) Skins.load('p:' + p.id).catch(() => { }); if (this.game.ui.screen === this) this.layout(); });
-    Account.loadGate();
   }
   get dirty() {
-    const s = (Account.data && Account.data.skin) || {};
-    return (s.skin || null) !== this.look.skin || !!s.slim !== this.look.slim || ['cape', 'hat', 'pet', 'pre'].some((k) => (s[k] || null) !== (this.look[k] || null));
+    const a = this.saved, b = this.look;
+    return (a.skin || null) !== (b.skin || null) || !!a.slim !== !!b.slim || ['cape', 'hat', 'pet', 'pre'].some((k) => (a[k] || null) !== (b[k] || null));
   }
   // a sign-in reward not owned yet: to the sign-in card (checkin.js), else a line saying how
   toCheckin(id) {
@@ -166,7 +182,7 @@ class WardrobeScreen extends FormScreen {
       color: this.tab === k ? '#FFFF55' : undefined, onClick: () => { this.tab = k; this.page = 0; this.layout(); } }));
     const cell = 30, cols = Math.max(3, Math.floor(W / cell)), y0 = 48;
     if (this.tab === 'skin') {
-      const items = [{ id: null, name: '默认（史蒂夫）' }, ...this.list.filter((p) => p.own)];
+      const items = [{ id: null, name: '默认（史蒂夫）' }, ...this.list];
       items.forEach((p, i) => {
         const cx = x0 + (i % cols) * cell, cy = y0 + Math.floor(i / cols) * (cell + 2);
         this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell - 2, label: '', skinIcon: p.id, sel: (p.id ? 'p:' + p.id : null) === this.look.skin, tip: [p.name + (p.id ? (p.slim ? '（纤细）' : '（经典）') : '')],
@@ -174,12 +190,10 @@ class WardrobeScreen extends FormScreen {
       });
       const yy = y0 + Math.ceil(items.length / cols) * (cell + 2) + 6;
       this.widgets.push({ x: x0, y: yy, w: W, h: 18, label: () => '手臂：' + (this.look.slim ? '纤细（3 像素，Alex）' : '经典（4 像素，Steve）'), onClick: () => { this.look.slim = !this.look.slim; } });
-      if (Account.has('skin')) {
-        this.addField('mojang', x0, yy + 36, W - 54, '正版玩家的皮肤（输入玩家名）', 16, nameOnly);
-        this.widgets.push({ x: x0 + W - 50, y: yy + 36, w: 50, h: 20, label: () => (this.busy ? '…' : '使用'), enabled: !this.busy, onClick: () => this.useMojang() });
-      }
+      this.addField('mojang', x0, yy + 36, W - 54, '正版玩家的皮肤（输入玩家名）', 16, nameOnly);
+      this.widgets.push({ x: x0 + W - 50, y: yy + 36, w: 50, h: 20, label: () => (this.busy ? '…' : '使用'), enabled: !this.busy, onClick: () => this.useMojang() });
     } else if (this.tab === 'cape') {
-      const items = [{ id: null, name: '不穿披风' }, ...Capes.list.filter((c) => !c.admin || Capes.unlocked(c.id))];
+      const items = [{ id: null, name: '不穿披风' }, ...Capes.list];
       items.forEach((c, i) => {
         const cx = x0 + (i % cols) * cell, cy = y0 + Math.floor(i / cols) * (cell + 12);
         const locked = c.id && !Capes.unlocked(c.id);
@@ -215,10 +229,13 @@ class WardrobeScreen extends FormScreen {
     this.busy = false; this.layout();
   }
   async saveLook() {
-    if (!Account.loggedIn) { this.game.ui.open(new LoginScreen(this.game, () => this.game.ui.open(this))); return; }
+    // (kept on this device even without an account; a logged-in one also gets it on the service)
+    Skins.saveLook(this.look); this.saved = { ...this.look };
+    if (this.game.net) this.game.net.sendLook();
+    if (!Account.loggedIn) { this.say('已保存在这台设备上'); this.layout(); return; }
     this.busy = true; this.layout();
-    try { await Account.update({ skin: { ...this.look } }); this.say('已保存'); if (this.game.net) this.game.net.sendLook(); }
-    catch (e) { this.say(e.message, true); }
+    try { await Account.update({ skin: { ...this.look } }); this.say('已保存'); }
+    catch (e) { this.say('已保存在这台设备上；账号同步失败：' + e.message, true); }
     this.busy = false; this.layout();
   }
   back() { Skins.setPreview(null); super.back(); }
@@ -258,6 +275,6 @@ class WardrobeScreen extends FormScreen {
     if (this.tab === 'pre' && typeof Cosmetics !== 'undefined') Font.center(c, fitText(Cosmetics.preChar(this.look.pre) + ((Account.loggedIn && Account.name) || '玩家'), P.w - 4), P.x + P.w / 2, P.y + 4, '#FFFFFF');
     Font.center(c, '拖动可以转动', P.x + P.w / 2, P.y + P.h + 4, '#808080');
     this.drawFields(ui);
-    if (!Account.loggedIn) Font.center(c, fitText('登录后才能保存（换设备、联机时别人也能看到）', ui.w - 8), ui.w / 2, ui.h - 42, '#FFD24A');
+    if (!Account.loggedIn) Font.center(c, fitText('外观保存在这台设备上（登录后还会同步到账号）', ui.w - 8), ui.w / 2, ui.h - 42, '#808080');
   }
 }

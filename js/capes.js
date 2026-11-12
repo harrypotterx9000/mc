@@ -1,7 +1,8 @@
 'use strict';
 // ---------------------------------------------------------------------------
 // Capes (game/ACCOUNT_PLAN.md「披风设计」): all original designs, none of Mojang's or Bilibili's. Four static ones
-// (三连) drawn pixel by pixel, three animated ones (following the UP) worked out frame by frame. Each is a texture in
+// drawn pixel by pixel, three animated ones worked out frame by frame. Every design is free (phase-02: no unlock
+// condition), the administrators' and the sign-in event's included. Each is a texture in
 // vanilla's cape layout (64 x 32: the cape 10 x 16 x 1 at 0,0; the elytra 10 x 20 x 2 at 22,0), so a player wearing
 // an elytra wears the design's wings, as in vanilla - each design has its own (outline and picture, WINGS), they are
 // not the cape stretched. Animated capes are 16 frames made once; the current
@@ -384,13 +385,12 @@ const Capes = (() => {
   const LIST = [
     { id: 'potato', name: '土豆', anim: false }, { id: 'sakura', name: '樱花', anim: false }, { id: 'starry', name: '星空', anim: false }, { id: 'ocean', name: '海浪', anim: false },
     { id: 'sunset', name: '海边日落', anim: true }, { id: 'lava', name: '熔岩', anim: true }, { id: 'nebula', name: '星云', anim: true },
-    // (the administrators' only - not even shown to anyone else; the room service checks too: ids starting with adm)
+    // (the administrators' designs: free like every other one since phase-02)
     ...Object.entries(CROWNS).map(([id, [cn]]) => ({ id, name: '王冠·' + cn, anim: true, admin: true })),
     { id: 'admender', name: '管理员·末影', anim: true, admin: true }, { id: 'admaurora', name: '管理员·极光', anim: true, admin: true },
     { id: 'admriver', name: '管理员·红河', anim: true, admin: true }, { id: 'admgold', name: '管理员·流金', anim: true, admin: true },
     { id: 'admvoid', name: '管理员·虚空', anim: true, admin: true },
-    // the sign-in event's rewards (ev: owned by the account, COMMUNITY_PLAN.md - cosmetics.js); last, so the
-    // ordinary capes keep their order in the wardrobe
+    // the sign-in event's rewards (ev: also in cosmetics.js; free to wear since phase-02)
     { id: 'penguin', name: '企鹅', anim: false, ev: true }, { id: 'penguinwalk', name: '摇摆企鹅', anim: true, ev: true },
     // (an event reward given by the service: community.js)
     { id: 'goldapple', name: '金苹果', anim: true, ev: true },
@@ -503,20 +503,20 @@ const Capes = (() => {
     const D = Math.PI / 180;
     return { rx: -(6 + f2 / 2 + up) * D, rz: (f3 / 2) * D, ry: (-f3 / 2) * D };
   }
-  // which cape a player wears: this player's from the account (if unlocked), another player's from what the room sent
+  // which cape a player wears: this player's from the device (or the account), another player's from what the room sent
   function of(g, e) {
     let id = null;
     if (e === g.player) {
-      const pv = typeof Skins !== 'undefined' && Skins.preview(), s = pv || (Account.data && Account.data.skin);
-      id = s && s.cape; if (id && !unlocked(id)) id = null;
+      const pv = typeof Skins !== 'undefined' && Skins.preview();
+      const s = pv || (typeof Skins !== 'undefined' && Skins.look ? Skins.look() : (Account.data && Account.data.skin));
+      id = s && s.cape; if (id && !info(id)) id = null;
     }
     else if (e.look) id = e.look.cape;
     return id && get(id) ? norm(id) : null;
   }
   const info = (id) => LIST.find((c) => c.id === norm(id));
-  // (the event's capes: owned by the account - a super administrator owns them all, the room service says so)
-  const evOwned = (id) => !!(Account.loggedIn && (typeof Cosmetics !== 'undefined' ? Cosmetics.owned() : (Account.data && Account.data.owned) || []).includes('cape:' + id));
-  const unlocked = (id) => { const c = info(id); return !!c && (c.ev ? evOwned(c.id) : c.admin ? !!(Account.data && Account.data.super) : Account.has(c.anim ? 'anim' : 'static')); };
+  // (phase-02: no cape is locked - the administrators' and the sign-in event's are free too; only a known id is accepted)
+  const unlocked = (id) => !!info(id);
   // the display setting (选项 → 皮肤与装饰, cosmetics.js): whose capes are drawn. The wardrobe's and the inventory's
   // previews always show this player's
   const shown = (g, e, opts) => typeof Cosmetics === 'undefined' || Cosmetics.shown(g, e, opts);

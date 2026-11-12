@@ -2,11 +2,8 @@
 // ---------------------------------------------------------------------------
 // The player's account (game/ACCOUNT_PLAN.md): log in with Bilibili inside Toy, or with the personal identity code
 // anywhere, or play offline (single player only). The room service keeps the accounts (multiplayer/rooms/accounts.js);
-// the browser keeps the login token. What an account unlocks (the rules the user set):
-//   三连 on the Toy's video  -> the static capes + custom skins
-//   following the UP         -> the animated capes
-//   both                     -> playing online
-// (until the video is out - no video in the service's gate config - following alone unlocks what 三连 would)
+// the browser keeps the login token. Since phase-02 an account gates nothing: every skin, cape and decoration is free
+// and multiplayer needs no login / follow / 三连 (the account itself, login and cloud save go in phase-03).
 // ---------------------------------------------------------------------------
 // a request by XMLHttpRequest (a string body goes as text/plain: no preflight), as {status, ok, text}
 function xhr(method, url, body) {
@@ -65,7 +62,6 @@ const Account = {
     if (!p.toyOpenId) throw new Error('B站没有给出身份信息，请再试一次');
     const j = this.took(await this.api('/api/account/bili', { openId: p.toyOpenId, nickname: p.nickname, avatar: p.avatar, device: this.device() }));
     this.bili = p.toyOpenId; this.save();
-    this.checkUnlocks(true).catch(() => { });
     return j;
   },
   async loginCode(code) {
@@ -96,7 +92,7 @@ const Account = {
     if (what === 'static' || what === 'skin') return this.tripleOk();
     return false;
   },
-  // 三连 / follow as Bilibili says now (only inside Toy); what changed is returned, the account keeps what was seen
+  // 三连 / follow as Bilibili says now (kept for phase-03; phase-02 no longer calls it: nothing is gated by it)
   async checkUnlocks(quiet) {
     if (!this.loggedIn || this.checking) return null;
     this.checking = true;
@@ -151,8 +147,7 @@ const Account = {
 // feedback 11-01; each device keeps its own)
 const ACCOUNT_SETTINGS = ['fov', 'sens', 'volume', 'gamma', 'bobbing', 'advTooltips', 'keys', 'autoJump', 'invertY', 'subtitles', 'chatOpacity', 'tutorialOff', 'minimap', 'deathMarker', 'recipeHints', 'vibrate', 'quickChat'];
 Account.load();
-// (each visit: follow / 三连 checked again once the page is up, quietly - unless it was a moment ago)
-setTimeout(() => { if (Account.loggedIn && Date.now() - Account.lastCheck > 5000) Account.checkUnlocks(true).catch(() => { }); }, 3000);
+// (phase-02: the follow / 三连 check that ran here on every visit is gone - nothing is unlocked by it any more)
 // the rooms: this account's room key and token instead of the browser's own key
 (() => {
   const key = RoomService.key.bind(RoomService);
@@ -282,7 +277,7 @@ class CodeLoginScreen extends FormScreen {
 
 // ---- 账号 (选项): the game name, the identity code, logging out, deleting ----
 class AccountScreen extends FormScreen {
-  constructor(game, parent) { super(game, '账号', parent); this.newName = Account.name; this.confirm = null; Account.refresh().then(() => { this.newName = Account.name; if (this.game.ui.screen === this) this.layout(); }); Account.loadGate(); }
+  constructor(game, parent) { super(game, '账号', parent); this.newName = Account.name; this.confirm = null; Account.refresh().then(() => { this.newName = Account.name; if (this.game.ui.screen === this) this.layout(); }); }
   layout() {
     const u = this.game.ui, cx = u.w / 2, g = this.game;
     this.fields = {}; this.widgets = [];
@@ -319,12 +314,10 @@ class AccountScreen extends FormScreen {
     const c = ui.ctx, cx = ui.w / 2;
     if (!Account.loggedIn) { Font.center(c, Account.offline ? '现在是离线游玩：只能玩单人游戏' : '还没有登录', cx, 40, '#A0A0A0'); return; }
     this.drawFields(ui);
-    const d = Account.data, u = Account.unlocks;
+    const d = Account.data;
     Font.draw(c, '游戏名：' + Account.name, cx - 150, 52, '#FFFFFF');
     Font.draw(c, '就是 B站名，B站改名后会跟着变', cx - 150, 64, '#808080');
     Font.draw(c, `B站：${d.nick || '（识别码登录）'}　　注册于 ${new Date(d.created).toLocaleDateString()}`, cx - 150, 80, '#A0A0A0');
-    const st = (ok, t) => (ok ? '✓ ' : '✗ ') + t;
-    Font.draw(c, [st(Account.tripleOk(), '三连'), st(u.follow, '关注')].join('　'), cx - 150, 94, '#E0E0E0');
   }
 }
 // ---- 管理员 (the highest permissions, rooms/accounts.js): a temporary nickname to play under online, an announcement

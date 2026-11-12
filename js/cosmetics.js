@@ -6,8 +6,8 @@
 // drawn: no entity, no collision, nothing for the server to carry), a name prefix (an icon before the name) and the
 // two penguin capes (capes.js). All original pixel art painted here, except the prefix: vanilla's potato item.
 // Ids are 'kind:name' ('hat:straw'); a look carries the name alone ({ hat: 'straw', pet, pre }, beside skin and
-// cape). What an account owns comes from the room service (Account.data.owned; a super administrator owns
-// everything), which also checks what is worn. Whose are drawn: settings.cosShow (选项 → 皮肤与装饰).
+// cape). Every decoration is free to wear since phase-02 (no account ownership check). Whose are drawn:
+// settings.cosShow (选项 → 皮肤与装饰).
 // ---------------------------------------------------------------------------
 const Cosmetics = (() => {
   const LIST = [
@@ -23,8 +23,8 @@ const Cosmetics = (() => {
   const KIND = { hat: '帽子', pet: '宠物', pre: '名字前缀', cape: '披风' };
   const info = (id) => LIST.find((d) => d.id === id) || null;
   const name = (id) => { const d = info(id); return d ? d.name : ''; }; // ('' for one this game doesn't know yet)
-  const owned = () => (typeof Account !== 'undefined' && Account.loggedIn && Account.data && Array.isArray(Account.data.owned) ? Account.data.owned : []);
-  const has = (id) => owned().includes(id);
+  const owned = () => LIST.map((d) => d.id);
+  const has = (id) => !!info(id);
 
   // ---- the display setting: 'all' (the default), 'mine' (others' hidden), 'none' (this player's too) ----
   // The previews (the wardrobe's, the inventory's: opts.inv) always show this player's. With the graphics on 流畅 and
@@ -38,14 +38,12 @@ const Cosmetics = (() => {
   const othersPets = (g) => mode(g) === 'all' && !(g.settings.cosShow === undefined && g.settings.graphics === 'fast');
 
   // ---- what a player wears ----
-  // this player: the wardrobe's preview while choosing, else the account's - only what it owns (the room service
-  // refuses a look with anything else in it); another player: what the room said (skins.js keeps e.look)
+  // this player: the wardrobe's preview while choosing, else the look kept on this device (or the account's);
+  // another player: what the room said (skins.js keeps e.look). No ownership filter (phase-02)
   function lookOf(g, e) {
     if (g && e === g.player) {
-      const s = (typeof Skins !== 'undefined' && Skins.preview()) || (typeof Account !== 'undefined' && Account.data && Account.data.skin) || null;
-      if (!s) return null;
-      const own = owned(), ok = (k) => (s[k] && own.includes(k + ':' + s[k]) ? s[k] : null);
-      return { hat: ok('hat'), pet: ok('pet'), pre: ok('pre') };
+      const s = (typeof Skins !== 'undefined' && (Skins.preview() || (Skins.look && Skins.look()))) || null;
+      return s ? { hat: s.hat || null, pet: s.pet || null, pre: s.pre || null } : null;
     }
     return (e && e.look) || (g && g.net && g.net.looks && e && e.name && g.net.looks.get(e.name)) || null;
   }
