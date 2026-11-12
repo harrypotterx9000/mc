@@ -8,9 +8,9 @@
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
 - 现状：phase-00/01/02/03/04 完成并验收；**phase-05 实现、测试与修复复核完成，已验收（2026-11-12）**；phase-06 起未开始。
 - 代码：会话工作区 `D:\ds\REA\opusmc`；phase-05 代码 `817bad3`；docs 收尾为当前 HEAD（基线 `3b8b2e0`）。
-- 工作区：phase-05 代码已提交；docs 收尾为当前 HEAD；phase-04 代码 `553ceed` 已推送 `origin/opusmc-integration`，未合并。
+- 工作区：**干净**；phase-05 代码已提交并推送；phase-04 代码 `553ceed` 已推送 `origin/opusmc-integration`，未合并。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
-- 远程：`https://github.com/harrypotterx9000/mc`；推送目标 `origin/opusmc-integration`。
+- 远程：`https://github.com/harrypotterx9000/mc`；phase-05 已推送 `origin/opusmc-integration`。
 
 > **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；phase-02/03/04/05 只在 `D:\ds\REA\opusmc`。
 > 如以 `D:\Projects\OpusMC` 为准，需要用户确认后单独同步，禁止直接覆盖。
@@ -37,7 +37,7 @@
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01/02/03/04 代码 | `15154bd` / `a9dc47b` / `025cba8` / `553ceed` |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`；docs 收尾为当前 HEAD** |
-| 远程 | 推送目标 `origin/opusmc-integration`；PR #1 未合并；未强推 |
+| 远程 | phase-05 已推送 `origin/opusmc-integration`；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -75,7 +75,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 5. 当前边界（务必遵守）
 
-- phase-05 **已验收、代码已提交 `817bad3`**；docs 收尾为当前 HEAD；推送/合并需用户确认。
+- phase-05 **已验收、代码已提交并推送 `817bad3`**；docs 收尾为当前 HEAD；合并/PR 仍需用户确认。
 - 不擅自开始 phase-06 或任何游戏功能改造；每个阶段必须等用户明确指令。
 - 已提交/已推送的历史不得改写；不 force push。
 - 不新增强制账号/登录；不引入永久账号体系。
@@ -138,7 +138,7 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. **phase-05 已提交**：代码 `817bad3`；docs 收尾为当前 HEAD；推送目标 `origin/opusmc-integration`。
+1. **phase-05 已提交并推送**：代码 `817bad3`；docs 收尾为当前 HEAD；远程 `origin/opusmc-integration`。
    F-A…F-F 修复记录在 `docs/phases/phase-05-server/ACCEPTANCE.md`。
 2. 不自动进入 phase-06；下一阶段需用户明确指令。
 3. phase-06 前置：单人 IndexedDB 与服务器 `srv~` 世界分开管理；不要把服务器世界写进单人存档。

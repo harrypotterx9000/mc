@@ -51,7 +51,7 @@
   - 证据：`D:\ds\REA\_work\phase05-*`；详见 `docs/phases/phase-05-server/TEST_REPORT.md`。
 - 未验证：真实 LAN 双设备、10 人/长时间/压力、公网/TLS/NAT、真实 GPU/移动端、服务端生物/红石/战斗、
   跨版本存档；管理接口已测本机 LAN IP 403，双机拒绝仍未测。见 `KNOWN_ISSUES.md` K-67…K-80。
-- 状态：**已验收（2026-11-12）；代码提交 `817bad3`；docs 收尾为当前 HEAD；推送目标 `origin/opusmc-integration`。**
+- 状态：**已验收（2026-11-12）；代码提交 `817bad3`；docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`。**
 
 ## phase-04 浏览器独立运行 — 2026-11-12 — 提交 `553ceed`（代码）+ docs 收尾
 

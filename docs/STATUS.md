@@ -15,8 +15,8 @@
 | HEAD | phase-05 代码 `817bad3`；docs 收尾为当前 HEAD |
 | phase-04 代码 | `553ceed`（`feat(phase-04): run as an independent browser game`） |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`；docs 收尾为当前 HEAD**：35 个文件（13 修改 + 2 删除 + 20 新增）；新增 `server/`、`js/mp.js`、根目录启动/停止脚本、阶段文档；独立验收 F-A…F-F 已修复并复验；24 个既有 JS 仅做 CRLF→LF 归一（内容无 diff） |
-| 工作区 | phase-05 代码已提交 `817bad3`；docs 收尾为当前 HEAD；无 stash、无临时分支、无未提交代码 |
-| 远程 | phase-05 代码 `817bad3`；docs 收尾为当前 HEAD；推送目标 `origin/opusmc-integration`；未合并、未强推、未打标签 |
+| 工作区 | **干净**；phase-05 代码 `817bad3`；docs 收尾为当前 HEAD；无 stash、无临时分支、无未提交代码 |
+| 远程 | **已推送 `origin/opusmc-integration`**；phase-05 代码 `817bad3`；未合并、未强推、未打标签 |
 | 历史代码 | phase-03 `025cba8`；phase-02 `a9dc47b`；phase-01 `15154bd`；基线 `2798c08` |
 
 > `D:\Projects\OpusMC` 仍是 phase-01 副本；phase-02/03/04/05 只在 `D:\ds\REA\opusmc`。如以那份为准，
@@ -36,7 +36,7 @@
 - **实现测试**：服务端集成 **62/62**；双浏览器 E2E **18/18**；单人回归 **6/6**；修复复核
   **F-A 1257/1257 + 19/19 + 存档 3/3**、**F-B 7/7**、**F-C 18/18**、**F-D 35/35 无 CRLF-only**、
   **F-E/F-F 6/6**；91 JS + 9 server mjs `node --check`；启动/停止/状态/端口占用实测。
-- **验收**：用户已确认验收结束（2026-11-12）；**代码 `817bad3`，docs 收尾为当前 HEAD**。提交/推送由本次交接执行。
+- **验收**：用户已确认验收结束（2026-11-12）；**代码 `817bad3`，docs 收尾为当前 HEAD**；已推送。
 
 ## phase-05 已实现内容
 
@@ -152,7 +152,7 @@
 
 ## 待办（phase-05 结束后）
 
-1. **phase-05 已提交**：代码 `817bad3`；docs 收尾为当前 HEAD；推送目标 `origin/opusmc-integration`。
+1. **phase-05 已提交并推送**：代码 `817bad3`；docs 收尾为当前 HEAD；远程 `origin/opusmc-integration`。
 2. 不自动进入 phase-06；下一阶段需用户明确指令。
 3. phase-06 前置：区分单人 IndexedDB 与服务器 `srv~` 世界管理；不要把服务器世界写进单人存档。
 4. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`（K-36/K-44/K-45/K-63/K-77）；

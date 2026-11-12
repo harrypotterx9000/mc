@@ -7,7 +7,7 @@
 - 分支：`develop`（跟踪 `origin/opusmc-integration`；未新建/切换/重置）
 - 起点：`3b8b2e0`（phase-04 docs 收尾）；phase-04 代码 `553ceed`
 - 工作区：phase-05 代码 `817bad3`；docs 收尾为当前 HEAD；35 个本阶段文件（13 修改 + 2 删除 + 20 新增）；24 个既有 JS 仅做 CRLF→LF 归一
-- 远程：推送目标 `origin/opusmc-integration`；未合并、未强推、未打标签
+- 远程：已推送 `origin/opusmc-integration`；未合并、未强推、未打标签
 
 ## 1. 本阶段目标
 
@@ -130,7 +130,7 @@ cd D:\ds\REA\opusmc
 | HEAD | phase-05 代码 `817bad3`；docs 收尾为当前 HEAD |
 | 本阶段 | **已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD** |
 | 工作区 | 35 个本阶段文件已提交；24 个行尾归一文件；无 stash、无临时分支、无 staged 变更 |
-| 远程 | 推送目标 `origin/opusmc-integration`；未合并、未强推、未打标签 |
+| 远程 | **已推送 `origin/opusmc-integration`**；未合并、未强推、未打标签 |
 
 本阶段提交文件：
 
@@ -145,7 +145,7 @@ phase-05 代码已提交 `817bad3`；docs 收尾为当前 HEAD。不要改写已
 
 ## 7. 下一阶段前置条件（phase-06 双存档）
 
-1. phase-05 已提交（代码 `817bad3` + docs 收尾）；推送目标 `origin/opusmc-integration`；不要改写历史。
+1. phase-05 已提交并推送（代码 `817bad3` + docs 收尾）；不要改写历史。
 2. phase-06 要区分单人 IndexedDB `mc-js-clone` 与服务器 `srv~` 世界管理；**不要**把服务器世界写进单人 IndexedDB。
 3. 保留 `js/mp.js` 对 `DB.getWorld/putWorld/getChunk/putChunks/chunkKeys` 的 `srv~` 拦截；不要在 phase-06 破坏
    `js/mp.js` 与 `js/p2p.js` 的包装顺序。

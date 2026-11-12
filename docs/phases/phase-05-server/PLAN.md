@@ -5,7 +5,7 @@
 - 基线：`3b8b2e0`（phase-04 docs 收尾）；代码基线 `553ceed`
 - 分支：`develop`（按用户约束未新建/切换/重置分支）
 - 工作区：`D:\ds\REA\opusmc`
-- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD**
+- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD；已推送**
 
 ## 1. 本阶段目标
 
@@ -171,4 +171,4 @@ server/
 - 证据：`D:\ds\REA\_work\phase05-*`；详见同目录 `TEST_REPORT.md` 与 `HANDOFF.md`。
 - 边界：服务器不同步生物、不模拟红石/流体/战斗；世界存档是 seed + 方块覆盖层；真实 LAN/公网/TLS/
   长时间/压力未测。详见 `docs/ARCHITECTURE.md` §14、`docs/KNOWN_ISSUES.md` phase-05 项。
-- Git：代码 `817bad3`；docs 收尾为当前 HEAD；已验收（2026-11-12）。
+- Git：代码 `817bad3`；docs 收尾为当前 HEAD；已验收（2026-11-12）；已推送。

@@ -4,7 +4,7 @@
 - 阶段：phase-05 自建服务器
 - 分支：`develop`（未新建/切换/重置）
 - 起点：`3b8b2e0`（phase-04 docs 收尾）；代码基线 `553ceed`
-- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD**
+- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD；已推送**
 - 环境：Windows，Node.js v26.13.0，Chrome 157.0.8103.51（headless + SwiftShader）
 - 测试代码位置：`D:\ds\REA\_work\phase05-*.mjs`（仓库外，不随项目提交）
 - 证据：`D:\ds\REA\_work\phase05-test-*`、`phase05-browser-result.json`、`phase05-sp-result.json`、

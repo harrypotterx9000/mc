@@ -146,7 +146,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 
 - 开发基线：`2798c08`（`chore: integrate OpusMC project`），即 PR #1 的 `opusmc-integration` 内容。
 - 当前 HEAD：phase-05 代码 `817bad3`；docs 收尾为当前 HEAD（基线 `3b8b2e0`）；phase-04 代码 `553ceed`，phase-03 代码 `025cba8` 已提交并推送。phase-01 代码 `15154bd`，phase-02 代码 `a9dc47b`。
-- 工作区：`D:\ds\REA\opusmc`；phase-05 实现、测试与修复复核完成，**已验收（2026-11-12）、代码 `817bad3`；docs 收尾为当前 HEAD**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04/05。
+- 工作区：`D:\ds\REA\opusmc`；phase-05 实现、测试与修复复核完成，**已验收（2026-11-12）、代码 `817bad3`；docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04/05。
 - 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（早期文档基线）、`v0.1.0-integration`（PR #1 内容基线）。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 打开中，远程 `main` 未变。
 - 合并后：先 `git fetch origin && git branch -u origin/main main`，再把 `develop` 对齐新的 `origin/main`，然后才开新的阶段分支。
@@ -165,7 +165,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 phase-02 的改动已实现、测试、验收并提交（代码 `a9dc47b`，2026-11-12）；docs 收尾为 `73c8af5`。
 phase-03 客户端改造已完成、验收结束，代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD。
 phase-04 已实现、测试、独立验收与用户验收完成（带真实移动端豁免、K-39 延期）；代码 `553ceed` 已提交并推送 `origin/opusmc-integration`（见 §11.9/§11.10、ADR-017）。
-phase-05 已实现、测试与修复复核（服务端 62/62、双浏览器 18/18、单人回归 6/6），**已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD**（见 §11.11、ADR-018/019）。
+phase-05 已实现、测试与修复复核（服务端 62/62、双浏览器 18/18、单人回归 6/6），**已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`**（见 §11.11、ADR-018/019）。
 
 ### 11.4 阶段启动与合并的确认点
 
@@ -185,7 +185,7 @@ phase-04（浏览器独立运行）**已完成并验收通过（带用户明确�
 独立验收：Edge 44/44、Chrome 43/45（2 项 K-39 `chunk stall`）、移动模拟 25/25、兼容/降级 7/7、
 phase-03 回归 33/33。用户明确不补测真实 Android/iOS；K-39 留 phase-07。详见 §11.9、ADR-017 与
 `docs/phases/phase-04-browser/`。
-phase-05（自建服务器）**实现、测试与修复复核完成并已验收（2026-11-12）**；代码 `817bad3`，docs 收尾为当前 HEAD。
+phase-05（自建服务器）**实现、测试与修复复核完成并已验收（2026-11-12）**；代码 `817bad3`，docs 收尾为当前 HEAD；已推送 `origin/opusmc-integration`。
 服务端集成 62/62、双浏览器 E2E 18/18、单人回归 6/6；修复复核 F-A 1257/1257、F-B 7/7、F-C 18/18、F-D 35/35、F-E/F-F 6/6；真实 LAN 双设备、公网/TLS、长时间/压力未测。
 详见 §11.11、ADR-018/019 与 `docs/phases/phase-05-server/`。
 
@@ -245,7 +245,7 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
 
 ### 11.11 phase-05 执行结果（2026-11-12）
 
-- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD**；分支 `develop`。
+- 状态：**实现、测试与修复复核完成；已验收（2026-11-12）；代码 `817bad3`；docs 收尾为当前 HEAD；已推送**；分支 `develop`。
 - 新增：`server/`（`index/config/log/storage/blockids/ws/protocol/rooms/http` 9 个 `.mjs`、`config.json`、
   `README.md`、`stop.ps1`、`status.ps1`）、`js/mp.js`、根目录 `start-server.bat`/`stop-server.bat`、
   阶段文档 `docs/phases/phase-05-server/`。
