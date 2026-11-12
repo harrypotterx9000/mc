@@ -1,135 +1,95 @@
 # 项目状态（STATUS）
 
-- 更新时间：2026-11-06
-- 当前阶段：**phase-01 主菜单删减与功能修改 —— 已完成，验收结束**
-- 下一阶段：**phase-02 解锁移除**（未开始，需用户明确指令）
-- 代码版本：**`15154bd`**（`feat(phase-01): remove onboarding, news, unlock, feedback and telemetry`）
-- 当前分支：`develop`（阶段 0 后未创建 `phase/*` 分支，按用户指令留在 `develop`）
+- 更新时间：2026-11-12
+- 当前阶段：**phase-02 取消皮肤、装饰和多人游戏解锁机制 —— 已完成、已验收、已提交**
+- 下一阶段：**phase-03 访客模式**（未开始，需用户明确指令）
+- 代码版本：**`a9dc47b`**（phase-02 代码）；docs 收尾为当前 HEAD
+- 当前分支：`develop`（按用户约束未新建/切换/重置）
 
 ## Git
 
 | 项 | 值 |
 |---|---|
-| 仓库 | `D:\Projects\OpusMC` |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 7：阶段 0 两个 docs 提交 + phase-01 代码提交 + phase-01 四个 docs 收尾） |
-| HEAD | phase-01 docs 收尾提交（哈希见 `git log -1`；父提交 `15154bd`） |
-| phase-01 代码提交 | **`15154bd`** |
-| 代码基线 | `2798c08`（`v0.1.0-integration`） |
-| 工作区 | **干净**（phase-01 代码与文档均已提交；无 stash、无未跟踪文件） |
-| 远程 | PR #1 未合并；本次未推送、未合并、未强推 |
+| 仓库 | `D:\ds\REA\opusmc`（会话工作区；`D:\Projects\OpusMC` 为 phase-01 同内容副本，本次未同步） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`，ahead 9：phase-01 7 + phase-02 代码 + docs 收尾） |
+| HEAD | phase-02 docs 收尾（见 `git log -1`；代码提交 `a9dc47b`） |
+| 代码基线 | `2798c08`（`v0.1.0-integration`）；phase-01 代码 `15154bd`；phase-02 代码 `a9dc47b` |
+| phase-02 改动 | 5 个源码文件 + 10 个文档修改 + 4 个新增文档；**已提交**（代码 `a9dc47b`，docs 收尾为 HEAD） |
+| 工作区 | **干净**（代码与文档已提交；无 stash、无未跟踪文件） |
+| 远程 | 未推送、未合并、未强推、未打标签 |
 
-> phase-01 的代码提交为 `15154bd`；本次文档收尾为当前 HEAD。远程推送、合并到 `main`、PR 操作均需用户另行确认。
+> phase-02 已按 ADR-009 在用户验收后提交；本次未推送。`D:\Projects\OpusMC` 未同步 phase-02。
 
 ## 整体状态
 
-- **单机**：可运行；标题、首次画质设置、创建世界、暂停菜单、保存并返回标题均已实测。
-- **多人**：标题入口不再要求登录/解锁（1-A）；但仓库仍无服务器端，实际联机仍不可用。
-- **账号/云存档**：仍存在；phase-01 只删除标题登录入口与解锁面板，账号界面仍可从 选项 → 账号 进入。
-- **公告**：主菜单公告模块整体删除；服务端公告/签到接口仍会被账号/签到模块访问（phase-03 处理）。
-- **反馈**：入口、面板、提交逻辑与截图逻辑全部删除；聊天/举报内容检查仅保留举报。
-- **遥测**：选项入口、`TelemetryScreen`、`Telemetry` 核心与 `js/telemetry.js` 整体删除；`GAME_BUILD` 移到 `js/game.js`；无 `/api/telemetry` 请求。
-- **首启**：`AgreementScreen`（欢迎来到 OpusMC）与 `PlayerKindScreen`（你是哪种玩家）删除；首启从画质设置开始，等待标题世界就绪后再打开。
+- **外观**：全部 18 款预设皮肤、正版玩家皮肤输入、23 款披风（7 普通 + 13 管理员 + 3 活动）、3 顶帽子、1 个宠物、1 个名字前缀全部直接可用；无账号也可保存外观并在刷新后恢复。
+- **多人**：标题「多人游戏」在未登录时直接进入多人界面，不再出现登录/关注/三连/识别码门槛；邀请码、公开房间列表与房间服务校验保留。
+- **账号/云存档**：仍存在，phase-03 才删除；账号已不再决定外观或多人入口，登录后外观会同步到账号。
+- **签到/活动**：签到界面与活动款装饰仍在；活动款在 phase-02 直接可穿戴，是否随签到在 phase-03 删除待用户确认。
+- **公告/反馈/遥测/解锁面板**：phase-01 已删除，保持删除状态。
 - **代码规模**：`index.html` 加载 **88** 个脚本；`js/` **92** 个 `.js` + `emoji.webp`。
 
-## phase-01 已完成
+## phase-02 已完成
 
-### 任务 1：删除首启两屏
+### 任务 1：外观全开放
 
-- 删除 `AgreementScreen`、`LEGAL`、`legalV` 状态与用户协议/隐私文本。
-- 删除 `PlayerKindScreen`、`PLAYER_KINDS`、`playerKind` 状态与选择逻辑。
-- 首启链改为：画质设置 → 设备 → 登录（仍在）→ “这个版本有什么不一样” → 标题。
-- 新世界默认关教程（`meta.tutorial ?? -1`）；旧存档 `meta.tutorial` 保留。
-- 小地图/死亡点默认改为仅在设置显式为开时显示（原先由 `playerKind` 决定）。
+- `Capes.unlocked()` 对全部已知披风返回 true；删除 `evOwned` 与账号 `owned`/`super`/`Account.has('anim'|'static')` 判定。
+- `Capes.of()` 不再把未解锁披风置空；本地玩家读取 `Skins.look()`。
+- `Cosmetics.owned()` 返回全部 8 个装饰 id；`has()` 全部 true；`lookOf()` 不再按账号拥有列表过滤。
+- 皮肤页取消 `own` 过滤（18 款全显示）；正版皮肤输入框取消 `Account.has('skin')` 门槛。
+- 新增 `mcjs-look` 本地外观存储：游客可保存/恢复；登录时接管一次账号外观；登录状态保存仍同步账号，失败时保留本地。
+- `js/onboard.js` 更新“三连/关注解锁”的旧文案。
+- 保留：皮肤预览/切换/渲染、披风显示、帽子/宠物/前缀选择、外观保存与恢复。
 
-### 任务 2：删除主菜单公告面板
+### 任务 2：多人直接可用
 
-- 删除 `js/news.js`（公告吊牌、公告板、编辑/发布、公告礼物领取、自动弹出、未读标记）。
-- 删除 `index.html` 的 `js/news.js` 引用；脚本数 90 → 89（K-27 再删 `telemetry.js` 后为 88）。
-- 删除 `skins.js` 中公告礼物查询/跳转；保留签到奖励逻辑。
-- `checkin.js` 不再依赖公告吊牌位置，签到按钮使用标题右上角固定回退位置。
-- 保留：聊天里的管理员全服公告（`social.js`，与公告板无关）、签到活动、`Cosmetics`。
+- `onlineGate()` 保持 phase-01 的 1-A 直接放行；未登录点击「多人游戏」直接打开 `MultiplayerScreen`。
+- 不再要求登录、关注、三连、识别码；未新增账号系统。
+- 邀请码控制保留：空码不能加入；输入 6–12 位码才调用 `game.joinRoom`；公开房间列表、直接连接、本地房间入口未改。
 
-### 任务 3：删除解锁披风和联机面板
+### 任务 3：测试
 
-- 删除 `UnlockScreen` 及标题「解锁披风和联机」入口。
-- 删除账号界面「解锁…」入口、衣柜「三连解锁：用正版玩家的皮肤」入口、锁定披风的解锁点击。
-- 删除 `UnlockSparks` 解锁特效、`unlockCelebrate`、解锁专用图标与 `Account.allUnlocked`。
-- `onlineGate()` 改为直接放行（1-A）；多人游戏不再要求账号/关注/三连。
-- 删除 `net.js` 中依 `UnlockScreen` 的 gate 回退；服务端 gate 错误只显示文字。
-- 保留：普通披风/皮肤的内部解锁数据与渲染；phase-02 再统一开放。
+- 92 个 `.js` 全量 `node --check` 通过；脚本数 88 不变；`git diff --check` 通过。
+- 无头 Edge 157 + SwiftShader 自动回归 **27/27 PASS**；`game.errLog` 结束为空；无 JS 异常。
+- 18 款皮肤、23 款披风、3 帽子、1 宠物、1 前缀全部可点/可预览；全部披风纹理构建并逐一应用到玩家。
+- 游客保存外观 → 刷新恢复；模拟账号外观接管；登录保存路径 stub 验证。
+- 末影龙通关结局补测：真实流程 8/8 PASS（进入末地 → 击杀 → 返回传送门 → `CreditsScreen` → 回主世界）。
+- 独立验收：35 项运行时检查 PASS；真实联机/真实账号依赖 BLOCKED；K-41 单独立项，本阶段不修复。
+- 截图与结果：`D:\ds\REA\_work\phase02-*`；详细见 `docs/phases/phase-02-unlock-removal/TEST_REPORT.md`；独立验收见同目录 `ACCEPTANCE.md`。
 
-### 任务 4：删除选项菜单指定项
-
-- 删除「遥测数据…」与 `TelemetryScreen`；K-27 后续把 `js/telemetry.js`、全部 `Telemetry` 调用与遥测包装一并删除。
-- 删除「制作人员名单与致谢…」入口；`CreditsScreen`（末影龙结局）保留。
-- 删除「用户协议和隐私说明」入口（随 `AgreementScreen` 删除）。
-- `GAME_BUILD` 移到 `js/game.js`；`Telemetry` 核心已删除（K-27 已解决）。
-
-### 任务 5：删除主菜单指定文字
-
-- 删除标题左上角「登录」按钮及其「登录后可以联机、云存档、换皮肤和披风」提示。
-- 删除 `cloudsave.js` 在标题底部绘制的「登录后可以联机、云存档、换皮肤和披风」。
-- 删除标题底部「OpusMC · 仅在 B站 Toy 平台发布」与「非官方作品-UP主自制toy」；保留 `OpusMC` 标识。
-- 删除启动页脚「非官方作品 · 仅在 B站 Toy 平台发布」及其 CSS。
-- 删除 `index.html` 头部 Toy 性能上报内联脚本（原 3–219 行，约 10 KB）。
-
-### 任务 6：删除反馈面板
-
-- 删除 `FeedbackScreen`、`postFeedback`、`feedbackShot`、`FEEDBACK_KINDS`。
-- 删除标题「反馈问题」、暂停菜单「反馈问题」、遥测界面「反馈问题…」。
-- `social.js` 内容检查只包裹 `ReportScreen`，不再引用 `FeedbackScreen`。
-- 无反馈提交请求、无反馈专属状态。
-
-### 任务 7：清理
-
-- `index.html` 88 个脚本全部 200；`js/news.js`、`js/telemetry.js` 不再请求。
-- 删除 `#bootnote` CSS、解锁专用图标、标题/公告/反馈/解锁相关悬空标识。
-- 全量 `node --check` 通过（92 个 `.js`）。
-- 无 `AgreementScreen` / `PlayerKindScreen` / `LEGAL` / `playerKind` / `legalV` / `FeedbackScreen` / `UnlockScreen` / `NewsBoard` / `TelemetryScreen` / `Telemetry` / `UnlockSparks` 残留引用。
-- 浏览器实测 `game.errLog` 为空；控制台仅原版噪音（铜门贴图缺失、SwiftShader ReadPixels 警告）。
-
-## 已验证（phase-01 独立验收）
+## 已验证（phase-02）
 
 | 测试 | 结果 |
 |---|---|
-| 静态服务器 GET `/` | 200，6,754 B；88 个脚本全部 200 |
-| 全量 JS 语法检查 | 92 个 `.js` 全部通过 |
-| 首启（无设置） | 进入 `QualityScreen`；两屏均 undefined；完整链可到标题 |
-| 首启画质基准 | 标题世界就绪后开始；`detect` → `pick`，无卡死 |
-| 返回玩家 | 直接进入 `TitleScreen` |
-| 标题按钮 | 单人游戏、多人游戏、皮肤和装饰、选项…、退出游戏；无登录/反馈/解锁 |
-| 标题绘制文字 | 仅 `OpusMC` + 按钮 + 随机 splash；无 B 站/Toy/非官方文案 |
-| 选项 | 无遥测/制作人员/用户协议；账号入口仍在 |
-| 创建世界 | `play`，61 区块，`tutorial=-1` |
-| 暂停菜单 | 无反馈问题；游戏说明/选项/保存回标题正常 |
-| 多人入口 | `onlineGate` 直接放行，打开 `MultiplayerScreen`，无登录/解锁 |
-| 衣柜 | `WardrobeScreen` 打开；锁定披风点击无异常 |
-| 存档 | `DB.listWorlds()` 返回 `acceptance-world` |
-| 账号界面 | 未登录与 mock 登录态均可打开，无解锁按钮 |
-| 签到结构 | 伪造活动状态下标题按钮与 `CheckinScreen` 可打开 |
-| 结局界面 | `CreditsScreen` 类存在且可绘制 |
-| 遥测 | `Telemetry` undefined；无 `telemetry.js` / `/api/telemetry` 请求 |
-| 控制台/`game.errLog` | 无 ReferenceError；`game.errLog` 为空 |
-
-独立验收结果：**35 项 PASS，1 项 NOT TESTED，0 项 FAIL**。
-NOT TESTED：末影龙通关实际触发 `CreditsScreen`（只验证类与绘制）。
+| 18 款预设皮肤加载 | 全部 64×64 |
+| 23 款披风解锁与纹理 | 全部 true/构建成功 |
+| 管理员/活动披风 | 13 + 3 款全部可选 |
+| 3 帽子 + 1 宠物 + 1 前缀 | 全部可点/可预览 |
+| 披风页/皮肤页锁定项 | 0 |
+| 游客保存/刷新恢复 | 通过 |
+| 账号外观接管 | 通过（mock） |
+| 正版皮肤无账号读取 | 通过（mock `/api/skin`） |
+| 多人入口 | 直接进入 `MultiplayerScreen` |
+| 邀请码控制 | 空码拒绝；有效码调用 `joinRoom` |
+| 世界内渲染 | 第三人称外观正常，0 错误 |
+| 末影龙通关结局 | 8/8 PASS（真实流程，`CreditsScreen` 打开并可返回主世界） |
+| 全量 JS 语法 | 92 个通过 |
 
 ## 未验证 / NOT TESTED
 
-- 真实 GPU 的 60 FPS；手机 30/60 FPS
-- Android Chrome / iOS Safari 真机、触控、发热、内存
-- 长时间运行（>1 小时）
-- 自建多人服务器与 LAN 双设备
-- 真实登录后的账号界面、解锁状态同步、签到活动（需原服务/账号）
-- 末影龙通关后的 `CreditsScreen` 实机触发
-- HTTPS/WSS、NAT、反向代理、备份恢复
+- 真实 GPU 60 FPS、手机/平板真机、触控、发热、长时间运行。
+- 真实 B 站登录、真实识别码、真实 Mojang 皮肤查询（`/api/skin` 仍依赖原房间服务）。
+- 真实房间服务/WSS 加入、两名玩家互看外观；原服务在本机 403。
+- 管理员披风在原房间服务的服务端校验（客户端已开放；phase-05 自建服务器统一处理）。
+- 签到活动领取与活动款在 phase-03 的最终去留。
+- HTTPS/WSS、公网、备份恢复。
 
 ## 尚未完成的阶段
 
 | 阶段 | 状态 | 内容 |
 |---|---|---|
-| phase-02 解锁移除 | 未开始 | 开放普通披风/皮肤/装饰；管理员款保持隐藏；活动款按 phase-02/03 时序处理 |
-| phase-03 访客模式 | 未开始 | 删除账号、登录、云存档、公告接口、签到、Toy 绑定 |
+| phase-02 解锁移除 | **已完成并验收（`a9dc47b`）** | 全部皮肤/披风/装饰（含 adm*）开放；多人入口无门槛；邀请码保留 |
+| phase-03 访客模式 | 未开始 | 删除账号、登录、识别码、云存档、公告接口、签到、Toy 绑定 |
 | phase-04 浏览器 | 未开始 | 桌面/手机/平板兼容、触控、全屏、缓存与性能入口 |
 | phase-05 服务器 | 未开始 | 自建服务器、房间/邀请码、服务端权威同步、多人存档 |
 | phase-06 双存档 | 未开始 | 单人 IndexedDB 与多人服务器存档独立管理 |
@@ -139,7 +99,17 @@ NOT TESTED：末影龙通关实际触发 `CreditsScreen`（只验证类与绘制
 
 ## 待办（下一阶段前）
 
-1. **phase-02 解锁移除**：开放普通披风/皮肤/装饰；管理员款保持隐藏；活动款按 phase-02/03 时序处理。
-2. 开始 phase-02 前需用户明确指令；当前不得提前修改。
+1. **phase-02 已验收并提交 `a9dc47b`**；等待用户明确启动 phase-03，不得提前修改。
+2. 路径：本次提交在 `D:\ds\REA\opusmc`，`D:\Projects\OpusMC` 未同步；若用户以那份为准，需要单独同步（需确认，不要覆盖）。
 3. 合并/推送/PR 操作需用户另行确认。
-4. phase-03 仍负责账号、登录、云存档、公告接口、签到、Toy 的清理。
+4. phase-03 决策：活动款装饰是否随签到删除；`mcjs-look` 本地外观必须保留给访客模式。
+5. phase-05 统一处理原房间服务 403 与管理员披风的服务端校验。
+
+## phase-01 历史（已完成并验收，代码 `15154bd`）
+
+- 删除首启「欢迎来到 OpusMC」与「你是哪种玩家？」两屏；新世界默认关教程。
+- 删除主菜单公告面板、`js/news.js`；保留签到、聊天公告与 Cosmetics。
+- 删除「解锁披风和联机」面板/入口；`onlineGate()` 改为直接放行（1-A）。
+- 删除选项「遥测数据」「制作人员名单与致谢」「用户协议和隐私说明」；整体移除遥测（`js/telemetry.js`、`Telemetry`、`GAME_BUILD` 移到 `game.js`）。
+- 删除标题登录/解锁/反馈入口与 B 站/Toy/非官方文案；删除反馈面板与提交/截图逻辑；举报保留。
+- 脚本 90 → 88；`js/` 94 → 92；独立验收 35 PASS / 1 NOT TESTED / 0 FAIL；唯一 NOT TESTED（末影龙通关结局）已由 phase-02 补测通过。

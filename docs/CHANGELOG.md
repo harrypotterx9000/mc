@@ -2,6 +2,38 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-02 取消皮肤、装饰和多人游戏解锁机制 — 2026-11-12 — 提交 `a9dc47b`（代码）+ docs 收尾
+
+> 代码提交 `a9dc47b`；docs 收尾为当前 HEAD（见 `git log -1`）。工作区已干净；未推送/未合并。
+
+- 新增文件：`docs/phases/phase-02-unlock-removal/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`
+- 删除文件：无
+- 修改文件（5）：
+  - `js/capes.js`：`Capes.unlocked()` 只校验 id，全部披风（普通/管理员/活动）开放；删除 `evOwned` 与 `Account.data.super` / `Account.has('anim'|'static')` 判定；`Capes.of()` 不再置空未解锁披风，改读 `Skins.look()`；注释更新。
+  - `js/cosmetics.js`：`owned()` 返回全部 8 个装饰 id、`has()` 对已知 id 为 true；`lookOf()` 不再按账号拥有列表过滤帽子/宠物/前缀。
+  - `js/skins.js`：预设皮肤取消 `own` 过滤（18 款全显示）；正版皮肤取消 `Account.has('skin')`；新增 `mcjs-look` 本地外观存储（`Skins.look()` / `Skins.saveLook()`）；无账号可保存，登录时接管一次账号外观，登录状态保存仍同步 `Account.update({skin})`；衣柜 `dirty` 改为保存快照比较；移除 `Account.loadGate()` 调用。
+  - `js/account.js`：删除登录/每次访问的 `checkUnlocks()` 调用；账号界面删除“三连/关注”状态行；账号界面不再加载 gate；账号模块保留到 phase-03。
+  - `js/onboard.js`：更新“这个版本有什么不一样”和更新内容里“三连/关注解锁”的旧文案。
+- 未改：`index.html`（脚本仍 88）、`js/net.js`、`js/p2p.js`、`js/checkin.js`、`js/save.js`、`js/ui.js`、服务器/协议/资源。
+- 文档：
+  - 修改：`docs/ARCHITECTURE.md`、`CHANGELOG.md`、`DECISIONS.md`、`KNOWN_ISSUES.md`、`PROJECT_SPEC.md`、`START-HERE.md`、`STATUS.md`、`docs/testing/regression-checklist.md`
+  - 新增：`docs/phases/phase-02-unlock-removal/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`、`ACCEPTANCE.md`
+  - 历史注记：`docs/phases/phase-01-menu-cleanup/HANDOFF.md` 顶部注明管理员款口径已被 ADR-014 取代；`TEST_REPORT.md` 注明末影龙结局已由 phase-02 补测通过
+- 关键函数/状态变化：`Capes.unlocked`、`Capes.of`、`Cosmetics.owned/has/lookOf`、`Skins.lookOf/look/saveLook`、`WardrobeScreen.saveLook`；新增 localStorage 键 `mcjs-look`；`Account.unlocks` 不再参与外观判断。
+- 关键行为变化：全部外观（含 `adm*` 与活动款）无需账号/关注/三连/识别码；游客可保存/恢复外观；多人入口保持 1-A 直接放行，邀请码/房间服务校验不变。
+- 修改原因：用户 phase-02 指令；PROJECT_SPEC §6 第 9/10 项；ADR-014 取代 ADR-011 第 3 项“管理员款隐藏”。
+- 验证：
+  - 92 个 `.js` 全量 `node --check` 通过；`git diff --check` 通过；脚本数 88 不变
+  - 无头 Edge 157 + SwiftShader：**27/27 PASS**；18 皮肤、23 披风、3 帽子、1 宠物、1 前缀全部可选/预览/渲染
+  - 游客保存外观 → 刷新恢复；模拟账号外观接管；登录保存 stub 验证
+  - 未登录多人界面直接打开；空邀请码拒绝、有效邀请码才 `joinRoom`
+  - 末影龙通关结局补测 **8/8 PASS**（真实流程到 `CreditsScreen` 并返回主世界）；发现 `renderDist=4` 时返回传送门不生成的边界问题 K-41（未修复）
+  - `game.errLog` 结束为空；无 JS 异常；控制台仅外部服务 403（K-02/K-40）
+  - 截图/结果：`D:\ds\REA\_work\phase02-*`
+- 未验证：真实 GPU/真机、真实登录/Mojang 查询、真实房间加入（原服务 403）、管理员披风服务端校验、签到活动领取。
+- 新发现：K-41（低渲染距离下末地返回传送门不生成，未修复，超出本阶段范围）。
+- 状态：**已实现、已测试、验收结束、已提交 `a9dc47b`；docs 收尾为当前 HEAD**。
+
 ## phase-01 主菜单清理 — 2026-11-06 — 提交 `15154bd`（代码）+ docs 收尾
 
 > phase-01 已验收；代码提交 `15154bd`，文档收尾为当前 HEAD（哈希见 `git log -1`）。

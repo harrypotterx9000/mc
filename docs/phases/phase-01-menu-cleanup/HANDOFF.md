@@ -1,5 +1,8 @@
 # phase-01 主菜单删减与功能修改 · 交接（HANDOFF）
 
+> 历史文档。phase-01 已完成并验收；其中 phase-02 的“管理员款（adm*）保持隐藏”口径已被
+> **ADR-014** 取代（phase-02 全开放，含管理员与活动款）。当前状态以 `docs/STATUS.md` 为准。
+
 - 状态：**已完成；验收结束；代码已提交**
 - 日期：2026-11-06
 - phase-01 代码提交：**`15154bd`**
@@ -108,7 +111,7 @@
 - 标题、选项、暂停、创建世界、保存/读回、多人入口、衣柜、签到结构、账号 mock、结局界面绘制、`WhatsNew` 包装链均通过。
 - `Telemetry` undefined；无 `telemetry.js` / `/api/telemetry`；`GAME_BUILD` 版本文字正常。
 - `game.errLog` 为空；控制台仅原版噪音。
-- NOT TESTED：末影龙通关实际触发 `CreditsScreen`（只验证类存在与绘制）。
+- NOT TESTED：末影龙通关实际触发 `CreditsScreen`（只验证类存在与绘制）；**2026-11-12 已由 phase-02 补测通过（8/8，真实流程）**。
 - 环境限制：真实 GPU/手机、真实账号/签到、自建多人服务器、HTTPS/WSS 未测。
 - 详细记录：同目录 `TEST_REPORT.md`。
 

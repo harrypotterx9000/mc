@@ -3,6 +3,7 @@
 - 日期：2026-11-06
 - 结论：**通过本地静态与无头浏览器回归；真实 GPU/真机未测**
 - 独立验收：**35 项 PASS，1 项 NOT TESTED，0 项 FAIL**
+- 2026-11-12 补测：唯一 NOT TESTED（末影龙通关实际触发 `CreditsScreen`）已由 phase-02 真实流程 **8/8 PASS**；见 `docs/phases/phase-02-unlock-removal/TEST_REPORT.md` §7
 - 代码状态：已提交，`develop` @ `15154bd`；文档收尾为当前 HEAD
 
 ## 环境
@@ -64,7 +65,7 @@
 - Android/iOS 真机、触控、发热、内存
 - 登录后的账号界面与解锁状态同步
 - 签到活动（需原服务/账号）
-- 末影龙通关后的 `CreditsScreen` 实机触发
+- 末影龙通关后的 `CreditsScreen` 实机触发（**已由 phase-02 补测通过**）
 - 多人服务器、LAN、HTTPS/WSS
 - 长时间运行
 

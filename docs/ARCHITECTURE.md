@@ -214,3 +214,53 @@ startTitle()
 - 遥测模块已整体移除（K-27 已解决）。
 - 公告/反馈删除后，旧的 localStorage 键与云端接口数据成为死数据；不自动清理（K-31）。
 - 首启等待标题世界就绪，低端设备会先看到标题数秒（K-35）。
+
+## 11. 阶段 2 变更（2026-11-12，已实现/已测试/已验收；代码提交 `a9dc47b`）
+
+> 本阶段不新增文件、不改 `index.html` 脚本顺序；脚本数仍 88，`js/` 仍 92 个 `.js`。
+
+### 11.1 外观权限模型
+
+phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
+
+| 位置 | phase-01 后 | phase-02 |
+|---|---|---|
+| `Capes.unlocked(id)` | 事件款看 `Account.data.owned`，管理员款看 `Account.data.super`，普通款看 `Account.has('anim'/'static')` | 只判断 id 是否为已知披风，全部 true |
+| `Capes.of(g, e)` | 本地玩家选中的披风未解锁时置空 | 不再置空；读取 `Skins.look()` |
+| `Cosmetics.owned()` / `has()` | 来自 `Account.data.owned` | 返回全部 8 个装饰 id；已知 id 全部 true |
+| `Cosmetics.lookOf()` | 按账号拥有列表过滤 hat/pet/pre | 不过滤 |
+| `Skins` 预设列表 | `this.list.filter(p => p.own)` | 全部 18 款 |
+| 正版皮肤 | `Account.has('skin')` 才显示输入框；`lookOf` 也拦截 `m:` | 输入框一直显示；`lookOf` 不拦截 |
+| 衣柜保存 | 未登录 → `LoginScreen` | 先写本地 `mcjs-look`；有账号再同步账号 |
+
+管理员披风（`admin`, `admblack`, `admred`, `admblue`, `admgreen`, `admivory`, `admsilver`, `admnavy`, `admender`, `admaurora`, `admriver`, `admgold`, `admvoid`）与活动披风（`penguin`, `penguinwalk`, `goldapple`）全部可显示、可选择、可渲染。
+
+### 11.2 外观保存与恢复
+
+- 新 localStorage 键：`mcjs-look`，结构 `{skin, slim, cape, hat, pet, pre}`（只保留字符串/布尔值）。
+- `Skins.look()`：衣柜预览优先；否则读取本地；登录后首次读取把账号 `data.skin` 接管一次（每个账号 id 一次）。
+- `Skins.saveLook(l)`：写本地；`WardrobeScreen.saveLook()` 在有账号时再调用 `Account.update({skin})`。
+- 保存失败（外部服务不可用）不回滚本地；界面提示“已保存在这台设备上；账号同步失败”。
+- `WardrobeScreen.dirty` 与保存快照比较，不再依赖 `Account.data.skin`。
+- 渲染链：`game.js drawMob → Capes.draw → Capes.of → Skins.look`；`Cosmetics.drawOn → worn → lookOf → Skins.look`；衣柜/背包预览走 `Skins.preview()`。
+
+### 11.3 账号
+
+- `Account` 仍保留到 phase-03（登录、识别码、云存档、签到、Toy）。
+- 删除 `loginBili` 与每次访问时的 `Account.checkUnlocks()` 调用；方法保留但不再被调用。
+- 账号界面不再显示三连/关注状态，也不再加载 `/api/gate`。
+- `Account.has()` 不再被外观模块调用；phase-03 删除账号时一并清理。
+
+### 11.4 多人
+
+- `onlineGate(g, then)` 仍为 phase-01 的 `return then()`；未登录可直接打开 `MultiplayerScreen`。
+- `MultiplayerScreen` 仍要求昵称；`submit()` 要求 6–12 位邀请码（本地房间可 12 位）；`joinRoom` / `RoomService` / 房间服务校验未改。
+- `NetClient.hello` 仍只在有账号时发送 token；不要求 token。
+
+### 11.5 风险与边界
+
+- 原房间服务 `xz.honghemc.cn:8443` 在本机 403：公开房间列表不可用；真实加入未测（phase-05 自建服务器）。
+- 原房间服务可能仍按 `adm*` 校验披风；客户端已开放，服务端未改（不在本仓库）。
+- 正版皮肤查询仍调用 `/api/skin`（Mojang 代理）；权限已开放，数据源仍依赖外部服务。
+- 本地外观仅本设备；换设备需登录账号（phase-03 之后按访客模式另行设计）。
+- 首启仍保留登录步骤（可离线游玩），属于 phase-03。
