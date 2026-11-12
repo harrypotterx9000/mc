@@ -1,22 +1,23 @@
 # OpusMC 架构说明（ARCHITECTURE）
 
-> 依据：`D:\ds\REA\opusmc` 当前源码（phase-04 后 86 个加载脚本、90 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
+> 依据：`D:\ds\REA\opusmc` 当前源码（phase-05 后 87 个加载脚本、91 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 运行时探针 + 本机服务器实测。
 > 标注：**[事实]** 源码可复核；**[实测]** 运行时读到；**[推断]** 未运行验证。
 
 ## 1. 总体形态
 
 单页 WebGL2 应用，无框架、无打包器：
 
-- `index.html` 按固定顺序加载 **86** 个 `<script>`（phase-04：85 + 新增 `platform.js`），全部挂在全局作用域。
+- `index.html` 按固定顺序加载 **87** 个 `<script>`（phase-04：85 + `platform.js`；phase-05：+ `mp.js`），全部挂在全局作用域。
 - 数据文件（方块/物品/配方/结构/模型/贴图/字体）是构建脚本从原版数据生成的单行 JSON。
 - 功能模块通过**给共享原型打补丁**扩展（`Game`、`Renderer`、`Player`、`UI`、`World`、`Mob`…）。
 - 世界生成在 Web Worker（`gen_worker.js`），装饰/网格化在另一个 Worker（`chunk_worker.js`，按需创建）。
-- 联机通过 WebSocket 连「原版 Java 服务器代理」；另有 WebRTC 本地房间。**服务器端代码不在本仓库。**
+- 联机：旧 `NetClient` 连「原版 Java 服务器代理」；`p2p.js` 提供 WebRTC 本地房间；phase-05 新增
+  `js/mp.js` + `server/` 自建 WebSocket 房间。**服务器端代码现在在本仓库 `server/`。**
 
 ## 2. 分层与文件（[事实]）
 
 ```
-加载顺序（86）
+加载顺序（87）
 ├─ 平台       platform
 ├─ 资源/数据  assets, font, emoji, texts, worldgen_data, blockdata, itemdata,
 │             recipedata, structures_data, entitydata, etex, models, panorama_data, subtitles
@@ -25,13 +26,15 @@
 ├─ 循环       game → terrain2 → perf
 ├─ 界面       ui → screens → commands → controls → touch → mobile → onboard
 └─ 平台       netconfig → guest → net → beacon/cmdblock → capes/skins
-              → social → companion → extras → cosmetics → p2p → panorama
+              → social → companion → extras → cosmetics → p2p → mp → panorama
 ```
 
 - **194 个顶层类声明**（phase-02 为 206；phase-03 删除 12 个账号/Toy/云/签到类）、**66 个 `*Screen` 类**（原 84；phase-01 −7、phase-03 −11）；按 `Game.prototype.* =` 赋值扫描沿用 phase-0 的 **40 个文件、257 处、174 个方法名**（含包装器）。
-- 运行时懒加载（不在 86 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
+- 运行时懒加载（不在 87 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
 - phase-03 删除：`js/account.js`、`js/toy.js`、`js/cloudsave.js`、`js/checkin.js`；新增 `js/guest.js`。
 - phase-04 新增：`js/platform.js`（浏览器平台层）；页面脚本 85 → 86，`js/` 89 → 90。
+- phase-05 新增：`js/mp.js`（自建服务器客户端与界面）；页面脚本 86 → 87，`js/` 90 → 91；新增 `server/`
+  （9 个 `.mjs`、配置、Windows 脚本与部署说明）。
 
 ## 3. 关键对象与状态归属（[事实]）
 
@@ -46,6 +49,9 @@
 | `GuestSession` | `js/guest.js` | `name, playerId, roomId, connection` | 多人界面、NetClient、P2P、外观前缀、聊天 |
 | `RoomService` | `js/net.js` | 房间 API 封装 | 多人、P2P、公告、正版皮肤查询 |
 | `NetClient` | `js/net.js` | WS 连接、玩家表 | 联机 UI、命令方块、皮肤、社交 |
+| `MPClient` | `js/mp.js` | `code, worldId, meta, token, state, deltas, mirrors, playersData` | 自建房间 UI、世界同步、暂停菜单 |
+| `RoomManager` / `Room` | `server/rooms.mjs` | 房间、邀请码、玩家、权限、方块覆盖层、方块实体、掉落物、世界时间 | WebSocket/HTTP、存档 |
+| `RoomStore` | `server/storage.mjs` | `world.json`、备份、管理令牌、pid | 启动加载、自动保存、恢复 |
 | `Sound` | `js/audio.js` | 音频上下文、监听者 | 全模块音效 |
 | `FX` / `DynRes` / `PerfMon` | `js/shaders.js` / `js/perf.js` | 光影与性能状态 | 渲染、HUD |
 
@@ -67,7 +73,11 @@
 **世界加载**：`createWorld/loadWorld → DB.getWorld → initDims → genSetup → GenPool(worker)`
 → `genReceive → finishFromWorker → finishChunk → Mesher → Renderer`；卸载时 `saveWorld → DB.putChunks`
 
-**联机**：`NetClient.connect → WS → hello{name,version,proto,room,key}（无账号 token）→ 服务端 login{eid} → GuestSession.connected(eid) → 服务端权威消息`
+**联机（旧）**：`NetClient.connect → WS → hello{name,version,proto,room,key}（无账号 token）→ 服务端 login{eid} → GuestSession.connected(eid) → 服务端权威消息`
+
+**联机（phase-05 自建）**：`MPServerScreen → MPClient.connect → WS /ws → hello{v:1,name,look} → create/join/resume
+→ server welcome → blocks/blockEntities/items/ready → game.loadWorld('srv~<code>')（DB getWorld/chunkKeys 重定向）
+→ finishChunk 应用方块覆盖层 → 10 Hz state + 10 s pstate → server E/b/be/env/chat 快照`
 
 ## 5. 跨文件补丁矩阵（[事实]，改动必查）
 
@@ -87,11 +97,13 @@
 
 - 客户端只实现协议的一半：发 `hello/tick/交互/聊天/窗口`，收 53 类消息。
 - **phase-03 起没有账号、token 或 Bilibili 身份**：`hello` 只带昵称/房间/浏览器房间 key；`login.eid` 作为房间会话的服务器临时 ID 交给 `GuestSession`（phase-05 自建服务器必须自己签发/校验）。
-- 注释指向 `multiplayer/proxy` 与 `multiplayer/rooms`，但**仓库内没有任何创建服务器的代码**（扫描：0 个文件监听端口）。
-- 现有房间服务地址 `https://xz.honghemc.cn:8443`（`js/netconfig.js`），属于原作者；本项目将替换为自建服务器。
-- **推断**：自建服务器需要新增：权威世界模拟（或复用现有单机逻辑跑在 Node）、房间/身份、协议编解码、状态同步、服务器存档、规则校验。
+- 注释指向 `multiplayer/proxy` 与 `multiplayer/rooms`；phase-04 前仓库内没有服务器端代码。phase-05 新增
+  `server/`（静态页面 + 自建房间 + WebSocket + 存档），旧代理/旧房间服务仍保留。
+- 现有旧房间服务地址 `https://xz.honghemc.cn:8443`（`js/netconfig.js`）仍用于旧多人界面；自建服务器走同源 `/ws`。
+- phase-05 的实现不是“完整无头 Minecraft 模拟”：服务器权威房间/身份/方块覆盖层/实体状态/时间/存档；
+  地形由客户端按 seed 生成，生物/红石/流体/战斗仍为客户端本地。详见 §14。
 
-## 7. 自建服务器设计草案（下一阶段细化，非本阶段实现）
+## 7. 自建服务器设计草案（历史；已在 phase-05 实现，见 §14）
 
 ```
 server/
@@ -110,7 +122,12 @@ server/
 1. Monkey Patch 依赖加载顺序，删文件会静默改变行为（`guard()` 会吞异常，只留日志）。
 2. 平台模块（Guest/Net/Game/外观）与主循环耦合在标题、多人、外观界面；删改需同步改 UI（phase-03 已完成账号/Toy/云/签到的删除）。
 3. `Game.tick` 的包装链让"删功能"比"加功能"更容易出错，阶段改造必须先列补丁清单。
-4. 无构建系统，任何新模块都必须手工加入 `index.html` 且注意顺序；`guest.js` 必须在 `net.js` 之前。
+4. 无构建系统，任何新模块都必须手工加入 `index.html` 且注意顺序；`guest.js` 必须在 `net.js` 之前，
+   `mp.js` 必须在 `p2p.js` 之后（它包装 `Game.tick`/`World.setBlock`/`DB`）。
+5. `js/mp.js` 与 `js/p2p.js` 都包装 `Game.tick`/`World.setBlock`/`DB`/`quitToTitle`/`saveWorld`；顺序变化
+   会改变哪条联机路径生效。改动前先跑单人回归与双浏览器 E2E。
+6. 服务器存档是 seed + 方块覆盖层；世界生成版本/构建变化会使旧房间的基础地形不一致（K-73）。
+7. 服务器不模拟生物/红石/流体/战斗；这些仍由各客户端本地计算，多人结果可能不一致（K-67…）。
 
 ## 9. 阶段 0 复核补充（2026-11-06，未改代码）
 
@@ -131,7 +148,7 @@ server/
 ### 9.2 联机架构的准确表述
 
 - `js/net.js` 的 `NetClient` 不是“OpusMC 房间协议客户端”，而是**WebSocket ↔ 原版 Java Minecraft 服务器代理**的客户端。它依赖原版 block state 调色板、窗口/背包/实体语义。
-- 仓库内没有服务器端代码：`server/` 只有 `.gitkeep`；`scripts/serve.mjs` 只提供静态 GET/HEAD。
+- 仓库内没有服务器端代码（phase-0 时点；phase-05 已新增 `server/`，见 §14）；`scripts/serve.mjs` 只提供静态 GET/HEAD。
 - `js/p2p.js` 的 `LocalHost`/`LocalGuest` 是**最接近自建服务器**的现有实现：主机跑完整世界，客人确定性生成 + 差量同步；但它是 WebRTC、最多 4 人、主机信任客人，不是服务端权威。
 - 阶段 5 决策（已确认）：**B/C 混合**——协议词汇与区块 RLE 编码复用 `p2p.js`，传输改 WebSocket；`NetClient` 保留为“直连原版代理”的遗留功能。
 
@@ -344,7 +361,7 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
 
 ### 13.3 资源与服务器
 
-- 页面资源：86 个 `<script src>`（全部 `js/`）、`js/emoji.webp`、`js/sound_events.js`（运行期）、`sounds/sfx/*.m4a`（运行期）、`favicon.svg`。
+- 页面资源（phase-04 时点）：86 个 `<script src>`（全部 `js/`）、`js/emoji.webp`、`js/sound_events.js`（运行期）、`sounds/sfx/*.m4a`（运行期）、`favicon.svg`；phase-05 为 87 个脚本（新增 `js/mp.js`）。
 - 字体/贴图/数据仍由构建生成的 `js/font.js`、`js/assets.js`、`js/*_data.js` 提供（data URI/JSON），不依赖 CDN。
 - `scripts/serve.mjs`：静态白名单仅 `index.html`、`js/*.{js,webp}`、`sounds/sfx/*`、`favicon.svg`；拒绝 docs/scripts/server/.git/点文件/目录/路径穿越。
 - 缓存：HTML/JS `no-cache` + `ETag`（条件请求 304）；音效 `public, max-age=2592000`；图片/favicon `max-age=604800`；MIME 显式；支持 HEAD。
@@ -371,3 +388,139 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
 - 静态服务器无 TLS/鉴权/限流/Range；不是生产部署。
 - 旧房间服务、`/api/skin`、管理员公告仍属 phase-05；本阶段只关闭后台自动轮询。
 - Chrome 83 旧 headless 偶发 `chunk stall`（K-39）；世界仍进入 `play`。
+
+## 14. 阶段 5 变更（2026-11-12，已验收；代码 `817bad3`；docs 收尾为当前 HEAD）
+
+> 页面脚本 86 → **87**；`js/` 90 → **91**；新增 `server/`。本节是 phase-05 的实现事实；
+> 旧的 `NetClient`/`RoomService`/`p2p` 仍保留，自建服务器是第三条联机路径。
+
+### 14.1 进程与模块
+
+```
+浏览器（MPClient） ── HTTP ──> server/http.mjs（静态白名单 / healthz / 管理接口）
+        │
+        └── WebSocket /ws ──> server/ws.mjs ──> server/rooms.mjs（RoomManager + Room）
+                                                    │
+                                                    └── server/storage.mjs（world.json / backups / logs）
+```
+
+| 模块 | 职责 |
+|---|---|
+| `server/index.mjs` | 配置、HTTP/WS 启动、20 TPS tick、pid、信号/正常关闭 |
+| `server/ws.mjs` | 零依赖 RFC 6455：握手、掩码、分片、ping/pong、close、消息/连接/心跳限额 |
+| `server/http.mjs` | 静态白名单（`index.html`、`js/*`、`sounds/sfx/*`、`favicon.svg`）、ETag/304、缓存、安全头、`/healthz`、`/api/status`、本机管理接口 |
+| `server/protocol.mjs` | 名称/聊天清洗、位置/状态/方块/方块实体/掉落物/pstate 校验、协议限额 |
+| `server/blockids.mjs` | 读取游戏 `blockdata.js`/`blocks.js` 的完整 ID 集（含动态花朵/羊毛/玻璃/混凝土表），当前 1257 个；未知 ID 拒绝 |
+| `server/rooms.mjs` | 房间/邀请码/临时 ID/令牌/权限/限流/同步/快照/房主转移/关闭/保存 |
+| `server/storage.mjs` | 原子写、每房存档、备份保留、损坏回退、管理令牌、pid |
+| `server/config.mjs` / `config.json` | 配置校验（host/port/dataDir/上限/限流/备份/恢复窗口） |
+| `server/log.mjs` | JSONL 日志、按日、保留、敏感键脱敏 |
+
+依赖补充：`blockids.mjs` 启动时读取客户端生成数据 `js/blockdata.js` 与 `js/blocks.js`（含动态表），
+因此服务器必须与同一版本的 `js/` 一起部署；`js/mp.js` 依赖 `net.js` 的 `NetPlayer`/`netEntityTick`、
+`p2p.js` 的包装顺序、`platform.js`/`screens.js`/`GuestSession`，必须排在 `p2p.js` 之后加载。
+
+### 14.2 协议（文本 JSON + WebSocket）
+
+客户端 → 服务器：
+
+| 消息 | 作用 |
+|---|---|
+| `hello{v:1,name,look?}` | 协议/昵称/外观；服务器回 `hello{ok,v,server,limits}` |
+| `create{room{name,maxPlayers,gamemode,difficulty},world{seed,spawn,name}}` | 创建房间；服务器生成邀请码 |
+| `join{code}` | 凭邀请码加入 |
+| `resume{code,pid,token}` | 断线/刷新恢复同一临时 ID |
+| `state{pos,yaw,pitch,armor,mode,held,sneak,swing,swim,dead,flying,health,look}` | 10 Hz 玩家状态 |
+| `pstate{data{pos,health,food,sat,xp,inv,sel,mode,look}}` | 10 秒一次，供服务器存档/恢复 |
+| `b{list[[x,y,z,id,meta,wl]]}` | 玩家动作窗口内的方块改动 |
+| `be{k,data}` | 方块实体（箱子/告示牌等，≤4 KB） |
+| `chat{text}` | 聊天（≤256 字符，1 条/秒突发 3） |
+| `drop{stack,pos}` / `pickup{id}` | 掉落/拾取（服务器实体） |
+| `kick{pid}` / `transfer{pid}` / `close` | 房主权限 |
+| `leave` / `ping` / `respawn{pos}` | 离开/心跳/重生锚点 |
+
+服务器 → 客户端：
+
+| 消息 | 作用 |
+|---|---|
+| `welcome{you,room,world,players,limits}` | 身份/令牌/房间/世界元数据/玩家列表 |
+| `blocks{list,more}` / `blockEntities{list}` / `items{list}` / `ready` | 加入时的完整增量（分批） |
+| `E{players,items}` | 10 Hz 玩家/物品快照 |
+| `b` / `be` / `itemAdd` / `itemRemove` / `give` | 方块/实体/掉落物增量 |
+| `players` / `join` / `leave` / `chat` | 成员/聊天 |
+| `env{time,weather,rain,difficulty}` | 世界时间/环境 |
+| `correct{pos}` / `reject{list,reason}` | 移动校正 / 方块拒绝 |
+| `kicked` / `closed` / `left` / `error` / `pong` | 生命周期/错误 |
+
+### 14.3 权威边界（本阶段的准确表述）
+
+| 数据 | 权威 | 说明 |
+|---|---|---|
+| 房间/邀请码/成员/房主/权限 | 服务器 | 客户端传的 owner/admin 字段被忽略 |
+| 临时玩家 ID/会话令牌 | 服务器 | 令牌只回给本人；服务端存 SHA-256 |
+| 方块覆盖层 | 服务器 | 接受后广播并计入存档；客户端本地动作窗口筛选 + 服务器距离/频率校验 |
+| 方块实体 | 服务器 | 最后写入胜出，大小/深度/数量限制；客户端对已加载实体做差异上报（`open/lid/viewers` 等表现字段不上报） |
+| 玩家实体位置/朝向/外观/生命 | 服务器（校验后） | 超速拒绝并 `correct`；生命/背包的自报只用于自己恢复 |
+| 掉落物 | 服务器 | 位置/堆栈/拾取距离/延迟/上限 |
+| 世界时间 | 服务器 | 20 TPS 递增；空房暂停 |
+| 地形 | 客户端 | 相同 seed 确定性生成；服务器只存 seed + 覆盖层 |
+| 生物/红石/流体/战斗 | 客户端本地 | **不同步**；多人结果可能不一致（phase-05 边界） |
+| 渲染/摄像机/UI/输入/动画 | 客户端 | 服务器不渲染画面 |
+
+### 14.4 客户端接入点（`js/mp.js`）
+
+- `MPServer`：地址（`NET_CONFIG.server`/同源/`mcjs-mp-server`）、`/healthz`、创建/加入/恢复、邀请链接。
+- `MPClient`：
+  - `srv~<code>` 世界：`DB.getWorld/chunkKeys/getChunk/putWorld/putChunks` 对 `srv~` 重定向/空操作；
+  - `finishChunk` 后应用该区块的服务器覆盖层；
+  - `syncBlockEntities` 每 500 ms 对已加载方块实体做差异比较，最多发 2 条 `be`；不发送 `open/lid/viewers`；
+  - `World.setBlock/setMeta/setWaterlogged` 只在 `actionUntil` 窗口内、玩家附近时排队上报；
+  - `Game.breakBlock/placeAt/useOnBlockItem` 设置动作窗口；避免本地随机刻/流体/红石全部上传；
+  - `Game.tick` 包装调用 `MPClient.tick()`（10 Hz state、pstate、方块批次、时间/环境、拾取）；
+  - `Game.dropItem` 4.5 格内交给服务器（服务器阈值为 6，留位置延迟余量），更远仍本地（不共享）；
+  - `Game.quitToTitle/saveWorld/respawn/changeDimension` 对服务器房间做特殊处理；
+  - `runCommand` 在服务器房间只发聊天，不允许命令；
+  - 旧 `NetClient`/`RoomService`/`LocalHost/LocalGuest` 未改。
+- 界面：`MPServerScreen`、`MPCreateScreen`、`MPRoomScreen`；入口在 `MultiplayerScreen`，暂停菜单入口在
+  `PauseScreen`。
+- 断线：`MPClient.onClose(ws)` 只处理当前 socket，旧 socket 的 open/message/error/close 全部忽略；
+  三次退避 `resume`；成功则保留本地世界，只补玩家/方块/物品增量。
+
+### 14.5 存档与恢复
+
+`server/data/worlds/room-<code>/world.json`：
+
+```json
+{
+  "v": 1, "code": "...", "dir": "room-...", "name": "...", "maxPlayers": 4,
+  "gamemode": "survival", "difficulty": 2, "createdAt": 0, "ownerPid": "p_...",
+  "closed": false, "world": { "seed": 12345, "gen": 2, "spawn": [x,y,z], "time": 6000 },
+  "blocks": [[x,y,z,id,meta,wl]],
+  "blockEntities": [["x,y,z", { }]],
+  "players": [{ "pid": "p_...", "name": "...", "tokenHash": "...", "state": { } }]
+}
+```
+
+- 原子写：临时文件 + 重命名；同一房间的保存串行化（避免 Windows 并发 rename EPERM）。
+- 备份：保存前按间隔复制到 `backups/room-<code>/<timestamp>.json`，保留 `backupKeep` 份。
+- 损坏：启动读取失败时尝试最新备份；日志 `world_recovered_from_backup`。
+- 房间关闭：`closed=true` 保存并从内存移除；邀请码不复用（`usedCodes`）。
+- 服务器重启：加载所有未关闭房间；玩家离线但保留令牌哈希与 `pstate`，在恢复窗口内可 `resume`。
+
+### 14.6 安全控制
+
+- 静态白名单 + 路径穿越/点文件/目录拒绝；`server/data` 永不静态公开。
+- 管理接口：本机回环 + `X-Admin-Token`；普通玩家不可达；令牌不写日志。
+- WS：来源检查、连接上限、消息大小、分片/掩码校验、连续协议错误关闭、心跳超时终止。
+- 房间：邀请码 8 位（去易混字符）、服务器唯一；按 IP 的加入/创建限流；人数上限；昵称消歧。
+- 消息：未知类型/类型错误/范围错误拒绝；方块距离/频率；方块 ID 精确白名单（启动时从
+  `js/blockdata.js`/`js/blocks.js` 读取全部 1257 个，含动态表；未知 ID 拒绝）；移动速度/界内；聊天/名称清洗。
+- 关闭：先停止接新连接并保存房间，再清空 HTTP 连接；8 秒强制退出仅作为最后保护。
+- 客户端不能自报 owner/admin；权限只看服务器会话。
+
+### 14.7 测试与限制
+
+- 详见 `docs/phases/phase-05-server/TEST_REPORT.md`：服务端 62/62、双浏览器 18/18、单人回归 6/6；
+  修复复核 F-A 1257/1257、F-B 7/7、F-C 18/18、F-D 35/35、F-E/F-F 6/6。
+- 未测：真实 LAN 双设备、公网/TLS、长时间/压力、真实 GPU/移动端、服务端生物/红石/战斗。
+- 已知边界：K-67…K-80（`docs/KNOWN_ISSUES.md`）。

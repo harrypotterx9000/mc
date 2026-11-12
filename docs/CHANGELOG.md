@@ -2,6 +2,57 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-05 自建服务器 — 2026-11-12 — 已验收；代码 `817bad3` + docs 收尾
+
+> 起点 `3b8b2e0`；phase-05 代码提交 `817bad3`，docs 收尾为当前 HEAD；本阶段 35 个文件。服务端集成 62/62、双浏览器 E2E 18/18、
+> 单人回归 6/6；独立验收 F-A…F-F 已修复并复验。真实 LAN 双设备、公网/TLS、长时间/压力未测。
+> 服务器不同步生物/红石/流体/战斗；存档为 seed + 方块覆盖层。
+
+- 新增文件：
+  - `server/index.mjs`、`config.mjs`、`log.mjs`、`storage.mjs`、`blockids.mjs`、`ws.mjs`、`protocol.mjs`、`rooms.mjs`、`http.mjs`
+  - `server/config.json`、`server/README.md`、`server/stop.ps1`、`server/status.ps1`
+  - `js/mp.js`；根目录 `start-server.bat`、`stop-server.bat`
+  - `docs/phases/phase-05-server/{PLAN,TEST_REPORT,HANDOFF,ACCEPTANCE}.md`
+- 删除文件：`server/.gitkeep`、`docs/phases/phase-05-server/.gitkeep`（占位文件；目录已有实现）
+- 文件总计：**35 个**（13 修改 + 2 删除 + 20 新增）；24 个既有 JS 另做 CRLF→LF 行尾归一（Git 内容无 diff）。
+- 修改文件：`index.html`、`js/net.js`、`js/netconfig.js`、`js/screens.js`、`.gitignore`、`README.md`、
+  `docs/{STATUS,ARCHITECTURE,DECISIONS,KNOWN_ISSUES,PROJECT_SPEC,START-HERE,CHANGELOG}.md`
+- 关键变化：
+  - 服务端：零 npm 依赖；自写 RFC 6455；静态白名单 + ETag/304 + 缓存 + 安全头；`/healthz`；
+    本机管理接口；房间/邀请码（8 位、去易混字符、服务器唯一）；临时玩家 ID `p_`+16 hex；SHA-256 会话令牌；
+    120 秒恢复；房主/权限；按 IP 加入/创建限流；20 TPS 世界时钟；方块覆盖层；方块实体；玩家/掉落物同步；
+    移动/方块/协议校验；每房 `world.json`、原子写、串行保存、备份/损坏回退；JSONL 日志；pid；正常关闭。
+  - 客户端：`MPServer`/`MPClient`；`srv~<code>` 世界；`DB` 对 `srv~` 重定向/空操作；`finishChunk` 应用覆盖层；
+    `Game.breakBlock/placeAt/useOnBlockItem` 动作窗口 + `World.setBlock` 筛选上报；`Game.tick` 10 Hz state/
+    10 s pstate/方块批次/时间/拾取；`dropItem` 近处共享；`quitToTitle/saveWorld/respawn/changeDimension`
+    适配；自动 `resume` 重连；`MPServerScreen/MPCreateScreen/MPRoomScreen`。
+  - `index.html` 86 → **87** 脚本；`js/` 90 → **91** `.js`；启动总数 87。
+  - `MultiplayerScreen` 增加“自建服务器房间…”入口；`PauseScreen` 增加“房间…”并调整退出按钮；
+    `netconfig.js` 增加 `server: ''`（同源）。
+  - 旧 `NetClient`/`RoomService`/`p2p`/单人 IndexedDB 保留，未覆盖；`NET_CONFIG.announce` 仍 false。
+  - 独立验收修复：方块 ID 白名单展开动态表（1257/1257）；`MPClient` 方块实体差异上报；
+    关闭顺序改为先保存再清 HTTP 连接；24 个既有 CRLF-only JS 归一为 LF（完整 Diff 35/35，raw=normalized）；
+    掉落发送阈值收紧到 4.5（服务器 6），旧 socket 的 open/message/error/close 不覆盖新连接。
+  - 关键函数/状态：`RoomManager`/`Room`、`WSConnection`/`WSServer`、`RoomStore`、`blockids` 动态 ID 表、
+    `MPClient`/`MPPlayer`、`MPClient.syncBlockEntities`、`MPClient.onClose(ws)`、`shutdown()` 保存顺序；
+    `Game.tick`/`World.setBlock`/`DB`/`quitToTitle`/`saveWorld`/`respawn`/`changeDimension` 的包装顺序
+    在 `p2p.js` 之后。
+- 修改原因：建立独立于 Bilibili/旧房间服务的 Windows 自建多人服务器；保持单人 IndexedDB、旧
+  `NetClient`/`RoomService`/`p2p` 不变；服务器权威房间/身份/权限/方块覆盖层/方块实体/玩家与物品快照/时间/存档。
+- 验证：
+  - 服务端集成 **62/62 PASS**（静态/安全、房间/身份、同步、权威、权限、断线恢复、协议异常、持久化/备份、
+    管理/关闭、限流）。
+  - 双浏览器 E2E **18/18 PASS**（Chrome 157 headless SwiftShader；创建/加入/互看/移动/方块/聊天/房间界面/
+    重连/踢人/关房；0 未捕获异常；最近一轮无 `chunk stall`，此前轮次 B 曾一次已知 K-39）。
+  - 单人回归 **6/6 PASS**；91 JS + 9 server mjs `node --check`；`git diff --check`。
+  - 修复复核：F-A 1257/1257 + 19/19 + 存档 3/3；F-B 7/7；F-C 18/18（3 轮）；F-D 35/35；F-E/F-F 6/6；晚加入/刷新恢复 7/7。
+  - `scripts/serve.mjs` 回归：index/mp.js 200，`server/config.json` 403。
+  - `stop.ps1`/`status.ps1`/端口占用启动：实测。
+  - 证据：`D:\ds\REA\_work\phase05-*`；详见 `docs/phases/phase-05-server/TEST_REPORT.md`。
+- 未验证：真实 LAN 双设备、10 人/长时间/压力、公网/TLS/NAT、真实 GPU/移动端、服务端生物/红石/战斗、
+  跨版本存档；管理接口已测本机 LAN IP 403，双机拒绝仍未测。见 `KNOWN_ISSUES.md` K-67…K-80。
+- 状态：**已验收（2026-11-12）；代码提交 `817bad3`；docs 收尾为当前 HEAD；推送目标 `origin/opusmc-integration`。**
+
 ## phase-04 浏览器独立运行 — 2026-11-12 — 提交 `553ceed`（代码）+ docs 收尾
 
 > 起点 `840b19c`；代码提交 `553ceed`；docs 收尾为当前 HEAD。phase-04 已验收通过，并已推送 `origin/opusmc-integration`；未合并、未强推、未打标签。
