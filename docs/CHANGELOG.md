@@ -2,6 +2,49 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更。
 
+## phase-04 浏览器独立运行 — 2026-11-12 — 提交 `553ceed`（代码）+ docs 收尾
+
+> 起点 `840b19c`；代码提交 `553ceed`；docs 收尾为当前 HEAD。phase-04 已验收通过，**未推送**、未合并、未强推、未打标签。
+> 用户明确豁免真实 Android/iOS 补测；K-39 留 phase-07。
+
+- 新增文件：`js/platform.js`（浏览器平台适配层）、`favicon.svg`、`docs/phases/phase-04-browser/{PLAN,TEST_REPORT,HANDOFF,ACCEPTANCE}.md`
+- 删除文件：`docs/phases/phase-04-browser/.gitkeep`（占位文件；目录已由阶段文档替代）
+- 修改文件（21）：`index.html`、`README.md`、`scripts/serve.mjs`、`js/{main,mobile,touch,screens,ui,render,game,audio,save,guest,net,netconfig,skins,social,terrain2,extras,emoji,export}.js`
+- 关键变化：
+  - `js/platform.js`：能力探测/阻断与降级、兼容性面板、安全 localStorage/sessionStorage、Web Audio、Worker、
+    文件 API、全屏/方向/键盘锁定、Pointer Lock、安全区/visualViewport、本地资源 URL、WebGL/Canvas 获取与上下文丢失。
+  - `index.html`：85 → **86** 个脚本；`platform.js` 第一；启动进度、资源失败/90 s 超时、`file://` 提示、
+    兼容性面板、favicon；移除启动时对本页的额外 fetch。
+  - `scripts/serve.mjs`：只服务 `index.html`、`js/*.{js,webp}`、`sounds/sfx/*`、`favicon.svg`；拒绝
+    docs/scripts/server/.git/点文件/目录/穿越；ETag + 304；HTML/JS no-cache；音效 30 天、图片 7 天；
+    HEAD/MIME；可选 `HOST=0.0.0.0`。
+  - 渲染/输入：WebGL2/Canvas2D、Pointer Lock、全屏走平台层；F11 防双触发；指针锁定失败自由鼠标降级并提示。
+  - 移动：`visualViewport` 尺寸、CSS 安全区、竖屏 90° 安全区映射、事件按帧合并、Android 全屏/横屏锁定、
+    iOS 无元素全屏/鼠标锁定时不阻断；摇杆/跳跃/攻击/使用/互动/多点触控保留。
+  - 存储/资源：localStorage/sessionStorage、Worker、AudioContext、音效/emoji/懒加载数据 URL 统一走平台层；
+    `chunk_worker.js` 绝对 URL 后 `importScripts` 仍按 `/js/` 解析。
+  - 网络边界：`NET_CONFIG.announce=false`，单机后台不再每分钟请求旧房间服务公告；多人功能仍待 phase-05。
+  - 关键函数/状态：`Platform`（caps/compat/storage/audio/workers/files/display/input/graphics/resource）；
+    `Stage.update/size/measure/safe/toStage`、`UI.prototype.safe`；`toggleFullscreen`/`Game.capturePointer`
+    统一走平台层；`WorldListScreen.pick`/`PhotoScreen.save` 用文件 API；`LS` 增加内存回退并在写失败时抛错。
+    未改变 `Game.tick`/`placeAt`/`UI.open`/`bindInput` 的包装顺序。
+- 验证：
+  - 90 个 JS `node --check`；`index.html` 86 个脚本；`git diff --check` 通过；改动文件保持 LF。
+  - Windows Edge 157 + SwiftShader：桌面 **37/37 PASS**；65 s 游玩无第三方请求；`game.errLog` 为空。
+  - Windows Chrome 157 + SwiftShader：桌面 **37/37 PASS**。
+  - Windows Chrome 83 旧版：**9/9 PASS**（旧 headless `chunk stall` 单列）。
+  - Android Chrome / iOS Safari（Chromium 模拟）：**21/21 PASS**；真实设备 NOT TESTED（用户明确不补测）。
+  - 降级（禁用 Worker + localStorage）：**7/7 PASS**。
+  - 兼容性面板（`file://`、无 WebGL2、上下文丢失）：**3/3 PASS**。
+  - 服务器白名单/缓存/304/HEAD/404：通过。
+  - 0 未捕获异常；正常路径 `game.errLog` 为空。
+  - 独立验收：Edge **44/44 PASS**；Chrome **43/45 PASS**（2 项 K-39 `chunk stall`）；移动模拟 **25/25 PASS**；
+    兼容/降级 **7/7 PASS**；phase-03 回归 **33/33 PASS**；受信任 F11/文件操作 NOT TESTED。
+- 未验证：真实 Android/iOS 真机、iOS WebKit、真实 GPU FPS、手机发热/长时间运行、HTTPS/WSS/公网。
+  用户已明确不补测真实 Android/iOS；K-39 留 phase-07。
+- 修改原因：用户 phase-04 指令；PROJECT_SPEC §11.9；ADR-016/ADR-017。
+- 状态：**已实现、已测试、验收通过（带用户豁免：真实 Android/iOS 不补测，K-39 延期 phase-07）；代码提交 `553ceed`，未推送。** 详见 `docs/phases/phase-04-browser/ACCEPTANCE.md`。
+
 ## phase-03 彻底移除账号系统并建立访客模式 — 2026-11-12 — 提交 `025cba8`（代码）+ docs 收尾
 
 > 代码提交 `025cba8`；docs 收尾为当前 HEAD。phase-03 代码与 docs 均已推送 `origin/opusmc-integration`；未合并、未强推、未打标签。客户端核心 10/10 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL。

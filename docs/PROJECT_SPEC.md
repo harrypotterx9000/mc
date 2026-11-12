@@ -3,7 +3,7 @@
 > 本文件是 OpusMC 项目唯一的长期总规范。所有阶段的目标、边界与验收均以本文件为准；
 > 与本文件冲突的临时需求必须先更新本文件再实施。
 >
-> 版本：1.3（2026-11-12，phase-03 完成 · 无账号访客模式）
+> 版本：1.5（2026-11-12，phase-04 完成并验收 · 浏览器独立运行）
 > 状态：生效
 
 ## 1. 项目定位
@@ -21,7 +21,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 - 不做永久身份体系：没有"账号"，只有昵称 + 服务器分配的临时玩家 ID。
 - 不做账号绑定式云存档（原 `/api/cloud/*` 一类的按账号同步）。
 - 不向玩家传输游戏画面（不做云游戏/像素流）。
-- 不重写游戏引擎；以现有脚本模块为基础迭代（phase-03 后页面加载 85 个脚本、`js/` 89 个 `.js`）。
+- 不重写游戏引擎；以现有脚本模块为基础迭代（phase-04 后页面加载 86 个脚本、`js/` 90 个 `.js`）。
 
 ## 3. 玩家身份：无账号访客模式
 
@@ -142,8 +142,8 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 ### 11.1 当前基线
 
 - 开发基线：`2798c08`（`chore: integrate OpusMC project`），即 PR #1 的 `opusmc-integration` 内容。
-- 当前 HEAD：docs 收尾为当前 HEAD（见 `git log -1`）；phase-03 代码 `025cba8` 已提交并推送。phase-01 代码 `15154bd`，phase-02 代码 `a9dc47b`。
-- 工作区：`D:\ds\REA\opusmc`；phase-03 客户端改造完成、验收结束，代码与 docs 已提交；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03。
+- 当前 HEAD：docs 收尾为当前 HEAD（见 `git log -1`）；phase-04 代码 `553ceed`，phase-03 代码 `025cba8` 已提交并推送。phase-01 代码 `15154bd`，phase-02 代码 `a9dc47b`。
+- 工作区：`D:\ds\REA\opusmc`；phase-04 已验收、代码与 docs 已提交，**未推送**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04。
 - 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（早期文档基线）、`v0.1.0-integration`（PR #1 内容基线）。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 打开中，远程 `main` 未变。
 - 合并后：先 `git fetch origin && git branch -u origin/main main`，再把 `develop` 对齐新的 `origin/main`，然后才开新的阶段分支。
@@ -161,6 +161,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 同日第二次 phase-01 改动已完成独立验收，并提交到 `develop`（代码 `15154bd`）。
 phase-02 的改动已实现、测试、验收并提交（代码 `a9dc47b`，2026-11-12）；docs 收尾为 `73c8af5`。
 phase-03 客户端改造已完成、验收结束，代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD。
+phase-04 已实现、测试、独立验收与用户验收完成（带真实移动端豁免、K-39 延期）；代码 `553ceed` 提交，未推送（见 §11.9/§11.10、ADR-017）。
 
 ### 11.4 阶段启动与合并的确认点
 
@@ -176,7 +177,10 @@ phase-00 完成；phase-01 已完成并验收（2026-11-06），代码提交 `15
 phase-02（取消皮肤、装饰和多人游戏解锁机制）**已完成、已验收并提交 `a9dc47b`**（2026-11-12）；docs 收尾为 `73c8af5`。
 phase-03（彻底移除账号系统并建立访客模式）**客户端改造完成、验收结束；代码 `025cba8` 已提交并推送**（2026-11-12）；docs 收尾为当前 HEAD。
 客户端核心 10/10 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL；真实联机/重连留 phase-05。
-phase-04 **未开始**，等待用户明确指令。
+phase-04（浏览器独立运行）**已完成并验收通过（带用户明确豁免）**（2026-11-12）；代码提交 `553ceed`。
+独立验收：Edge 44/44、Chrome 43/45（2 项 K-39 `chunk stall`）、移动模拟 25/25、兼容/降级 7/7、
+phase-03 回归 33/33。用户明确不补测真实 Android/iOS；K-39 留 phase-07。详见 §11.9、ADR-017 与
+`docs/phases/phase-04-browser/`。
 
 ### 11.6 phase-01 执行约束（2026-11-06）
 
@@ -198,3 +202,32 @@ Toy 身份、识别码、关注/三连、账号资料/API/绑定、账号云存�
 不进入 phase-04；不重写无关模块；未验收前不提交。
 活动款装饰**不随签到删除**；`mcjs-look` 必须保留。
 执行结果：客户端核心已实现、已测试、验收结束；代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD；端到端真实联机/重连为 BLOCKED，F-1（同名昵称房间所有权）留 phase-05（见 ADR-015、`docs/phases/phase-03-guest-mode/`）。
+
+### 11.9 phase-04 执行约束（2026-11-12）
+
+按用户指令：留在 `develop` 工作区，不新建/切换/重置分支；建立统一浏览器平台适配层；替换 Toy 平台
+能力为浏览器标准能力（phase-03 已删除 Toy，因此重点是能力层、资源边界与兼容性，不机械重命名）；
+确保图片/字体/音频/游戏数据/Worker/动态资源路径独立，资源全部由自己的静态服务器提供，适当使用
+HTTP 缓存，不再请求不必要的第三方平台资源；提供标准网页入口（http/https，不依赖 `file://`）；
+电脑键盘/鼠标/全屏/指针锁定；手机摇杆/跳跃/攻击/交互/多点触控/方向变化/横屏/安全区/视口；
+至少验证 Windows Chrome、Windows Edge、Android Chrome、iOS Safari，并对缺失必要能力给出清晰提示。
+不进入 phase-05；不改无关模块；未验收前不提交。
+
+执行结果：新增 `js/platform.js`；`index.html` 86 个脚本、`js/` 90 个 `.js`；自有静态服务器白名单 +
+ETag/304 + 缓存；桌面/移动输入与安全区/视口适配；兼容性面板；单机后台第三方公告轮询关闭。
+Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android/iOS 模拟 21/21、降级 7/7、
+兼容性面板 3/3；90 个 JS `node --check`。独立验收：Edge 44/44、Chrome 43/45（2 项 K-39
+`chunk stall`）、移动模拟 25/25、兼容/降级 7/7、phase-03 回归 33/33；真实 Android/iOS 真机、iOS WebKit、
+真实 GPU 性能未测，标 **BLOCKED/NOT TESTED**。用户明确**不补测**真实 Android/iOS；**K-39 留 phase-07**；
+据此 phase-04 验收通过（ADR-017）。代码提交 `553ceed`；docs 收尾为当前 HEAD。详见
+`docs/phases/phase-04-browser/ACCEPTANCE.md`。
+
+### 11.10 phase-05 前置条件（未执行）
+
+- 用户明确发送“执行阶段 5”后才开始；不得提前修改 phase-05 功能。
+- 自建服务器需处理：房间生命周期/邀请码、临时玩家 ID 签发与校验、真实短时重连、服务端权威移动/方块/战斗、
+  多人存档、房间所有权 F-1、`/api/skin`、管理员公告、旧 `mcjs-room-key` 替换。
+- 客户端 `GuestSession` 继续作为昵称/连接状态来源；不得恢复 `Account`；不得覆盖单人 IndexedDB 存档。
+- `NET_CONFIG.rooms` 仍指旧服务；phase-05 替换后决定是否恢复 `NET_CONFIG.announce`。
+- 真实 Android/iOS 真机未测（用户当前豁免）；正式发布验收前应重新评估。K-39 属 phase-07。
+- 未经用户确认不得推送/合并；phase-05 仍需遵守 ADR-009/§11.3。

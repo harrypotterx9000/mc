@@ -1,13 +1,13 @@
 # OpusMC 架构说明（ARCHITECTURE）
 
-> 依据：`D:\ds\REA\opusmc` 当前源码（phase-03 后 85 个加载脚本、89 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
+> 依据：`D:\ds\REA\opusmc` 当前源码（phase-04 后 86 个加载脚本、90 个 `.js`，构建 `47455601425408-v39426`）+ 静态扫描 + 既有运行时探针。
 > 标注：**[事实]** 源码可复核；**[实测]** 运行时读到；**[推断]** 未运行验证。
 
 ## 1. 总体形态
 
 单页 WebGL2 应用，无框架、无打包器：
 
-- `index.html` 按固定顺序加载 **85** 个 `<script>`（phase-03：88 − 4 删除 + 新增 `guest.js`），全部挂在全局作用域。
+- `index.html` 按固定顺序加载 **86** 个 `<script>`（phase-04：85 + 新增 `platform.js`），全部挂在全局作用域。
 - 数据文件（方块/物品/配方/结构/模型/贴图/字体）是构建脚本从原版数据生成的单行 JSON。
 - 功能模块通过**给共享原型打补丁**扩展（`Game`、`Renderer`、`Player`、`UI`、`World`、`Mob`…）。
 - 世界生成在 Web Worker（`gen_worker.js`），装饰/网格化在另一个 Worker（`chunk_worker.js`，按需创建）。
@@ -16,7 +16,8 @@
 ## 2. 分层与文件（[事实]）
 
 ```
-加载顺序（85）
+加载顺序（86）
+├─ 平台       platform
 ├─ 资源/数据  assets, font, emoji, texts, worldgen_data, blockdata, itemdata,
 │             recipedata, structures_data, entitydata, etex, models, panorama_data, subtitles
 ├─ 内核       util → world → mesher → vmodels → render/render2 → shaders
@@ -28,8 +29,9 @@
 ```
 
 - **194 个顶层类声明**（phase-02 为 206；phase-03 删除 12 个账号/Toy/云/签到类）、**66 个 `*Screen` 类**（原 84；phase-01 −7、phase-03 −11）；按 `Game.prototype.* =` 赋值扫描沿用 phase-0 的 **40 个文件、257 处、174 个方法名**（含包装器）。
-- 运行时懒加载（不在 85 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
+- 运行时懒加载（不在 86 个 `<script>` 中）：`js/chunk_worker.js`、`js/skins_data.js`、`js/vstates_data.js`、`js/sound_events.js`、`js/emoji.webp`；音效文件 `sounds/sfx/*`（4,849 个 m4a，已随项目提供）。
 - phase-03 删除：`js/account.js`、`js/toy.js`、`js/cloudsave.js`、`js/checkin.js`；新增 `js/guest.js`。
+- phase-04 新增：`js/platform.js`（浏览器平台层）；页面脚本 85 → 86，`js/` 89 → 90。
 
 ## 3. 关键对象与状态归属（[事实]）
 
@@ -310,3 +312,62 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
 - 旧 `mcjs-room-key` 仍是浏览器本地房间管理凭据（不是玩家账号），phase-05 替换；旧 `mcjs-account`/`cloud` 元数据为死数据，不自动清理。
 - 正版皮肤仍走 `/api/skin`（不属于账号 API，K-36）；管理员公告轮询仍走旧房间服务。
 - 移除 Toy 容器后手机安全区为 0（K-48）；Toy 内容检查移除后内容治理归 phase-05（K-49）。
+
+## 13. 阶段 4 变更（2026-11-12，已实现/已测试/已验收；代码 `553ceed`）
+
+> `index.html` 85 → **86** 个脚本；`js/` 89 → **90** 个 `.js`；加载顺序以新增的 `js/platform.js` 开头。
+> 本节以 phase-04 提交 `553ceed` 为准；用户明确不补测真实 Android/iOS，K-39 留 phase-07（ADR-017）。
+
+### 13.1 浏览器平台层 `js/platform.js`
+
+新增全局 `Platform`（无构建器，按页面脚本顺序加载）：
+
+| 区域 | 能力 |
+|---|---|
+| `caps` / `fatal()` / `warnings()` | WebGL2、Canvas2D、Worker、IndexedDB、localStorage/sessionStorage、Web Audio、Pointer Events、键盘、Pointer Lock、全屏、振动、设备运动、方向、visualViewport、fetch、WebSocket、文件 API、目录选择 |
+| `storage.local/session` | 安全 get/set/getJSON/setJSON/remove/keys；不可用时本页内存影子，`available/backend` 可查 |
+| `display` | `safeArea()`（CSS `env(safe-area-inset-*)` 探针）、`viewport()`（visualViewport）、全屏（含 webkit 前缀）、方向锁定、键盘锁定 |
+| `input` | Pointer Lock 请求/释放（`unadjustedMovement` 失败回退）、振动 |
+| `audio` | AudioContext 创建/恢复 |
+| `workers` | 按 `document.baseURI` 解析 Worker URL；不可用返回 null |
+| `files` | 文件/目录选择、DataURL/Blob 下载 |
+| `graphics` | Canvas2D/WebGL2 获取；WebGL 上下文丢失面板 |
+| `resource()` | 本地资源绝对 URL；Worker/音效/emoji/懒加载数据统一走这里 |
+| `compat` | 阻断/警告列表、文本报告、DOM 兼容性面板 |
+
+### 13.2 启动与入口
+
+- `index.html`：`js/platform.js` 为第一个脚本；总脚本 86；启动条不再额外 fetch 本页；新增资源加载失败、90 s 启动超时、`file://` 明确提示、兼容性面板、`favicon.svg`。
+- `main.js` 启动前调用 `Platform.fatal()`：`file://`、Canvas2D、WebGL2 缺失时显示面板并停止初始化；其余能力降级。
+- 失败路径：`Platform.compat.show()` 输出能力报告、UA、视口、安全区、启动错误；`#err` 仅作面板缺失时的后备。
+- WebGL 上下文丢失：`Platform.graphics.watchContext` 阻止默认行为并显示“重新加载”，不在黑画布上继续运行。
+
+### 13.3 资源与服务器
+
+- 页面资源：86 个 `<script src>`（全部 `js/`）、`js/emoji.webp`、`js/sound_events.js`（运行期）、`sounds/sfx/*.m4a`（运行期）、`favicon.svg`。
+- 字体/贴图/数据仍由构建生成的 `js/font.js`、`js/assets.js`、`js/*_data.js` 提供（data URI/JSON），不依赖 CDN。
+- `scripts/serve.mjs`：静态白名单仅 `index.html`、`js/*.{js,webp}`、`sounds/sfx/*`、`favicon.svg`；拒绝 docs/scripts/server/.git/点文件/目录/路径穿越。
+- 缓存：HTML/JS `no-cache` + `ETag`（条件请求 304）；音效 `public, max-age=2592000`；图片/favicon `max-age=604800`；MIME 显式；支持 HEAD。
+- `HOST=0.0.0.0` 仅用于局域网设备验证；TLS/公网/反代留 phase-08。
+
+### 13.4 输入、全屏与移动端
+
+- 桌面：键盘 `KeyboardEvent.code`；鼠标事件；Pointer Lock（失败时自由鼠标降级 + 一次提示）；全屏（F11 由游戏绑定统一处理，避免浏览器与游戏双触发）。
+- 移动：`TouchDevice` 仍按 UA/触控点识别；摇杆、跳跃、攻击/使用、互动、潜行、疾跑、快捷栏、多点触控保留。
+- `Stage` 使用 `visualViewport` 实际宽高；`visualViewport` resize/scroll、window resize、orientationchange 按帧合并；尺寸/DPR/安全区不变时跳过重排，避免清空 UI 画布。
+- 安全区：CSS `env()` 探针；竖屏 CSS 旋转 90° 时按“上→左、右→上、下→右、左→下”映射到舞台坐标；HUD/聊天/触控按钮按 `UI.safe()` 避让。
+- 全屏/方向：触摸第一次进入世界时空闲触发；Android 可请求全屏并锁横屏；iOS/不支持元素全屏时跳过，不阻断 CSS 横屏路径。
+
+### 13.5 第三方网络边界
+
+- `NET_CONFIG.announce = false`；`social.js` 不再在单人游戏后台每分钟请求旧房间服务的 `/api/announce`。
+- 旧房间服务仍由用户主动打开多人界面时使用（房间列表/加入/皮肤查询），phase-05 替换。
+- 启动、标题、单人创建/保存/65 s 游玩均无第三方平台请求（见 TEST_REPORT）。
+
+### 13.6 风险与未覆盖
+
+- 真实 Android Chrome / iOS Safari / iOS WebKit 未测；移动端结论均来自 Chromium 视口/UA/触控/安全区模拟。
+- 真实 GPU 性能、手机发热、长时间运行未测。
+- 静态服务器无 TLS/鉴权/限流/Range；不是生产部署。
+- 旧房间服务、`/api/skin`、管理员公告仍属 phase-05；本阶段只关闭后台自动轮询。
+- Chrome 83 旧 headless 偶发 `chunk stall`（K-39）；世界仍进入 `play`。

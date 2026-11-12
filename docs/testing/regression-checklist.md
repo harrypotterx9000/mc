@@ -5,11 +5,15 @@
 ## A. 启动与加载
 
 - [ ] `node scripts/serve.mjs` 启动无报错，`http://127.0.0.1:8080/` 返回 200
-- [ ] 89 个 `js/*.js` 全部 200（控制台无 404）
-- [ ] 85 个页面脚本全部加载，`js/guest.js` 在 `js/net.js` 之前
-- [ ] `js/sound_events.js` 与抽检的 `sounds/sfx/*.m4a` 返回 200
-- [ ] 标题界面出现，背景世界渲染正常
-- [ ] 控制台无新增红色错误
+- [ ] 页面通过 http(s) 打开；`file://` 显示“请通过本地服务器打开”
+- [ ] 86 个页面脚本全部 200；`js/platform.js` 第一个加载
+- [ ] 90 个 `js/*.js` 全部 `node --check` 通过
+- [ ] `js/sound_events.js`、`js/emoji.webp`、抽检 `sounds/sfx/*.m4a` 返回 200
+- [ ] 字体图集、贴图、游戏数据加载；标题界面出现，背景世界渲染正常
+- [ ] 控制台无新增红色错误；`game.errLog` 为空
+- [ ] `Platform.fatal()` 为空（正常浏览器）
+- [ ] Worker：`gen_worker.js` 有实例、`chunk_worker.js` ready
+- [ ] WebGL 上下文丢失时出现可读的重新加载面板
 
 ## B. 单人核心
 
@@ -20,19 +24,23 @@
 - [ ] 2×2 与工作台合成
 - [ ] 熔炉/箱子可用
 - [ ] 保存退出 → 刷新 → 世界仍在
+- [ ] 设置（FOV 等）刷新恢复
 
-## C. 阶段相关
+## C. 阶段相关（phase-04）
 
-- [ ] 本阶段删除的入口不再出现（逐项对照 PROJECT_SPEC §6）
-- [ ] 本阶段新增/修改的功能可用
-- [ ] 相关跨模块补丁未被破坏（见 `research/dependency-analysis.md`）
-- [ ] 全部皮肤/披风/装饰可选（含 `adm*` 管理员披风与活动款），无锁定图标/登录跳转
-- [ ] 无账号保存外观，刷新后恢复
-- [ ] 标题/选项/暂停/首启无登录、注册、账号、识别码、签到入口
-- [ ] 多人界面昵称可填；空昵称拒绝；有效邀请码才走 `joinRoom`
-- [ ] 无 `Account`/`Toy`/`CloudSave`/`Checkin` 全局；无 `/api/account`、`/api/cloud`、`/api/event`、`/api/gate` 请求
-- [ ] 活动款披风（企鹅/金苹果）与 8 个装饰仍可用
-- [ ] `GuestSession` 断开后保留 5 分钟重连提示，主动离开清除
+- [ ] 标题「单人游戏」→ 世界列表 → 创建 → 进入 `play`
+- [ ] 键盘/鼠标输入；Pointer Lock 请求/释放；全屏请求/退出
+- [ ] 指针锁定被浏览器拒绝时，自由鼠标降级 + 一次提示，不反复弹暂停
+- [ ] `Platform.resource()` 解析的 Worker/音效/emoji/懒加载路径全部 200
+- [ ] 启动/标题/单人游玩无第三方平台请求；无后台 `/api/announce`
+- [ ] 服务器只服务 `index.html`、`js/*`、`sounds/sfx/*`、`favicon.svg`；docs/scripts/server/.git/穿越 403
+- [ ] HTML/JS 返回 ETag，条件请求 304；音效 `max-age=2592000`
+- [ ] 移动模拟：竖屏 CSS 旋转、横屏、安全区、`visualViewport` 变化
+- [ ] 移动模拟：摇杆/跳跃/攻击/使用/互动/多点触控
+- [ ] 禁用 Worker/localStorage 仍能启动并创建世界（降级）
+- [ ] 无 WebGL2 / `file://` 有清晰兼容性提示
+- [ ] Android Chrome / iOS Safari 真机：**NOT TESTED**；phase-04 用户已明确不补测，不得写成通过
+- [ ] 真实 GPU FPS / 手机发热：**NOT TESTED**（phase-07）
 
 ## D. 联机（有服务器后）
 

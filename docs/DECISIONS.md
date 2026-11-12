@@ -173,3 +173,42 @@
   - 真实房间加入/P2P 互连、phase-05 服务器签发 ID 仍未验证。
 - 验证：89 个 JS `node --check`；无头 Edge 157 实现测试核心 33/33 PASS、首启 1/1 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL；`Account`/`Toy`/`CloudSave`/`Checkin`/登录界面类均 `undefined`；无 `/api/account`、`/api/cloud`、`/api/event`、`/api/gate`、`/api/checkin` 或 Bilibili 请求；游客外观保存/刷新恢复；单人创建/保存/刷新；活动款保留；`game.errLog` 为空。详见 `docs/phases/phase-03-guest-mode/{TEST_REPORT,ACCEPTANCE}.md`。
 - 状态：**已实施、已测试、验收结束；代码提交 `025cba8` 并推送；docs 收尾为当前 HEAD；F-1 与真实联机/重连留 phase-05**。
+
+## ADR-016 phase-04 浏览器平台适配与独立资源
+
+- 日期：2026-11-12
+- 背景：用户启动 phase-04，要求通过普通浏览器网址直接运行 OpusMC；建立统一平台适配层；替换 Toy 平台能力为浏览器标准能力；图片/字体/音频/数据/Worker/动态 import 路径全部自有；标准网页入口；桌面/移动输入；Windows Chrome/Edge、Android Chrome、iOS Safari 兼容与清晰提示。Toy/账号已在 phase-03 删除，因此本阶段不是“把 Toy 调用改成浏览器”，而是补齐独立运行所需的浏览器能力层、资源边界和兼容性。
+- 决策：
+  1. **新增 `js/platform.js` 作为唯一浏览器平台层**：能力探测、兼容性报告/面板、安全存储、音频、Worker、文件、全屏、鼠标锁定、安全区/视口、本地资源 URL、Canvas/WebGL2 获取。只把需要能力判断、回退或供应商差异的调用点接入平台层，不机械重命名所有浏览器 API。
+  2. **阻断与降级分级**：`file://`、Canvas 2D、WebGL2 为阻断项；Worker、IndexedDB、localStorage、sessionStorage、Web Audio、Pointer Lock、全屏、文件 API 为可降级项。阻断时显示中文兼容性面板与启动命令；降级时记录警告并在标题后提示一次。
+  3. **资源全部自有**：页面脚本、数据、字体、贴图、音效、Worker 均从本项目静态服务器加载；`Platform.resource()` 按 `document.baseURI` 解析，不使用 Toy 容器或硬编码根路径。不引入第三方 CDN/字体/图片。
+  4. **自有静态服务器边界**：`scripts/serve.mjs` 只服务 `index.html`、`js/*.{js,webp}`、`sounds/sfx/*.{m4a,ogg,wav}`、`favicon.svg`；拒绝文档、`scripts/`、`server/`、`.git`、点文件、目录列表与路径穿越。HTML/JS 用 `ETag` + `no-cache`（304）；音效 30 天、图片/图标 7 天缓存。`HOST=0.0.0.0` 仅用于局域网设备验证，正式 TLS/公网留 phase-08。
+  5. **标准入口与兼容提示**：`index.html` 保留同步脚本顺序（无构建器），增加启动进度、脚本加载失败/超时、`file://` 明确提示、兼容性面板、favicon；不引入 `file://` 双路径。
+  6. **设备输入**：电脑保留键盘/鼠标/指针锁定/全屏；指针锁定失败时自由鼠标降级并提示。移动端保留摇杆/跳跃/攻击/使用/互动/多点触控；以 CSS `env(safe-area-inset-*)` + `visualViewport` 做安全区和浏览器视口适配；竖屏 CSS 旋转时按 90° 映射安全区；Android 可全屏并锁横屏，iOS 无元素全屏/鼠标锁定时不阻断。
+  7. **关闭单机后台第三方轮询**：`NET_CONFIG.announce=false`；`social.js` 不再在单人游戏后台每分钟请求旧房间服务 `/api/announce`。旧房间服务仍用于用户主动打开的多人界面（phase-05 替换）；本项不删除公告能力代码，phase-05 自建服务器可重新启用。
+  8. **范围约束**：不实现 phase-05 服务器、不改渲染/世界生成/红石/战斗、不做 PWA/Service Worker、不做真实 GPU 性能结论；真实 Android/iOS 真机、iOS WebKit 与真实 GPU 未测，必须标 NOT TESTED/BLOCKED。
+  9. **流程**：按用户约束留在 `develop`，不新建/切换/重置分支；实现测试后等待用户验收，验收前不提交、不推送；验收后提交 `553ceed`，未推送。
+- 影响：
+  - `index.html` 85 → 86 个脚本；`js/` 89 → 90 个 `.js`（新增 `platform.js`）；加载顺序以 `platform.js` 开头。
+  - 任何新的本地资源/Worker/存储/音频/全屏调用应优先走 `Platform`，避免再次散落供应商判断。
+  - 服务器不再暴露项目文档/脚本/服务端/Git；静态资源缓存改善重复加载，但 JS 每次重新验证（ETag 304）。
+  - 单机不再有后台第三方网络请求；多人入口仍可能访问旧房间服务，属 phase-05 范围。
+  - 真实设备/真机结论仍为空，phase-04 只能宣称“模拟与无头浏览器通过”。
+- 验证：90 个 JS `node --check`；Edge 157 桌面 37/37；Chrome 157 桌面 37/37；Chrome 83 旧版 9/9；Android/iOS 模拟 21/21；降级 7/7；兼容性面板 3/3；服务器白名单/缓存/304/HEAD/404 全部通过。独立验收另见 `ACCEPTANCE.md`：Edge 44/44、Chrome 43/45（2 项 K-39 `chunk stall`）、移动模拟 25/25、兼容/降级 7/7、phase-03 回归 33/33；真实 Android/iOS 真机 BLOCKED，受信任 F11/文件操作 NOT TESTED。
+- 状态：**已实现、已测试；用户验收通过（见 ADR-017），代码提交 `553ceed`；未推送。**
+
+## ADR-017 phase-04 验收豁免与遗留
+
+- 日期：2026-11-12
+- 背景：独立验收报告 `ACCEPTANCE.md` 记录：真实 Android Chrome / iOS Safari 无法补测（BLOCKED）；Windows Chrome headless 的 2 项 `game.errLog` 失败均为已知 K-39 `chunk stall`；受信任 F11、文件选择/照片下载为 NOT TESTED。按原标准，phase-04 不能宣称完整通过。
+- 决策：
+  1. 用户明确**不补测**真实 Android Chrome / iOS Safari；移动端只保留 Chromium 模拟证据，不能宣传为真机通过。
+  2. **K-39 `chunk stall` 延期 phase-07**；phase-04 的 Chrome headless 2 项失败不阻断本阶段。
+  3. 受信任 F11、文件选择/照片下载保留为 **NOT TESTED**；不写成已完成。
+  4. 在上述明确豁免下，phase-04 验收通过；代码提交 `553ceed`，docs 收尾为当前 HEAD。
+  5. 不自动进入 phase-05；下一阶段需用户明确指令。
+- 影响：
+  - `KNOWN_ISSUES.md` 保留 K-39/K-51/K-64/K-65/K-66，不得删除或改写成已解决。
+  - phase-05 不得依赖“真机已验证”的假设；发布验收前仍应重新评估真实设备。
+  - phase-07 必须处理 K-39；K-39 不是 phase-04 已修复项。
+- 状态：**已确认；phase-04 验收通过（带明确豁免）；代码 `553ceed`；未推送。**
