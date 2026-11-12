@@ -2,6 +2,12 @@
 // ---------------------------------------------------------------------------
 // 2D UI (HUD, inventories, menus) drawn on an overlay canvas in GUI pixels
 // ---------------------------------------------------------------------------
+// a rounded dark card with a gold or grey edge (the menus' cards; moved here when the account module went)
+function drawCard(c, x, y, w, h, gold) {
+  c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(x, y, w, h);
+  c.strokeStyle = gold ? '#E8B830' : '#555555'; c.lineWidth = 1; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  if (gold) { c.fillStyle = 'rgba(232,184,48,0.10)'; c.fillRect(x + 1, y + 1, w - 2, h - 2); }
+}
 // Text uses the vanilla font (ascii.png + Unifont, tools/build_font.py -> font.js): a 16 px glyph atlas drawn
 // at half size, so Latin letters land on whole GUI pixels and CJK on half pixels, like vanilla's
 // Unifont. Each (string, colour) pair is rendered once into a small cached canvas.

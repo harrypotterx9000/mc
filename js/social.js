@@ -1,65 +1,26 @@
 'use strict';
 // ---------------------------------------------------------------------------
-// The platform around the game (Toy SDK, account.js): the name a new account plays under, Bilibili's content check
-// on what players type for others (chat, room names, reports), the invite card (share, QR code), and the
-// page closing (leave the room, last statistics).
-// ---------------------------------------------------------------------------
+// The platform around the game: the invite card (copy the link or the code),
+// and leaving the room when the page goes away. The Bilibili Toy SDK - its
+// content check, share sheet, QR code and page-close bridge - was removed
+// together with the account system in phase-03; the game now runs in a plain
+// browser. Content checks belong to the self-hosted server (phase-05).// ---------------------------------------------------------------------------
 
-// (a new account plays under its Bilibili name - the room service makes the game name from the nickname, and it
-// follows a rename there; no name to pick)
-
-// ---- Bilibili's content check on what others will read ----
-async function textOk(g, text, scene) {
-  const r = await Toy.checkText(text, scene);
-  if (!r.passed) return false;
-  return true;
-}
-(() => {
-  // chat in a room (commands are the server's own business)
-  const chat = NetClient.prototype.chat;
-  NetClient.prototype.chat = async function (text) {
-    if (!String(text).startsWith('/') && !(await textOk(this.g, text, 'chat'))) { this.g.ui.message('这条消息包含不合适的内容，没有发出', '#FF5555'); return; }
-    return chat.call(this, text);
-  };
-  // a room's name (shown to everyone in the public list)
-  const cr = CreateRoomScreen.prototype.submit;
-  CreateRoomScreen.prototype.submit = async function () {
-    if (this.busy) return;
-    if (!(await textOk(this.game, this.roomName, 'room_name'))) { this.say('房间名包含不合适的内容，换一个吧', true); return; }
-    return cr.call(this);
-  };
-  const sub = ReportScreen.prototype.submit;
-  ReportScreen.prototype.submit = async function () {
-    if (this.text && String(this.text).trim() && !(await textOk(this.game, this.text, 'report'))) { this.note = '内容包含不合适的词，请修改后再发送'; this.noteColor = '#FF5555'; if (this.say) this.say(this.note, true); return; }
-    return sub.call(this);
-  };
-})();
-
-// ---- 邀请卡片: the room's name and code, a QR code to scan, share it on Bilibili ----
+// ---- 邀请卡片: the room's name and code, copy the link or the code ----
 class InviteCardScreen extends MenuScreen {
   constructor(game, parent) {
-    super(game, '邀请朋友'); this.parent = parent; this.pauses = false; this.titleY = 8; this.qr = null; this.note = ''; this.inToy = null;
-    const R = this.R;
-    Toy.ready().then((v) => {
-      this.inToy = v;
-      if (v && R) Toy.qrCode('index.html?room=' + R.code, 240).then((q) => { if (q && q.base64) { const im = new Image(); im.onload = () => { this.qr = im; }; im.src = q.base64.startsWith('data:') ? q.base64 : 'data:image/png;base64,' + q.base64; } }).catch(() => { });
-      if (this.game.ui.screen === this) this.layout();
-    });
+    super(game, '邀请朋友'); this.parent = parent; this.pauses = false; this.titleY = 8; this.note = '';
   }
   get R() { return this.game.net && this.game.net.room; }
   layout() {
     const u = this.game.ui, cx = u.w / 2, R = this.R, y = u.h - 52;
     this.widgets = [];
     if (R) this.widgets.push(
-      { x: cx - 152, y, w: 98, h: 20, gold: true, label: '分享给朋友', enabled: this.inToy === true, tip: this.inToy ? ['发到 B站 私信、动态'] : ['在 B站 App 或网页里才能分享'], onClick: () => this.share() },
-      { x: cx - 50, y, w: 98, h: 20, label: '复制链接', onClick: async () => { this.note = (await copyText(RoomService.link(R.code))) ? '链接已复制' : '复制失败'; } },
-      { x: cx + 52, y, w: 100, h: 20, label: '复制邀请码', onClick: async () => { this.note = (await copyText(R.code)) ? '邀请码已复制' : '复制失败'; } },
+      { x: cx - 152, y, w: 98, h: 20, gold: true, label: '复制链接', onClick: async () => { this.note = (await copyText(RoomService.link(R.code))) ? '链接已复制，发给朋友吧' : '复制失败，请抄下邀请码'; } },
+      { x: cx - 50, y, w: 98, h: 20, label: '复制邀请码', onClick: async () => { this.note = (await copyText(R.code)) ? '邀请码已复制' : '复制失败，请抄下邀请码'; } },
+      { x: cx + 52, y, w: 100, h: 20, label: '完成', onClick: () => this.game.ui.open(this.parent) },
     );
-    this.widgets.push({ x: cx - 100, y: u.h - 28, w: 200, h: 20, label: '完成', onClick: () => this.game.ui.open(this.parent) });
-  }
-  async share() {
-    try { await Toy.share('index.html?room=' + this.R.code); this.note = '已打开分享'; }
-    catch (e) { this.note = Toy.explain(e); }
+    else this.widgets.push({ x: cx - 100, y, w: 200, h: 20, label: '完成', onClick: () => this.game.ui.open(this.parent) });
   }
   drawExtra(ui) {
     const c = ui.ctx, cx = ui.w / 2, R = this.R;
@@ -68,12 +29,10 @@ class InviteCardScreen extends MenuScreen {
     drawCard(c, x, y, w, h, true);
     Font.center(c, fitText(R.name, w - 16), cx, y + 8, '#FFFFFF');
     Font.center(c, '房主 ' + R.owner, cx, y + 20, '#A0A0A0');
-    const qs = Math.min(h - 70, 90);
-    if (this.qr) { c.fillStyle = '#FFFFFF'; c.fillRect(cx - qs / 2 - 3, y + 32, qs + 6, qs + 6); c.drawImage(this.qr, cx - qs / 2, y + 35, qs, qs); }
-    else { c.strokeStyle = '#555555'; c.strokeRect(cx - qs / 2 + 0.5, y + 35.5, qs, qs); Font.center(c, this.inToy === false ? '用邀请码加入' : '二维码…', cx, y + 30 + qs / 2, '#808080'); }
-    c.save(); c.translate(cx, y + qs + 44); c.scale(2, 2); Font.center(c, R.code, 0, 0, '#FFD24A'); c.restore();
-    Font.center(c, fitText('扫码或在「多人游戏」里输入邀请码加入', w - 12), cx, y + qs + 66, '#A0A0A0');
-    if (this.note) Font.center(c, this.note, cx, ui.h - 64, '#80FF80');
+    c.save(); c.translate(cx, y + 58); c.scale(2, 2); Font.center(c, R.code, 0, 0, '#FFD24A'); c.restore();
+    Font.center(c, '把邀请码或链接发给朋友', cx, y + 86, '#FFFFFF');
+    Font.center(c, '他们在「多人游戏」里输入就能加入', cx, y + 100, '#A0A0A0');
+    if (this.note) Font.center(c, fitText(this.note, w - 12), cx, y + 122, '#80FF80');
   }
   onEsc() { this.game.ui.open(this.parent); }
 }
@@ -92,15 +51,16 @@ class InviteCardScreen extends MenuScreen {
   };
 })();
 
-// ---- the page closing inside Toy: leave the room cleanly, send the last statistics ----
-Toy.onPageClose(() => {
+// ---- the page going away: leave the room cleanly and keep the short reconnect hint ----
+window.addEventListener('pagehide', () => {
   const g = typeof game !== 'undefined' && game;
   try { if (g && g.net) g.net.close && g.net.close(); } catch (e) { }
-}).catch(() => { });
+  try { GuestSession.suspend(); } catch (e) { }
+});
 
-// ---- announcements from the administrators (rooms/server.js announce): in the chat in gold and over the hotbar, for
-// everyone playing - in a room they come at once, otherwise the page asks once a minute; each shown once (the last
-// one seen kept in this browser), and on a page just opened only those of the last 10 minutes ----
+// ---- announcements from the administrators (the room service's announce): in the chat in gold and over the hotbar,
+// for everyone playing - in a room they come at once, otherwise the page asks once a minute; each shown once (the
+// last one seen kept in this browser), and on a page just opened only those of the last 10 minutes ----
 function showAnnounce(g, a) {
   let seen = 0; try { seen = +localStorage.getItem('mcjs-announce') || 0; } catch (e) { }
   if (!a || a.id <= seen) return;

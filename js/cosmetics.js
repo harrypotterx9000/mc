@@ -38,8 +38,8 @@ const Cosmetics = (() => {
   const othersPets = (g) => mode(g) === 'all' && !(g.settings.cosShow === undefined && g.settings.graphics === 'fast');
 
   // ---- what a player wears ----
-  // this player: the wardrobe's preview while choosing, else the look kept on this device (or the account's);
-  // another player: what the room said (skins.js keeps e.look). No ownership filter (phase-02)
+  // this player: the wardrobe's preview while choosing, else the look kept on this device; another player: what the
+  // room said (skins.js keeps e.look). No ownership filter (phase-02), no account (phase-03)
   function lookOf(g, e) {
     if (g && e === g.player) {
       const s = (typeof Skins !== 'undefined' && (Skins.preview() || (Skins.look && Skins.look()))) || null;
@@ -179,7 +179,7 @@ const Cosmetics = (() => {
   // by name alone (chat lines, the room's list): this player's own, or another's from what the room said
   function preName(g, nm) {
     if (!g || !nm) return nm;
-    const me = (g.net && g.net.name) || (typeof Account !== 'undefined' && Account.loggedIn && Account.name);
+    const me = (g.net && g.net.name) || GuestSession.name;
     if (nm === me) return shown(g, g.player) ? prefixed(g, g.player, nm) : nm;
     if (!shown(g, null)) return nm;
     const e = (g.entities || []).find((x) => x.type === 'player' && x.name === nm);

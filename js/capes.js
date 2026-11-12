@@ -1,6 +1,6 @@
 'use strict';
 // ---------------------------------------------------------------------------
-// Capes (game/ACCOUNT_PLAN.md「披风设计」): all original designs, none of Mojang's or Bilibili's. Four static ones
+// Capes: all original designs, none of Mojang's or Bilibili's. Four static ones
 // drawn pixel by pixel, three animated ones worked out frame by frame. Every design is free (phase-02: no unlock
 // condition), the administrators' and the sign-in event's included. Each is a texture in
 // vanilla's cape layout (64 x 32: the cape 10 x 16 x 1 at 0,0; the elytra 10 x 20 x 2 at 22,0), so a player wearing
@@ -503,12 +503,12 @@ const Capes = (() => {
     const D = Math.PI / 180;
     return { rx: -(6 + f2 / 2 + up) * D, rz: (f3 / 2) * D, ry: (-f3 / 2) * D };
   }
-  // which cape a player wears: this player's from the device (or the account), another player's from what the room sent
+  // which cape a player wears: this player's from the device, another player's from what the room sent
   function of(g, e) {
     let id = null;
     if (e === g.player) {
       const pv = typeof Skins !== 'undefined' && Skins.preview();
-      const s = pv || (typeof Skins !== 'undefined' && Skins.look ? Skins.look() : (Account.data && Account.data.skin));
+      const s = pv || (typeof Skins !== 'undefined' && Skins.look ? Skins.look() : null);
       id = s && s.cape; if (id && !info(id)) id = null;
     }
     else if (e.look) id = e.look.cape;

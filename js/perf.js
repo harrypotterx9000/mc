@@ -388,7 +388,7 @@ Game.prototype.graphicsChanged = function () {
 };
 
 // ---- report ------------------------------------------------------------------------------------------------
-// (the clipboard API refused - inside the Toy page's frame on Edge, feedback 2026-11-01 「识别码复制不了」 - falls back
+// (the clipboard API refused - inside some web views on Edge, feedback 2026-11-01 「复制不了」 - falls back
 // to the old copy command, which works there)
 function copyText(text) {
   const old = () => {

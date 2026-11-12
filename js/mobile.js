@@ -1,9 +1,8 @@
 'use strict';
 // ---------------------------------------------------------------------------
 // Phones (game/UX_IDEAS.md「手机端适配」), on top of the touch layer (touch.js):
-//   - landscape: inside the Bilibili app the Toy container turns landscape and immersive (toy.setContainerMode); a
-//     page held upright anywhere else (the Toy iframe may not go fullscreen, iPhones never lock the orientation) gets
-//     the whole game turned on its side with CSS, touches turned with it - the player turns the phone and plays
+//   - landscape: a page held upright gets the whole game turned on its side with CSS, touches turned with it - the
+//     player turns the phone and plays (the Bilibili container bridge was removed in phase-03)
 //   - Bedrock's controls: a floating joystick (where the thumb lands is its centre; pushed all the way forward
 //     sprints), a sneak button by it, drag the rest of the screen to look; Bedrock's "split" controls - a crosshair
 //     with attack / use buttons (the only ones since 10-30; a tap on the world does nothing); jump (double tap in
@@ -13,7 +12,7 @@
 //   - 60 / 90 / 120 fps on high refresh phones, back to 60 when the phone heats up and cannot keep up
 // ---------------------------------------------------------------------------
 const Stage = {
-  rot: false, el: null, inset: { top: 0, right: 0, bottom: 0, left: 0 }, toyLandscape: false,
+  rot: false, el: null, inset: { top: 0, right: 0, bottom: 0, left: 0 },
   init() {
     if (this.el) return;
     const el = this.el = document.createElement('div'); el.id = 'stage';
@@ -35,8 +34,8 @@ const Stage = {
       s.left = '0px'; s.top = '0px'; s.width = innerHeight + 'px'; s.height = innerWidth + 'px';
       s.transformOrigin = '0 0'; s.transform = `translateX(${innerWidth}px) rotate(90deg)`;
     } else {
-      // (the whole screen: the safe area - the Toy capsule, a notch - only keeps the controls and the HUD clear,
-      // UI.safe; leaving it all black put a long black bar along the top)
+      // (the whole screen: a notch's safe area only keeps the controls and the HUD clear, UI.safe; leaving it all
+      // black put a long black bar along the top)
       s.transform = ''; s.left = '0px'; s.top = '0px'; s.width = '100%'; s.height = '100%';
     }
     const was = this.rot; this.rot = rot;
@@ -94,22 +93,8 @@ UI.prototype.toGui = function (ev) { const [x, y] = ev.stage ? [ev.clientX, ev.c
   };
   void sy;
 })();
-// inside Bilibili: the container turned landscape and immersive; its safe area kept clear
-(async () => {
-  if (TouchDevice.kind !== 'phone' && TouchDevice.kind !== 'tablet') return;
-  if (!(await Toy.ready())) return;
-  Stage.inToy = true;
-  const apply = (st) => {
-    if (!st) return;
-    const a = st.safeArea || {};
-    Stage.inset = { top: a.top || 0, right: a.right || 0, bottom: a.bottom || 0, left: a.left || 0 };
-    Stage.toyLandscape = st.orientation === 'landscape';
-    Stage.update();
-  };
-  try { await Toy.setContainerMode({ orientation: 'landscape', immersive: true }); } catch (e) { }
-  try { apply(await Toy.containerState()); } catch (e) { }
-  Toy.onContainerChange(apply);
-})();
+// (phase-03: the Bilibili container bridge that asked for landscape / immersive and its safe area is gone; the
+// CSS-turned stage below and the ordinary browser fullscreen are all that remain)
 
 // ---- the controls ----
 Object.assign(TOUCH_ICONS, {
@@ -148,7 +133,7 @@ Object.assign(TOUCH_ICONS, {
       L.use = { x: L.jump.x, y: L.jump.y - B - gp, w: B, h: B };
       if (L.interact) L.interact.y = L.use.y - L.interact.h - gp;
     }
-    // kept clear of the safe area (the Toy capsule top right, a notch, the home bar)
+    // kept clear of a notch / the home bar (the old platform capsule inset is gone)
     const sf = this.ui.safe();
     for (const id of ['pause', 'chat', 'view', 'emote', 'f3']) if (L[id]) { L[id].x -= sf.r; L[id].y += sf.t; }
     for (const id of ['jump', 'descend', 'sprint', 'attack', 'use', 'interact']) if (L[id]) { L[id].x -= sf.r; L[id].y -= sf.b; }
@@ -184,16 +169,12 @@ Object.assign(TOUCH_ICONS, {
     }
     return L;
   };
-  // a screen's close button: kept clear of the safe area; inside Bilibili top left, as the container's capsule
-  // (… and ✕) floats over the top right corner whatever the safe area says
+  // a screen's close button: kept clear of a notch / the home bar
   const cr = P.closeRect;
   P.closeRect = function () {
     const r = cr.call(this); if (!r) return r;
     const sf = this.ui.safe();
-    if (Stage.inToy) {
-      r.x = 4 + sf.l; r.y = 4 + sf.t;
-      if (typeof Minimap !== 'undefined' && Minimap.on(this.g)) { const m = Minimap.rect(this.ui); r.x = m.x + m.w + 4; } // (beside the minimap)
-    } else { r.x -= sf.r; r.y += sf.t; }
+    r.x -= sf.r; r.y += sf.t;
     return r;
   };
   const sp = P.startPlay;
@@ -399,7 +380,7 @@ class QuickChatScreen extends MenuScreen {
   }
   send(t) {
     const g = this.game;
-    if (g.net) g.net.chat(t); else g.ui.message('<' + ((typeof Account !== 'undefined' && Account.name) || g.settings.netName || '我') + '> ' + t);
+    if (g.net) g.net.chat(t); else g.ui.message('<' + (GuestSession.name || g.settings.netName || '我') + '> ' + t);
     g.ui.close();
   }
   onEsc() { this.game.ui.close(); }

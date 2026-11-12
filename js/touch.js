@@ -134,7 +134,7 @@ class TouchControls {
     Sound.init();
     // first tap in touch mode in a world: go fullscreen in landscape, like an app. Not on the first-run screens (it
     // was the very first tap, on the agreement - players on tablets and learning phones: 「一点同意就卡死」, feedback
-    // 2026-11-02) and not inside the Bilibili app, whose own container is fullscreen already
+    // 2026-11-02) and not inside an app's own web view, whose container is fullscreen already
     if (this.on() && !this.fsTried && !cancel && this.g.state === 'play' && !/BiliApp/i.test(navigator.userAgent)) {
       this.fsTried = true;
       const de = document.documentElement;

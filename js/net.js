@@ -131,7 +131,7 @@ class NetClient {
     this.inv = new Array(40).fill(null); this.w0x = new Array(5).fill(null); this.off = null; this.win = null; this.sentSel = -1; this.unknownItems = new Set(); this.eid = 0; this.pendingItems = new Map();
     const ws = this.ws = new WebSocket(url);
     ws.binaryType = 'arraybuffer';
-    ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name, version: 1, proto: 1, room: opts.room, key: opts.key, token: (opts.room && typeof Account !== 'undefined' && Account.token) || undefined }));
+    ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name, version: 1, proto: 1, room: opts.room, key: opts.key }));
     ws.onmessage = (e) => { this.stats.msgs++; try { if (typeof e.data === 'string') this.onMessage(JSON.parse(e.data)); else this.onBinary(e.data); } catch (err) { console.error('net', err); } };
     ws.onerror = () => { if (!this.closed) this.fail(opts.room ? '连不上联机服务器，请稍后再试' : '无法连接到联机中转 ' + url + '（中转程序没有启动？）'); };
     ws.onclose = () => { if (!this.closed) this.fail('与服务器的连接已断开'); };
@@ -142,7 +142,8 @@ class NetClient {
     if (this.closed) return;
     this.closed = true;
     const g = this.g;
-    g.leaveServer();
+    try { GuestSession.disconnected(); } catch (e) { }
+    g.leaveServer(true);
     g.ui.open(new ConfirmScreen(g, '连接已断开', reason, '返回标题画面', () => g.ui.open(new TitleScreen(g))));
   }
 
@@ -168,7 +169,7 @@ class NetClient {
         break;
       }
       case 'biomes': this.biomes = m.list.map((n) => Math.max(VB_BASE, vbiomeIndex(n))); break;
-      case 'login': this.eid = m.eid; this.enterWorld(m, true); break;
+      case 'login': this.eid = m.eid; try { GuestSession.connected(String(m.eid)); } catch (e) { } this.enterWorld(m, true); break;
       case 'respawn': this.enterWorld(m, false); break;
       case 'pos': {
         const r = m.rel || {};
@@ -1007,12 +1008,15 @@ Game.prototype.netBreak = function (pos) {
 };
 Game.prototype.joinServer = function (url, name) {
   if (this.world) { this.unloadAll(); this.world = null; }
+  try { GuestSession.beginConnect(''); } catch (e) { }
   this.net = new NetClient(this, url, name);
   this.ui.open(new LoadingScreen(this, '正在连接…'));
 };
-Game.prototype.leaveServer = function () {
+// keepGuest: the socket dropped on its own - keep the short reconnect hint; an explicit leave clears it
+Game.prototype.leaveServer = function (keepGuest) {
   const n = this.net; if (!n) return;
   this.net = null; n.close();
+  if (!keepGuest) { try { GuestSession.leaveRoom(); } catch (e) { } }
   this.startTitle();
 };
 // the server's world: the player moves (the server checks it), everything else comes from the server
@@ -1049,7 +1053,7 @@ const RoomService = {
     return new Promise((resolve, reject) => {
       const x = new XMLHttpRequest();
       x.open('POST', this.base() + path);
-      x.setRequestHeader('Content-Type', 'text/plain'); // (the bytes as they are; text/plain so no preflight - account.js)
+      x.setRequestHeader('Content-Type', 'text/plain'); // (the bytes as they are; text/plain so no preflight)
       x.upload.onprogress = (e) => { if (e.lengthComputable && progress) progress(e.loaded / e.total); };
       x.onload = () => { let j = null; try { j = JSON.parse(x.responseText); } catch (e) { } if (x.status === 200 && j && !j.error) resolve(j); else reject(new Error((j && j.error) || 'HTTP ' + x.status)); };
       x.onerror = () => reject(new Error('连不上联机服务器'));
@@ -1058,7 +1062,7 @@ const RoomService = {
   },
   async api(path, body) {
     let r;
-    // (sent as plain text: no preflight - account.js)
+    // (sent as plain text: no preflight - the old game's app web views; the server may replace this in phase-05)
     try { r = await fetch(this.base() + path, body ? { method: 'POST', body: JSON.stringify(body) } : {}); }
     catch (e) { throw new Error('连不上联机服务器'); }
     const j = await r.json().catch(() => ({ error: '联机服务器没有回应' }));
@@ -1073,6 +1077,7 @@ const RoomService = {
 };
 Game.prototype.joinRoom = function (code, name) {
   if (this.world) { this.unloadAll(); this.world = null; }
+  try { GuestSession.beginConnect(code); } catch (e) { }
   this.net = new NetClient(this, RoomService.ws(), name, { room: code, key: RoomService.key() });
   this.ui.open(new LoadingScreen(this, '正在连接房间 ' + code + '…'));
 };
@@ -1127,7 +1132,7 @@ class MultiplayerScreen extends FormScreen {
   constructor(game, parent) {
     super(game, '多人游戏', parent);
     const s = game.settings;
-    this.name = (typeof Account !== 'undefined' && Account.loggedIn && Account.name) || s.netName || ('Steve' + Math.floor(Math.random() * 900 + 100));
+    this.name = GuestSession.name || s.netName || ('Steve' + Math.floor(Math.random() * 900 + 100));
     this.code = RoomService.fromUrl() || '';
     this.list = null; this.page = 0; this.cap = null;
     if (!RoomService.base()) this.say(location.protocol === 'http:' ? '没有配置房间服务（js/netconfig.js）：可以用下面的“直接连接”' : '还没有配置联机服务器地址（js/netconfig.js）', true);
@@ -1146,9 +1151,8 @@ class MultiplayerScreen extends FormScreen {
   layout() {
     const u = this.game.ui, cx = u.w / 2, n = this.rows(), list = this.list || [];
     this.fields = {};
-    // (logged in: the account's game name, changed in 选项 → 账号)
-    if (!(typeof Account !== 'undefined' && Account.loggedIn)) this.addField('name', cx - 152, 42, 148, '你的名字（英文、数字、下划线）', 16, nameOnly);
-    else this.name = Account.name;
+    // a nickname chosen here; no account or login (the server issues the temporary id for the room)
+    this.addField('name', cx - 152, 42, 148, '昵称（1–16 个字符）', 16, GuestSession.cleanName);
     this.addField('code', cx + 4, 42, 98, '邀请码', 8, codeOnly);
     const pages = Math.max(1, Math.ceil(list.length / n));
     this.page = clamp(this.page, 0, pages - 1);
@@ -1158,12 +1162,11 @@ class MultiplayerScreen extends FormScreen {
       { x: cx + 130, y: 66, w: 22, h: 14, label: '>', enabled: this.page < pages - 1, onClick: () => { this.page++; this.layout(); } },
     ];
     list.slice(this.page * n, this.page * n + n).forEach((r, i) => {
-      // (a super administrator goes into a full room too - the service lets it, and the room's server keeps two places)
-      // (the owner too, into their own room - its button blue: the user, 2026-11-01)
-      const full = r.players >= r.max, sup = typeof Account !== 'undefined' && !!(Account.data && Account.data.super);
-      const mine = typeof Account !== 'undefined' && !!Account.name && String(r.owner || '').toLowerCase() === Account.name.toLowerCase();
-      this.widgets.push({ x: cx + 106, y: 84 + i * 24, w: 46, h: 20, label: full && !sup && !mine ? '已满' : '进入', enabled: !full || sup || mine, gold: full && sup && !mine, blue: mine,
-        tip: [r.name, `房主 ${r.owner}，${r.players}/${r.max} 人，${GM_CN[r.gamemode] || ''}`].concat(mine ? ['你的房间：满员了也能进'] : full && sup ? ['满员了，管理员可以进'] : []), onClick: () => this.join(r.code) });
+      // (the owner's own room: its button blue - the old account checks are gone; names are just nicknames now)
+      const full = r.players >= r.max;
+      const mine = !!GuestSession.name && String(r.owner || '').toLowerCase() === GuestSession.name.toLowerCase();
+      this.widgets.push({ x: cx + 106, y: 84 + i * 24, w: 46, h: 20, label: full && !mine ? '已满' : '进入', enabled: !full || mine, blue: mine,
+        tip: [r.name, `房主 ${r.owner}，${r.players}/${r.max} 人，${GM_CN[r.gamemode] || ''}`].concat(mine ? ['你的房间：满员了也能进'] : []), onClick: () => this.join(r.code) });
     });
     this.widgets.push(
       { x: cx - 152, y: u.h - 52, w: 98, h: 20, label: '创建房间', onClick: () => this.go(CreateRoomScreen) },
@@ -1175,8 +1178,9 @@ class MultiplayerScreen extends FormScreen {
     if (this.field) this.focus(this.field);
   }
   okName() {
-    const n = typeof Account !== 'undefined' && Account.loggedIn && Account.name ? Account.name : nameOnly(this.name);
-    if (n.length < 1) { this.say('先输入名字', true); this.focus('name'); return null; } // (one- and two-character Bilibili names too: the service takes 1-16, 2026-11-01)
+    const n = GuestSession.setName(GuestSession.cleanName(this.name));
+    this.name = n;
+    if (n.length < 1) { this.say('先输入昵称', true); this.focus('name'); return null; }
     const g = this.game; g.settings.netName = n; g.saveSettings();
     return n;
   }
@@ -1190,7 +1194,6 @@ class MultiplayerScreen extends FormScreen {
   drawExtra(ui) {
     const c = ui.ctx, cx = ui.w / 2, n = this.rows(), list = this.list || [];
     const nt = this.note; this.note = ''; this.drawFields(ui); this.note = nt; // (the note goes above the buttons, below)
-    if (typeof Account !== 'undefined' && Account.loggedIn) { Font.draw(c, '你的名字', cx - 152, 31, '#A0A0A0'); Font.draw(c, fitText(Account.name, 146), cx - 150, 48, '#FFFFFF'); }
     Font.draw(c, '公开房间' + (list.length ? `（${list.length}）` : ''), cx - 152, 69, '#FFFFFF');
     if (this.maint) Font.draw(c, this.maint, cx - 80, 69, '#FF5555');
     if (!this.list) Font.center(c, '正在读取公开房间…', cx, 100, '#A0A0A0');
@@ -1373,6 +1376,7 @@ class DirectConnectScreen extends MenuScreen {
   join() {
     const g = this.game, name = this.name.replace(/[^A-Za-z0-9_]/g, '').slice(0, 16);
     if (!name) return;
+    GuestSession.setName(name);
     g.settings.netUrl = this.url.trim(); g.settings.netName = name; g.saveSettings();
     g.ui.hideInput();
     g.joinServer(this.url.trim(), name);
@@ -2048,10 +2052,9 @@ function netRecipe(o) {
   };
 })();
 
-// ---- players' names: on a room's server a Bilibili name that isn't a Minecraft name plays under a stand-in (B_ and a
-// hash, rooms.js mcName); the room service says whose is whose ('names'), and everything shown here - names over heads,
-// the player list, chat, joins, deaths - has the real name, while a command typed with a real name goes to the server
-// with the stand-in
+// ---- players' names: a room's server may map a display name that isn't a Minecraft name to a stand-in; the room
+// service says whose is whose ('names'), and everything shown here - names over heads, the player list, chat, joins,
+// deaths - has the real name, while a command typed with a real name goes to the server with the stand-in
 (() => {
   const sub = (s, from, to) => { s = String(s); return s.includes(from) ? s.split(from).join(to) : s; };
   const _om = NetClient.prototype.onMessage;

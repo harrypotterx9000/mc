@@ -4,8 +4,8 @@
 // skin looked up by name (the room service asks Mojang: skin and arm model, never their cape). Classic (4 px) or slim
 // (3 px) arms, the second layer, old 64 x 32 skins turned into 64 x 64 like vanilla; the first-person arm uses the
 // skin too. In a room the web players tell each other what they wear (a 'look' message the room service passes on).
-// Every preset, every premium player's skin, every cape and every decoration is free (phase-02: no unlock checks);
-// the look chosen here is kept on this device and, when an account is logged in, also synced to it.
+// Every preset, every premium player's skin, every cape and every decoration is free; the look chosen here is kept
+// on this device (`mcjs-look`) and nowhere else - phase-03 removed the account it used to sync to.
 // ---------------------------------------------------------------------------
 const Skins = (() => {
   const canv = new Map();   // id -> 64 x 64 canvas
@@ -67,26 +67,17 @@ const Skins = (() => {
     load(id).catch(() => { });
     return 'steve';
   }
-  // this player's look: what is being previewed in the wardrobe, else the look kept on this device (an account's
-  // look is taken over once when it is logged in). No skin or decoration needs an unlock (phase-02)
+  // this player's look: what is being previewed in the wardrobe, else the look kept on this device
   const LOOK_KEY = 'mcjs-look';
   const str = (v) => (typeof v === 'string' && v ? v : null);
   const clean = (l) => {
     const s = l && typeof l === 'object' ? l : {};
     return { skin: str(s.skin), slim: !!s.slim, cape: str(s.cape), hat: str(s.hat), pet: str(s.pet), pre: str(s.pre) };
   };
-  let saved = null, savedFor = null;
+  let saved = null;
   try { const v = JSON.parse(localStorage.getItem(LOOK_KEY) || 'null'); if (v) saved = clean(v); } catch (e) { }
   function persist(l) { saved = clean(l); try { localStorage.setItem(LOOK_KEY, JSON.stringify(saved)); } catch (e) { } }
-  // (a logged-in account's own look replaces this device's once per account; after that this device's save is used)
-  function takeAccountLook() {
-    if (typeof Account === 'undefined' || !Account.loggedIn || !Account.data) { savedFor = null; return; }
-    const key = String(Account.data.id || Account.data.name || '?');
-    if (savedFor === key) return;
-    savedFor = key;
-    if (Account.data.skin) persist(Account.data.skin);
-  }
-  function currentLook() { takeAccountLook(); return saved; }
+  function currentLook() { return saved; }
   let preview = null;
   function lookOf(g, e) {
     if (e === g.player) return preview || currentLook();
@@ -161,18 +152,7 @@ class WardrobeScreen extends FormScreen {
     const a = this.saved, b = this.look;
     return (a.skin || null) !== (b.skin || null) || !!a.slim !== !!b.slim || ['cape', 'hat', 'pet', 'pre'].some((k) => (a[k] || null) !== (b[k] || null));
   }
-  // a sign-in reward not owned yet: to the sign-in card (checkin.js), else a line saying how
-  toCheckin(id) {
-    if (typeof CheckinScreen !== 'undefined' && typeof Checkin !== 'undefined' && Checkin.shown()) this.game.ui.open(new CheckinScreen(this.game, this));
-    else this.say('签到活动奖励：活动期间每天登录签到，累计签到就能领');
-  }
-  // how a locked sign-in reward is got: its day in the event's rewards as last read (checkin.js keeps it, also
-  // across reloads; the server may change the order, so never hardcoded), else just that it's a reward
-  evHow(id) {
-    const st = typeof Checkin !== 'undefined' && Checkin.st, R = st && st.event && Array.isArray(st.event.rewards) ? st.event.rewards : [];
-    const i = R.indexOf(id);
-    return [i >= 0 ? '签到第 ' + (i + 1) + ' 天' : '签到活动奖励', ...(typeof Checkin !== 'undefined' && Checkin.shown() ? ['点一下去签到'] : [])];
-  }
+  // (nothing is locked any more: every preset skin, cape, hat, pet and prefix is free)
   pv() { const u = this.game.ui; return { x: Math.max(8, Math.floor(u.w / 2 - 190)), y: 26, w: 110, h: 170 }; }
   layout() {
     const u = this.game.ui, g = this.game, P = this.pv(), x0 = P.x + P.w + 10, W = Math.min(270, u.w - x0 - 8);
@@ -196,23 +176,20 @@ class WardrobeScreen extends FormScreen {
       const items = [{ id: null, name: '不穿披风' }, ...Capes.list];
       items.forEach((c, i) => {
         const cx = x0 + (i % cols) * cell, cy = y0 + Math.floor(i / cols) * (cell + 12);
-        const locked = c.id && !Capes.unlocked(c.id);
-        // (the sign-in event's capes: owned once signed for, not unlocked by 三连 / following)
-        const how = c.ev ? this.evHow('cape:' + c.id) : ['暂未解锁'];
-        this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell + 8, label: '', capeIcon: c.id, locked, sel: c.id === this.look.cape,
-          tip: [c.name + (c.anim ? '（动态）' : ''), ...(locked ? how : [])],
-          onClick: () => { if (locked && c.ev) this.toCheckin('cape:' + c.id); else if (!locked) { this.look.cape = c.id; this.layout(); } } });
+        this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell + 8, label: '', capeIcon: c.id, sel: c.id === this.look.cape,
+          tip: [c.name + (c.anim ? '（动态）' : '')],
+          onClick: () => { this.look.cape = c.id; this.layout(); } });
       });
     } else {
-      // hats, pets, name prefixes (cosmetics.js): 'none' first, then each with its icon; all sign-in rewards for now
+      // hats, pets, name prefixes (cosmetics.js): 'none' first, then each with its icon; all free
       const k = this.tab, C = typeof Cosmetics !== 'undefined' ? Cosmetics : null;
       const items = [{ id: null, name: { hat: '不戴帽子', pet: '不带宠物', pre: '不用前缀' }[k] }, ...(C ? C.LIST.filter((d) => d.kind === k) : [])];
       items.forEach((d, i) => {
         const cx = x0 + (i % cols) * cell, cy = y0 + Math.floor(i / cols) * (cell + 2);
-        const v = d.id ? d.id.split(':')[1] : null, locked = !!d.id && !C.has(d.id);
-        this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell - 2, label: '', cosIcon: d.id, locked, sel: v === (this.look[k] || null),
-          tip: [d.name, ...(locked ? this.evHow(d.id) : [])],
-          onClick: () => { if (locked) this.toCheckin(d.id); else { this.look[k] = v; this.layout(); } } });
+        const v = d.id ? d.id.split(':')[1] : null;
+        this.widgets.push({ x: cx, y: cy, w: cell - 2, h: cell - 2, label: '', cosIcon: d.id, sel: v === (this.look[k] || null),
+          tip: [d.name],
+          onClick: () => { this.look[k] = v; this.layout(); } });
       });
     }
     this.widgets.push(
@@ -229,14 +206,10 @@ class WardrobeScreen extends FormScreen {
     this.busy = false; this.layout();
   }
   async saveLook() {
-    // (kept on this device even without an account; a logged-in one also gets it on the service)
+    // kept on this device only; there is no account to sync it to (phase-03)
     Skins.saveLook(this.look); this.saved = { ...this.look };
     if (this.game.net) this.game.net.sendLook();
-    if (!Account.loggedIn) { this.say('已保存在这台设备上'); this.layout(); return; }
-    this.busy = true; this.layout();
-    try { await Account.update({ skin: { ...this.look } }); this.say('已保存'); }
-    catch (e) { this.say('已保存在这台设备上；账号同步失败：' + e.message, true); }
-    this.busy = false; this.layout();
+    this.say('已保存在这台设备上'); this.layout();
   }
   back() { Skins.setPreview(null); super.back(); }
   mouseDown(ui, mx, my, b) { const P = this.pv(); if (mx >= P.x && mx < P.x + P.w && my >= P.y && my < P.y + P.h) { this.drag = { x: mx, yaw: this.yaw }; return; } super.mouseDown(ui, mx, my, b); }
@@ -255,8 +228,8 @@ class WardrobeScreen extends FormScreen {
       if (w.skinIcon !== undefined) {
         const img = w.skinIcon ? this.faceOf('p:' + w.skinIcon) : this.game.renderer.images.steve;
         if (img) { c.drawImage(img, 8, 8, 8, 8, w.x + 4, w.y + 4, w.w - 8, w.h - 8); c.drawImage(img, 40, 8, 8, 8, w.x + 3, w.y + 3, w.w - 6, w.h - 6); }
-      } else if (w.capeIcon) { Capes.drawFlat(c, w.capeIcon, w.x + 4, w.y + 3, 2, w.locked); if (w.locked) drawIcon(c, 'lock', w.x + w.w - 11, w.y + w.h - 11, 1, '#FFD24A'); }
-      else if (w.cosIcon) { Cosmetics.drawIcon(c, w.cosIcon, w.x + 2, w.y + 2, w.w - 4, w.locked); if (w.locked) drawIcon(c, 'lock', w.x + w.w - 11, w.y + w.h - 11, 1, '#FFD24A'); }
+      } else if (w.capeIcon) { Capes.drawFlat(c, w.capeIcon, w.x + 4, w.y + 3, 2, false); }
+      else if (w.cosIcon) { Cosmetics.drawIcon(c, w.cosIcon, w.x + 2, w.y + 2, w.w - 4, false); }
       else Font.center(c, '无', w.x + w.w / 2, w.y + w.h / 2 - 4, '#A0A0A0');
     }
     for (const w of tips) if (ui.hit(w)) ui.tooltip(w.tip.map((t) => ({ text: t })), ui.mouse.x, ui.mouse.y);
@@ -272,9 +245,9 @@ class WardrobeScreen extends FormScreen {
     Skins.setPreview(null);
     if (cv) { c.imageSmoothingEnabled = false; c.drawImage(cv, P.x, P.y, P.w, P.h); }
     // (on the prefix page: the name as others will see it)
-    if (this.tab === 'pre' && typeof Cosmetics !== 'undefined') Font.center(c, fitText(Cosmetics.preChar(this.look.pre) + ((Account.loggedIn && Account.name) || '玩家'), P.w - 4), P.x + P.w / 2, P.y + 4, '#FFFFFF');
+    if (this.tab === 'pre' && typeof Cosmetics !== 'undefined') Font.center(c, fitText(Cosmetics.preChar(this.look.pre) + GuestSession.displayName, P.w - 4), P.x + P.w / 2, P.y + 4, '#FFFFFF');
     Font.center(c, '拖动可以转动', P.x + P.w / 2, P.y + P.h + 4, '#808080');
     this.drawFields(ui);
-    if (!Account.loggedIn) Font.center(c, fitText('外观保存在这台设备上（登录后还会同步到账号）', ui.w - 8), ui.w / 2, ui.h - 42, '#808080');
+    Font.center(c, fitText('外观保存在这台设备上', ui.w - 8), ui.w / 2, ui.h - 42, '#808080');
   }
 }

@@ -30,7 +30,7 @@
   // the loading bar: the game's scripts as they arrive (how many there are: counted in this page itself), then the
   // start-up (textures, the title world) creeping on until the title screen is up
   (function () {
-    var bar = document.querySelector('#bootbar i'), txt = document.getElementById('boottext'), total = 88, got = 0, shown = 0;
+    var bar = document.querySelector('#bootbar i'), txt = document.getElementById('boottext'), total = 85, got = 0, shown = 0;
     try { fetch(location.href, { cache: 'force-cache' }).then(function (r) { return r.text(); }).then(function (t) { var n = (t.match(/<script src=/g) || []).length; if (n) total = n; }).catch(function () { }); } catch (e) { }
     document.addEventListener('load', function (e) { if (e.target && e.target.tagName === 'SCRIPT' && e.target.src) got++; }, true);
     (function step() {
@@ -114,21 +114,18 @@
 <script src="js/touch.js"></script>
 <script src="js/perf.js"></script>
 <script src="js/netconfig.js"></script>
+<script src="js/guest.js"></script>
 <script src="js/net.js"></script>
 <script src="js/beacon.js"></script>
 <script src="js/cmdblock.js"></script>
-<script src="js/toy.js"></script>
-<script src="js/account.js"></script>
 <script src="js/capes.js"></script>
 <script src="js/skins.js"></script>
-<script src="js/cloudsave.js"></script>
 <script src="js/social.js"></script>
 <script src="js/mobile.js"></script>
 <script src="js/onboard.js"></script>
 <script src="js/companion.js"></script>
 <script src="js/extras.js"></script>
 <script src="js/cosmetics.js"></script>
-<script src="js/checkin.js"></script>
 <script src="js/p2p.js"></script>
 <script src="js/panorama_data.js"></script>
 <script src="js/panorama.js"></script>

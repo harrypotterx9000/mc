@@ -207,12 +207,8 @@ class DeviceScreen extends MenuScreen {
 const Onboarding = {
   start(g) {
     if (g.settings.onboarded) return;
-    const login = () => {
-      const after = () => this.afterLogin(g);
-      if (Account.loggedIn || !RoomService.base()) return after();
-      g.ui.open(new LoginScreen(g, after));
-    };
-    const device = () => g.ui.open(new DeviceScreen(g, login));
+    // phase-03: no login step - the player picks a nickname in 多人游戏, and a single-player world needs nothing
+    const device = () => g.ui.open(new DeviceScreen(g, () => this.afterLogin(g)));
     g.ui.open(new QualityScreen(g, device));
   },
   afterLogin(g) {
@@ -250,9 +246,9 @@ const Onboarding = {
 // ---- "this version is different": a few pages (players new to it) ----
 const DIFF_PAGES = [
   ['网页里的操作', '电脑：和原版一样（WASD、鼠标、E 背包、T 聊天）；点一下画面锁定鼠标，Esc 释放', '手机：左下摇杆走路，右边滑动转视角；屏幕中间是准星，右下的攻击按钮挖掘 / 攻击、使用按钮放置 / 使用'],
-  ['和朋友联机', '多人游戏 → 创建房间，把邀请码或邀请卡片发给朋友；也可以进公开房间', '房主能踢人、禁言、设成员；也可以用自己的单人存档开房间'],
-  ['存档和账号', '登录后存档会同步到云端，换设备接着玩；7 天没玩的云端存档会自动删除（设备上的不动）', '识别码能在任何设备上登录你的账号，请保密'],
-  ['皮肤、披风、帮助', '标题界面「皮肤和装饰」：全部预设皮肤、正版玩家皮肤、全部原创披风（含管理员款）、全部帽子和宠物、名字前缀，都已直接开放', '按 F1 或 暂停 → 游戏说明 查看操作；物品图鉴（背包里的书本按钮）查合成方法'],
+  ['和朋友联机', '多人游戏 → 创建房间，把邀请码或邀请卡片发给朋友；也可以进公开房间', '进房间前给自己起一个昵称就可以；不需要注册或登录'],
+  ['存档和身份', '单人存档保存在这台设备的浏览器里（IndexedDB），换设备不会自动带过去', '访客身份只在这个房间会话里有效：昵称由你选，临时玩家 ID 由服务器分配'],
+  ['皮肤、披风、帮助', '标题界面「皮肤和装饰」：全部预设皮肤、正版玩家皮肤、全部原创披风（含管理员款）、全部帽子和宠物、名字前缀，都已直接开放', '外观保存在这台设备上；按 F1 或 暂停 → 游戏说明 查看操作；物品图鉴（背包里的书本按钮）查合成方法'],
 ];
 class DifferencesScreen extends MenuScreen {
   constructor(game, next) { super(game, '这个版本有什么不一样'); this.next = next; this.pauses = false; this.page = 0; this.titleY = 16; }
@@ -276,7 +272,7 @@ class DifferencesScreen extends MenuScreen {
 }
 // ---- what changed (players of this version, once per update) ----
 const WHATS_NEW = {
-  '2026.10.30': ['B站 账号登录、个人识别码、云存档（换设备接着玩）', '原创披风 7 款、全部帽子 / 宠物 / 名字前缀、正版玩家皮肤（无需解锁）', '手机：摇杆、准星 + 攻击 / 使用按钮、横屏', '新手引导、小地图、死亡点、物品图鉴、整理背包', '用单人存档开联机房间、邀请卡片、本地房间'],
+  '2026.10.30': ['皮肤 / 披风 / 帽子 / 宠物 / 名字前缀全部开放', '手机：摇杆、准星 + 攻击 / 使用按钮、横屏', '新手引导、小地图、死亡点、物品图鉴、整理背包', '用单人存档开联机房间、邀请卡片、本地房间'],
 };
 class WhatsNewScreen extends MenuScreen {
   constructor(game, next) { super(game, '更新内容'); this.next = next; this.pauses = false; this.titleY = 16; }
@@ -325,10 +321,9 @@ const Tips = {
   OptionsScreen.prototype.layout = function () {
     lay.call(this);
     const u = this.game.ui, g = this.game, s = g.settings;
-    // the skin and account entries (vanilla's skin customisation slot; the resource packs slot, not supported here)
+    // the skin entry (vanilla's skin customisation slot; the resource packs slot, not supported here)
     for (const w of this.widgets) {
       if (w.label === '皮肤自定义…') Object.assign(w, { enabled: true, gold: true, label: '皮肤和披风…', tip: null, onClick: () => g.ui.open(new WardrobeScreen(g, this)) });
-      if (w.label === '资源包…') Object.assign(w, { enabled: true, label: '账号…', tip: ['登录、游戏名、识别码'], onClick: () => g.ui.open(new AccountScreen(g, this)) });
     }
     const y = Math.max(...this.widgets.filter((w) => w.y < u.h - 40).map((w) => w.y)) + 24;
     if (y < u.h - 50) this.widgets.push(

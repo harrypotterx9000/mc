@@ -433,7 +433,7 @@ class ItemDexScreen extends FormScreen {
   };
 })();
 
-// ---- a photo: the picture without the HUD, with the game's name and a QR code, to share or keep ----
+// ---- a photo: the picture without the HUD, with the game's name, to keep ----
 const Photo = {
   async take(g) {
     const ui = g.ui, hide = ui.hideHud;
@@ -444,29 +444,25 @@ const Photo = {
     const x = cv.getContext('2d');
     x.drawImage(src, 0, 0, W, H);
     ui.hideHud = hide;
-    // the card's strip: the game's name, who took it, the QR code to play
+    // the card's strip: the game's name and who took it
     x.fillStyle = '#1B1B1B'; x.fillRect(0, H, W, 64);
     x.fillStyle = '#FFFFFF'; x.font = 'bold 22px sans-serif'; x.fillText('OpusMC · 网页里的 Minecraft', 16, H + 30);
-    x.fillStyle = '#A0A0A0'; x.font = '15px sans-serif'; x.fillText(((typeof Account !== 'undefined' && Account.name) || '') + ' 拍摄 · 在 B站 搜索 OpusMC 就能玩', 16, H + 52);
-    try { const q = await Toy.qrCode('index.html', 120); if (q && q.base64) { const im = new Image(); await new Promise((r) => { im.onload = r; im.onerror = r; im.src = q.base64.startsWith('data:') ? q.base64 : 'data:image/png;base64,' + q.base64; }); x.fillStyle = '#FFFFFF'; x.fillRect(W - 62, H + 4, 56, 56); x.drawImage(im, W - 60, H + 6, 52, 52); } } catch (e) { }
+    x.fillStyle = '#A0A0A0'; x.font = '15px sans-serif'; x.fillText(GuestSession.displayName + ' 拍摄 · 在浏览器里打开 OpusMC 就能玩', 16, H + 52);
     g.ui.open(new PhotoScreen(g, cv));
     Sound.ev && Sound.ev('ui.button.click', null, 1, 2);
   },
 };
 class PhotoScreen extends MenuScreen {
-  constructor(game, cv) { super(game, null); this.cv = cv; this.pauses = !game.net; this.blurBg = false; this.bgDim = 0.6; this.note = ''; this.inToy = null; Toy.ready().then((v) => { this.inToy = v; if (this.game.ui.screen === this) this.layout(); }); }
+  constructor(game, cv) { super(game, null); this.cv = cv; this.pauses = !game.net; this.blurBg = false; this.bgDim = 0.6; this.note = ''; }
   layout() {
     const u = this.game.ui, cx = u.w / 2;
     this.widgets = [
-      { x: cx - 152, y: u.h - 26, w: 98, h: 20, gold: true, label: '分享', enabled: this.inToy === true, tip: this.inToy ? ['分享到 B站'] : ['在 B站 App 或网页里才能分享'], onClick: () => this.share() },
-      { x: cx - 50, y: u.h - 26, w: 98, h: 20, label: '保存图片', onClick: () => this.save() },
+      { x: cx - 50, y: u.h - 26, w: 100, h: 20, label: '保存图片', onClick: () => this.save() },
       { x: cx + 52, y: u.h - 26, w: 100, h: 20, label: '关闭', onClick: () => this.game.ui.close() },
     ];
   }
   data() { return this.cv.toDataURL('image/jpeg', 0.88); }
-  async share() { try { await Toy.sharePicture({ base64Data: this.data(), title: 'OpusMC 截图' }); this.note = '已打开分享'; } catch (e) { this.note = Toy.explain(e); } }
   async save() {
-    if (this.inToy) { try { await Toy.saveImage({ base64Data: this.data() }); this.note = '已保存到相册'; return; } catch (e) { } }
     const a = document.createElement('a'); a.href = this.data(); a.download = 'OpusMC-' + Date.now() + '.jpg'; a.click(); this.note = '已下载';
   }
   drawExtra(ui) {

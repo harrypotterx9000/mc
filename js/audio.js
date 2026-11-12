@@ -141,10 +141,10 @@ const Sound = {
 const SOUND_CACHE_BYTES = 32 << 20;
 Object.assign(Sound, {
   buffers: new Map(), pending: new Map(), packReady: false, cacheBytes: 0,
-  // WebKit (every browser on an iPhone, the Bilibili app there, Safari on a Mac) did not decode Ogg until lately -
+  // WebKit (every browser on an iPhone, Safari on a Mac) did not decode Ogg until lately -
   // iPhones had no sound at all (players' feedback 2026-10-31): the effects are AAC (sounds/sfx/<name>.m4a), which
-  // every browser decodes; the Toy package carries only those (both doubled its files and Bilibili's upload timed
-  // out). A browser that can't decode AAC switches to the Ogg files where they are (decode)
+  // every browser decodes; the sound set carries only those. A browser that can't decode AAC switches to the Ogg
+  // files where they are (decode)
   ext: '.m4a',
   loadPack() {
     if (window.SOUNDS) { this.packReady = true; this.predecode(); return; }

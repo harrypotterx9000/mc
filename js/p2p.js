@@ -96,17 +96,18 @@ class LocalHost {
   constructor(g, code) { this.g = g; this.code = code; this.peers = new Map(); this.nextEnt = 1; this.blocks = []; this.beSent = new Map(); this.state = 'connecting'; this.chunkLists = new Map(); }
   open() {
     return new Promise((res, rej) => {
+      try { GuestSession.beginConnect(this.code); } catch (e) { }
       const ws = this.ws = new WebSocket(p2pUrl());
-      ws.onopen = () => ws.send(JSON.stringify({ t: 'host', code: this.code, token: Account.token || undefined, name: (Account.loggedIn && Account.name) || this.g.settings.netName || 'Host' }));
+      ws.onopen = () => ws.send(JSON.stringify({ t: 'host', code: this.code, name: GuestSession.name || this.g.settings.netName || 'Host' }));
       ws.onmessage = (e) => {
         let m; try { m = JSON.parse(e.data); } catch (err) { return; }
-        if (m.t === 'hosted') { this.ice = m.ice; this.sponsor = m.sponsorText ? { text: m.sponsorText, seconds: m.sponsorSeconds } : null; this.state = 'open'; res(); }
-        else if (m.t === 'error') { this.state = 'closed'; rej(new Error(m.reason)); }
+        if (m.t === 'hosted') { this.ice = m.ice; this.sponsor = m.sponsorText ? { text: m.sponsorText, seconds: m.sponsorSeconds } : null; this.state = 'open'; try { GuestSession.connected(); } catch (err) { } res(); }
+        else if (m.t === 'error') { this.state = 'closed'; try { GuestSession.disconnected(); } catch (err) { } rej(new Error(m.reason)); }
         else if (m.t === 'peer') this.addPeer(m.id, m.name);
         else if (m.t === 'signal') { const p = this.peers.get(m.from); if (p) p.link.signal(m.data, (d) => this.sig(p.id, d)).catch((err) => console.warn('p2p signal', err)); }
         else if (m.t === 'gone') this.dropPeer(m.id, '离开了');
       };
-      ws.onclose = () => { if (this.state === 'connecting') rej(new Error('连不上游戏服务器')); if (this.state === 'open') { this.state = 'closed'; this.g.ui.message('和游戏服务器的连接断了：已经在房间里的朋友不受影响，新的人进不来了', '#FFAA00'); } };
+      ws.onclose = () => { if (this.state === 'connecting') { try { GuestSession.disconnected(); } catch (err) { } rej(new Error('连不上游戏服务器')); } if (this.state === 'open') { this.state = 'closed'; this.g.ui.message('和游戏服务器的连接断了：已经在房间里的朋友不受影响，新的人进不来了', '#FFAA00'); } };
     });
   }
   sig(id, data) { if (this.ws.readyState === 1) this.ws.send(JSON.stringify({ t: 'signal', to: id, data })); }
@@ -153,7 +154,7 @@ class LocalHost {
     for (const q of parts) p.link.send(q);
     p.link.send({
       t: 'welcome', name: m.name, seed: m.seed, gen: m.gen, mode: g.mode === 'spectator' ? 'survival' : g.mode, difficulty: g.difficulty, hardcore: !!g.hardcore,
-      time: g.worldTime, weather: g.weather, rain: g.rainTarget, spawn: g.player.spawn || m.spawn, near: [sp[0], sp[1], sp[2]], host: (Account.loggedIn && Account.name) || 'Host',
+      time: g.worldTime, weather: g.weather, rain: g.rainTarget, spawn: g.player.spawn || m.spawn, near: [sp[0], sp[1], sp[2]], host: GuestSession.name || 'Host',
       saved, sponsor: this.sponsor, players: [...this.peers.values()].filter((q) => q.joined).map((q) => q.name),
     });
     p.joined = true;
@@ -243,7 +244,7 @@ class LocalHost {
     }
     // the host itself, as a player
     const hp = g.player;
-    ents.push([-1, 'player', +hp.pos[0].toFixed(2), +hp.pos[1].toFixed(2), +hp.pos[2].toFixed(2), +hp.yaw.toFixed(2), { name: (Account.loggedIn && Account.name) || 'Host', look: Skins.mine(g), held: hp.inv.held ? hp.inv.held.id : null, armor: hp.inv.slots.slice(36, 40).map((s) => s && s.id), sneak: !!hp.sneaking, swing: hp.swingT > 0, pitch: hp.pitch, swim: !!hp.swimming }]);
+    ents.push([-1, 'player', +hp.pos[0].toFixed(2), +hp.pos[1].toFixed(2), +hp.pos[2].toFixed(2), +hp.yaw.toFixed(2), { name: GuestSession.name || 'Host', look: Skins.mine(g), held: hp.inv.held ? hp.inv.held.id : null, armor: hp.inv.slots.slice(36, 40).map((s) => s && s.id), sneak: !!hp.sneaking, swing: hp.swingT > 0, pitch: hp.pitch, swim: !!hp.swimming }]);
     return { t: 'E', list: ents };
   }
   // a block changed in the host's world (game play, not generation): to the guests, and the chunk marked changed
@@ -255,6 +256,7 @@ class LocalHost {
     this.peers.clear();
     try { this.ws && this.ws.close(); } catch (e) { }
     if (this.g.p2pHost === this) this.g.p2pHost = null;
+    try { GuestSession.leaveRoom(); } catch (e) { }
   }
 }
 
@@ -264,11 +266,13 @@ class LocalGuest {
   join() {
     return new Promise((res, rej) => {
       this.res = res; this.rej = rej;
+      try { GuestSession.beginConnect(this.code); } catch (e) { }
       const ws = this.ws = new WebSocket(p2pUrl());
-      ws.onopen = () => ws.send(JSON.stringify({ t: 'join', code: this.code, token: Account.token || undefined, name: this.name }));
+      ws.onopen = () => ws.send(JSON.stringify({ t: 'join', code: this.code, name: this.name }));
       ws.onmessage = (e) => {
         let m; try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.t === 'joined') {
+          try { GuestSession.connected(m.id ? String(m.id) : ''); } catch (err) { }
           this.hostName = m.host;
           this.link = new P2PLink(m.ice, (x) => this.onMsg(x), (st) => {
             if ((st === 'failed' || st === 'closed' || st === 'disconnected') && this.state !== 'left') this.lost(st === 'failed' ? '没连上房主（网络不通：可以换个网络再试，或者让房主开服务器上的公开房间）' : '和房主的连接断开了');
@@ -277,16 +281,17 @@ class LocalGuest {
           pc.ondatachannel = (ev) => this.link.wire(ev.channel);
           setTimeout(() => { if (this.state === 'connecting') this.lost('连接超时：房主的网络可能不通'); }, 30000);
         } else if (m.t === 'signal') this.link && this.link.signal(m.data, (d) => ws.send(JSON.stringify({ t: 'signal', data: d }))).catch((err) => console.warn('p2p', err));
-        else if (m.t === 'error') { this.state = 'left'; rej(new Error(m.reason)); }
+        else if (m.t === 'error') { this.state = 'left'; try { GuestSession.disconnected(); } catch (err) { } rej(new Error(m.reason)); }
         else if (m.t === 'closed') this.lost('房主关闭了房间');
       };
-      ws.onerror = () => { if (this.state === 'connecting') { this.state = 'left'; rej(new Error('连不上游戏服务器')); } };
+      ws.onerror = () => { if (this.state === 'connecting') { this.state = 'left'; try { GuestSession.disconnected(); } catch (err) { } rej(new Error('连不上游戏服务器')); } };
     });
   }
   lost(why) {
     if (this.state === 'left') return;
     const was = this.state; this.state = 'left';
     try { this.link && this.link.close(); } catch (e) { } try { this.ws && this.ws.close(); } catch (e) { }
+    try { GuestSession.disconnected(); } catch (e) { }
     const g = this.g;
     if (was === 'connecting') { this.rej && this.rej(new Error(why)); return; }
     if (g.p2pGuest === this) { g.p2pGuest = null; g.worldMeta = null; g.startTitle(); g.ui.open(new ConfirmScreen(g, '离开了本地房间', why, '返回标题画面', () => g.ui.open(new TitleScreen(g)))); }
@@ -295,6 +300,7 @@ class LocalGuest {
     if (this.state === 'left') return;
     this.sendState(true);
     this.state = 'left';
+    try { GuestSession.leaveRoom(); } catch (e) { }
     setTimeout(() => { try { this.link && this.link.close(); } catch (e) { } try { this.ws && this.ws.close(); } catch (e) { } }, 300);
   }
   send(o) { return this.link && this.link.send(o); }
@@ -478,14 +484,14 @@ class LocalGuest {
   const rc = runCommand;
   runCommand = function (g, text) {
     if (g.p2pGuest) { if (text.startsWith('/')) { g.ui.message('本地房间里客人不能用命令', '#FF5555'); return; } g.ui.message(`<${g.p2pGuest.name}> ${text}`); g.p2pGuest.send({ t: 'chat', text }); return; }
-    if (g.p2pHost && !text.startsWith('/')) { const n = (Account.loggedIn && Account.name) || '房主'; g.ui.message(`<${n}> ${text}`); g.p2pHost.toAll({ t: 'chat', name: n, text }); return; }
+    if (g.p2pHost && !text.startsWith('/')) { const n = GuestSession.name || '房主'; g.ui.message(`<${n}> ${text}`); g.p2pHost.toAll({ t: 'chat', name: n, text }); return; }
     return rc(g, text);
   };
   // markers in a local room go through the host
   const mp = Marks.place;
   Marks.place = function (g) {
     if (g.p2pGuest || g.p2pHost) {
-      const t = g.target, pos = t ? [...t.pos] : g.player.pos.map(Math.floor), me = g.p2pGuest ? g.p2pGuest.name : (Account.loggedIn && Account.name) || '房主';
+      const t = g.target, pos = t ? [...t.pos] : g.player.pos.map(Math.floor), me = g.p2pGuest ? g.p2pGuest.name : (GuestSession.name || '房主');
       if (g.p2pGuest) g.p2pGuest.send({ t: 'mark', pos }); else g.p2pHost.toAll({ t: 'mark', name: me, pos });
       Marks.add(me, pos, '#55FF55'); return;
     }
@@ -573,7 +579,7 @@ class LocalRoomStatusScreen extends MenuScreen {
     if (!H) { Font.center(c, '没有开本地房间', cx, 50, '#A0A0A0'); return; }
     const ps = [...H.peers.values()].filter((p) => p.joined);
     Font.draw(c, `邀请码 ${H.code}　·　${ps.length + 1} / ${P2P_MAX} 人`, cx - 152, 54, '#FFFF55');
-    const rows = [{ name: ((Account.loggedIn && Account.name) || '你') + '（房主）' }, ...ps];
+    const rows = [{ name: (GuestSession.name || '你') + '（房主）' }, ...ps];
     rows.forEach((p, i) => { const y = 66 + i * 22; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(cx - 152, y, 290, 18); Font.draw(c, p.name, cx - 148, y + 5, '#FFFFFF'); });
     if (!ps.length) Font.draw(c, '还没有人进来：把邀请码发给朋友，他们在「多人游戏」里输入', cx - 152, 66 + 26, '#A0A0A0');
     if (this.note) Font.center(c, this.note, cx, ui.h - 40, '#80FF80');
@@ -592,7 +598,7 @@ class LocalRoomStatusScreen extends MenuScreen {
     // (the game-mode button gives up half of its width)
     b.w = 48;
     this.widgets.push({ x: b.x + 50, y: b.y, w: 48, h: 20, gold: !g.p2pHost, label: g.p2pHost ? '房间…' : '开房间', tip: g.p2pHost ? ['本地房间：邀请码、在场的人'] : ['开一个本地房间，朋友用邀请码加入你的世界（最多 4 人）'],
-      onClick: () => onlineGate(g, () => g.ui.open(g.p2pHost ? new LocalRoomStatusScreen(g, this) : new LocalRoomScreen(g, this)), this) });
+      onClick: () => g.ui.open(g.p2pHost ? new LocalRoomStatusScreen(g, this) : new LocalRoomScreen(g, this)) });
   };
   // joining by code: a local room when one is open under it, else a room on the service
   const sub = MultiplayerScreen.prototype.submit;
@@ -608,7 +614,9 @@ class LocalRoomStatusScreen extends MenuScreen {
   MultiplayerScreen.prototype.layout = function () { lay2.call(this); if (this.fields.code) this.fields.code.max = 12; if (this.fields.code) this.fields.code.filter = (v) => v.replace(/[^A-Za-z0-9]/g, '').slice(0, 12); };
 })();
 async function joinLocalRoom(g, code, parent) {
-  const name = (Account.loggedIn && Account.name) || nameOnly(g.settings.netName || '') || ('Steve' + Math.floor(Math.random() * 900 + 100));
+  let name = GuestSession.name || nameOnly(g.settings.netName || '');
+  if (!name) name = 'Steve' + Math.floor(Math.random() * 900 + 100);
+  name = GuestSession.setName(name);
   g.ui.hideInput();
   g.ui.open(new LoadingScreen(g, '正在连接本地房间 ' + code + '…'));
   const G = new LocalGuest(g, code, name);

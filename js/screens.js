@@ -94,16 +94,14 @@ class TitleScreen extends MenuScreen {
   layout() {
     const u = this.game.ui, cx = u.w / 2, l = Math.floor(u.h / 4 + 48), g = this.game;
     this.widgets = [
-      { x: cx - 100, y: l, w: 200, h: 20, label: '单人游戏', onClick: () => singleGate(g, () => g.ui.open(new WorldListScreen(g)), this) },
-      { x: cx - 100, y: l + 24, w: 200, h: 20, label: '多人游戏', onClick: () => onlineGate(g, () => g.ui.open(new MultiplayerScreen(g, this)), this), tip: ['加入公开房间、用邀请码加入朋友的房间，或者自己开一个（4–10 人）'] },
+      { x: cx - 100, y: l, w: 200, h: 20, label: '单人游戏', onClick: () => g.ui.open(new WorldListScreen(g)) },
+      { x: cx - 100, y: l + 24, w: 200, h: 20, label: '多人游戏', onClick: () => g.ui.open(new MultiplayerScreen(g, this)), tip: ['加入公开房间、用邀请码加入朋友的房间，或者自己开一个（4–10 人）'] },
       { x: cx - 100, y: l + 48, w: 200, h: 20, label: '皮肤和装饰', gold: true, tip: ['换皮肤（也可以用正版玩家的皮肤）、穿上原创披风、帽子和宠物'], onClick: () => g.ui.open(new WardrobeScreen(g, this)) },
       { x: cx - 124, y: l + 84, w: 20, h: 20, icon: 'icon_language', tip: ['游戏说明'], onClick: () => g.ui.open(new HelpScreen(g, this)) },
       { x: cx - 100, y: l + 84, w: 98, h: 20, label: '选项…', onClick: () => g.ui.open(new OptionsScreen(g, this)) },
       { x: cx + 2, y: l + 84, w: 98, h: 20, label: '退出游戏', onClick: () => quitGame(g) },
       { x: cx + 104, y: l + 84, w: 20, h: 20, icon: 'icon_accessibility', tip: ['全屏'], onClick: () => toggleFullscreen() },
     ];
-    // the account (top left; phase 1 removed the title's login and unlock prompts)
-    if (Account.loggedIn) this.widgets.push({ x: 4, y: 4, w: Math.min(120, Font.width(Account.name) + 30), h: 18, label: fitText(Account.name, 110), tip: ['账号：游戏名、识别码、退出登录'], onClick: () => g.ui.open(new AccountScreen(g, this)) });
   }
   drawExtra(ui) {
     const c = ui.ctx, w = ui.w, lg = ui.img.logo, ed = ui.img.edition;
@@ -750,16 +748,12 @@ Game.prototype.setMode = function (m, quiet) {
   if (!quiet) this.ui.message('已将自己的游戏模式设置为' + { survival: '生存模式', creative: '创造模式', spectator: '旁观模式' }[m], '#AAAAAA');
 };
 
-// 「退出游戏」: most places do not let a page close itself (a tab the player opened, the Bilibili app, the Toy page's
-// frame) - window.close() did nothing there and the button seemed dead (Android feedback 2026-10-31). In Toy the
-// container closes it (toy.closeBrowser); elsewhere the page tries, and if it is still here a moment later, says how
+// 「退出游戏」: most places do not let a page close itself (a tab the player opened) - window.close() does nothing
+// there and the button seemed dead (Android feedback 2026-10-31). The page tries, and if it is still here a moment
+// later, says how.
 async function quitGame(g) {
   const sc = g.ui.screen;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
-  try {
-    if (typeof Toy !== 'undefined' && await Promise.race([Toy.inToy(), new Promise((r) => setTimeout(() => r(false), 1500))]))
-      await Promise.race([Toy.closeBrowser(), new Promise((r) => setTimeout(r, 1500))]);
-  } catch (e) { }
   try { window.close(); } catch (e) { }
   setTimeout(() => { if (!document.hidden && g.ui.screen === sc && sc) sc.quitTip = performance.now(); }, 600);
 }
