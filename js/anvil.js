@@ -246,7 +246,7 @@ const VanillaImport = (() => {
     let spawn = null;
     if (D.spawn && D.spawn.pos) spawn = [D.spawn.pos[0], D.spawn.pos[1], D.spawn.pos[2]];
     else if (D.SpawnX !== undefined) spawn = [D.SpawnX, D.SpawnY, D.SpawnZ];
-    const id = 'w' + Date.now().toString(36);
+    const id = await DB.newWorldId();
     const stats = { chunks: 0, old: 0, partial: 0, skipped: 0, containers: 0, regions: 0, perDim: {} };
     missing.clear(); substituted.clear();
     const dims = {};

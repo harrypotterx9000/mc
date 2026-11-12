@@ -202,7 +202,7 @@ class Game {
     let seed;
     if (gen === 2) seed = parseSeed(seedStr);
     else { seed = parseInt(seedStr, 10); if (!seedStr) seed = (Math.random() * 2 ** 31) | 0; else if (isNaN(seed) || String(seed) !== seedStr.trim()) seed = hashStr(seedStr); }
-    const id = 'w' + Date.now().toString(36);
+    const id = await DB.newWorldId();
     const meta = { id, name: name || '新的世界', seed, gen, mode, flat: !!flat, created: Date.now(), lastPlayed: Date.now(), time: 1000, player: null,
       hardcore: !!opts.hardcore, difficulty: opts.difficulty ?? 2, cheats: opts.cheats ?? mode === 'creative', structures: opts.structures !== false, bonus: !!opts.bonus };
     await DB.putWorld(meta);
@@ -271,6 +271,7 @@ class Game {
   }
   captureIcon() {
     this.iconAt = 0;
+    if (this.worldMeta && DB.isServerWorld(this.worldMeta.id)) return;
     const src = this.canvas, s = Math.min(src.width, src.height), cv = document.createElement('canvas');
     cv.width = cv.height = 64;
     const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high';
@@ -279,6 +280,9 @@ class Game {
   }
   async saveWorld(quiet) {
     if (!this.worldMeta || this.state !== 'play') return;
+    // a server room's world is stored by the server (mp.js also redirects this
+    // path); a stale server meta must not write anything into this browser
+    if (DB.isServerWorld(this.worldMeta.id)) return;
     const p = this.player;
     const lists = this.collectDimSave();
     const m = this.worldMeta;
@@ -308,7 +312,9 @@ class Game {
   }
   async quitToTitle() {
     if (this.net) { this.leaveServer(); return; }
-    await this.saveWorld(true);
+    // (mp.js leaves a room before this; a server meta left behind by a failed
+    // connection is dropped, never "saved" into the local database)
+    if (!(this.worldMeta && DB.isServerWorld(this.worldMeta.id))) await this.saveWorld(true);
     this.worldMeta = null;
     this.ui.cursor = null;
     this.startTitle();

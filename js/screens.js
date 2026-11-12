@@ -94,8 +94,8 @@ class TitleScreen extends MenuScreen {
   layout() {
     const u = this.game.ui, cx = u.w / 2, l = Math.floor(u.h / 4 + 48), g = this.game;
     this.widgets = [
-      { x: cx - 100, y: l, w: 200, h: 20, label: '单人游戏', onClick: () => g.ui.open(new WorldListScreen(g)) },
-      { x: cx - 100, y: l + 24, w: 200, h: 20, label: '多人游戏', onClick: () => g.ui.open(new MultiplayerScreen(g, this)), tip: ['加入公开房间、用邀请码加入朋友的房间，或者自己开一个（4–10 人）'] },
+      { x: cx - 100, y: l, w: 200, h: 20, label: '单人游戏', tip: ['世界只保存在这个浏览器里（IndexedDB），不需要服务器或登录'], onClick: () => g.ui.open(new WorldListScreen(g)) },
+      { x: cx - 100, y: l + 24, w: 200, h: 20, label: '多人游戏', onClick: () => g.ui.open(new MultiplayerScreen(g, this)), tip: ['加入公开房间、用邀请码加入朋友的房间，或者自己开一个（4–10 人）', '服务器房间的世界保存在服务器，和单人存档分开，同名也不会覆盖'] },
       { x: cx - 100, y: l + 48, w: 200, h: 20, label: '皮肤和装饰', gold: true, tip: ['换皮肤（也可以用正版玩家的皮肤）、穿上原创披风、帽子和宠物'], onClick: () => g.ui.open(new WardrobeScreen(g, this)) },
       { x: cx - 124, y: l + 84, w: 20, h: 20, icon: 'icon_language', tip: ['游戏说明'], onClick: () => g.ui.open(new HelpScreen(g, this)) },
       { x: cx - 100, y: l + 84, w: 98, h: 20, label: '选项…', onClick: () => g.ui.open(new OptionsScreen(g, this)) },
@@ -133,7 +133,7 @@ class TitleScreen extends MenuScreen {
 // vanilla SelectWorldScreen + WorldSelectionList
 class WorldListScreen extends MenuScreen {
   constructor(game) {
-    super(game, '选择世界'); this.titleY = 8; this.worlds = null; this.sel = -1; this.scroll = 0; this.filter = ''; this.icons = {};
+    super(game, '选择世界（仅保存在此浏览器）'); this.titleY = 8; this.worlds = null; this.sel = -1; this.scroll = 0; this.filter = ''; this.icons = {};
     DB.listWorlds().then(w => { this.worlds = w; this.layout(); });
   }
   shown() { return (this.worlds || []).filter(w => !this.filter || w.name.toLowerCase().includes(this.filter.toLowerCase())); }
@@ -144,7 +144,7 @@ class WorldListScreen extends MenuScreen {
       { x: cx - 154, y: u.h - 76, w: 150, h: 20, label: '导入原版存档（文件夹）', onClick: () => this.pick(true), tip: ['选择原版 Java 版存档的世界文件夹', '（里面有 level.dat），支持 1.18 及以上'] },
       { x: cx + 4, y: u.h - 76, w: 150, h: 20, label: '导入原版存档（.zip）', onClick: () => this.pick(false), tip: ['选择打包成 .zip 的原版世界存档', '手机上请用这个'] },
       { x: cx - 154, y: u.h - 52, w: 150, h: 20, label: '进入选中的世界', enabled: has, onClick: () => this.play() },
-      { x: cx + 4, y: u.h - 52, w: 150, h: 20, label: '创建新的世界', onClick: () => g.ui.open(new CreateWorldScreen(g, this)) },
+      { x: cx + 4, y: u.h - 52, w: 150, h: 20, label: '创建新的世界', tip: ['新世界只写进这个浏览器的 IndexedDB；服务器多人世界在“多人游戏”里，两者分开保存'], onClick: () => g.ui.open(new CreateWorldScreen(g, this)) },
       { x: cx - 154, y: u.h - 28, w: 72, h: 20, label: '编辑', enabled: has, onClick: () => g.ui.open(new EditWorldScreen(g, this, list[this.sel])) },
       { x: cx - 76, y: u.h - 28, w: 72, h: 20, label: '删除', enabled: has, onClick: () => this.del() },
       { x: cx + 4, y: u.h - 28, w: 72, h: 20, label: '重建', enabled: has, onClick: () => g.ui.open(new CreateWorldScreen(g, this, list[this.sel])) },
@@ -479,7 +479,7 @@ class PauseScreen extends MenuScreen {
       g.net && g.net.room ? { x: cx + 4, y: y + 72, w: 98, h: 20, label: '房间…', tip: ['邀请朋友、看在场的玩家；房主可以踢人、封禁、禁言'], onClick: () => g.ui.open(new RoomScreen(g, this)) } : null,
       // phase-05: a room on the owner's own server
       mpRoom ? { x: cx - 102, y: y + 96, w: 98, h: 20, label: '房间…', tip: ['邀请码、在场的玩家；房主可以移出玩家、关闭房间'], onClick: () => g.ui.open(new MPRoomScreen(g, this)) } : null,
-      { x: mpRoom ? cx + 4 : cx - 102, y: y + (roomMode ? 120 : 96), w: mpRoom ? 98 : 204, h: 20, label: mpRoom ? '离开房间' : '保存并退回到标题屏幕', onClick: () => g.quitToTitle() },
+      { x: mpRoom ? cx + 4 : cx - 102, y: y + (roomMode ? 120 : 96), w: mpRoom ? 98 : 204, h: 20, label: mpRoom ? '离开房间' : '保存并退回到标题屏幕', tip: mpRoom ? ['离开后房间世界仍保存在服务器；可凭邀请码再次加入'] : null, onClick: () => g.quitToTitle() },
     ].filter(Boolean);
   }
   onEsc() { this.game.ui.close(); }

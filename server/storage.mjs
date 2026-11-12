@@ -64,15 +64,27 @@ export class RoomStore {
       const file = path.join(dir, 'world.json');
       let rec = null, recovered = '';
       try { rec = JSON.parse(await fsp.readFile(file, 'utf8')); }
-      catch (e) {
-        this.log.warn('world_load_failed', { dir: name, error: e.message });
-        rec = await this._latestBackupRecord(name);
-        if (rec) recovered = 'backup';
-      }
+      catch (e) { this.log.warn('world_load_failed', { dir: name, error: e.message }); }
+      // A file that parses but is not a usable record is just as broken as one
+      // that does not parse: both fall back to the newest readable backup.
+      if (rec && !this._validRecord(rec)) this.log.error('world_record_invalid', { dir: name });
       if (!this._validRecord(rec)) {
-        if (rec) this.log.error('world_record_invalid', { dir: name });
-        this.log.error('world_skipped', { dir: name });
-        continue;
+        const backup = await this._latestBackupRecord(name);
+        if (backup) { rec = backup; recovered = 'backup'; }
+      }
+      if (!this._validRecord(rec)) { this.log.error('world_skipped', { dir: name }); continue; }
+      // the record must stay in its own room directory: a copied/garbled file
+      // must not be loaded as another room's world
+      if (rec.dir !== name) { this.log.error('world_dir_mismatch', { dir: name, recordDir: rec.dir }); continue; }
+      if (recovered) {
+        // write the recovered copy back so the next start reads a valid file
+        // (the damaged original never becomes a backup of itself)
+        try {
+          await this.save(rec, { backup: false, reason: 'recovered' });
+          this.log.info('world_recovered_written', { dir: name });
+        } catch (e) {
+          this.log.warn('world_recovery_write_failed', { dir: name, error: e.message });
+        }
       }
       out.push({ record: rec, recovered });
     }

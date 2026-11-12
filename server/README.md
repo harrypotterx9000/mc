@@ -50,9 +50,15 @@ server/data/
 - 备份：默认每 10 分钟最多一份（`backupEveryMinutes`），保留 `backupKeep` 份。
 - 世界存档是“种子 + 改动”，不是完整地形：客户端按相同种子生成地形，再应用服务器保存的改动。
   因此**不要删除或改变游戏的世界生成版本**去打开旧房间；升级游戏后请先备份并验证。
+- 房间隔离：每个房间只读写自己的 `worlds/room-<code>/world.json`；记录里的 `dir` 必须与目录名一致，
+  否则该记录会被拒绝加载（不会把 A 房存档装进 B 房），原文件保留、不自动删除。
 - 恢复备份：先停止服务器，把 `backups/room-<code>/<时间>.json` 复制为
-  `worlds/room-<code>/world.json`，再启动。损坏的 `world.json` 在启动时会自动尝试最新备份，
-  并在日志中记录 `world_recovered_from_backup`。
+  `worlds/room-<code>/world.json`，再启动。`world.json` 解析失败，或能解析但字段结构无效时，启动都会
+  自动尝试最新可读备份；恢复成功后把有效内容写回 `world.json`，并在日志中记录
+  `world_recovered_from_backup` 和 `world_recovered_written`。损坏的原文件不会被当成新备份。
+- 服务器世界与浏览器本地世界是两套存储：服务器世界只存在 `server/data/`，不会写进玩家的
+  IndexedDB 单人存档；单人世界也不会写进 `server/data/`。两边即使世界/房间同名也互不覆盖。
+  浏览器端以 `srv~<邀请码>` 标识房间世界，单人世界仍用 `mc-js-clone` IndexedDB。
 
 ## 5. 局域网联机（可选）
 
@@ -130,7 +136,8 @@ server/data/
 - 浏览器或命令行访问 `http://127.0.0.1:8080/healthz` 查看运行状态。
 - `server\status.ps1` 查看状态和房间（可加 `-Config <配置文件>`）。
 - 日志在 `server/data/logs/`，常见事件：`server_start`、`room_created`、`room_joined`、`world_saved`、
-  `owner_transferred`、`world_recovered_from_backup`、`shutdown_done`。
+  `owner_transferred`、`world_recovered_from_backup`、`world_recovered_written`、`world_dir_mismatch`、
+  `shutdown_done`。
 - 端口占用：修改 `port`，或先停止占用端口的程序。
 - 提示“服务器已经在运行”：先运行 `stop-server.bat`，或检查 `server/data/server.pid` 是否指向已退出的进程。
 - 客户端提示“连不上游戏服务器”：确认服务器窗口还在、地址和端口正确、页面是用该服务器打开的。
@@ -139,4 +146,5 @@ server/data/
 ## 10. 不在本阶段范围
 
 账号/登录、HTTPS/WSS、公网/NAT、反向代理、PWA/离线、服务器端生物 AI、完整红石/流体/战斗权威、
-真实设备性能、跨版本存档迁移。阶段边界以 `docs/PROJECT_SPEC.md` 与 `docs/phases/phase-05-server/` 为准。
+真实设备性能、跨版本存档迁移。阶段边界以 `docs/PROJECT_SPEC.md`、`docs/phases/phase-05-server/` 与
+`docs/phases/phase-06-dual-save/` 为准。

@@ -18,6 +18,22 @@ const DB = {
   // the stores and how each is made (a new one only needs adding here: the database is bumped by itself - see connect)
   STORES: { worlds: { keyPath: 'id' }, chunks: undefined },
   db: null, mem: { worlds: new Map(), chunks: new Map() }, ok: false, backend: 'memory', opens: 0, blocked: false,
+  // A server room's world lives on the server and is named "srv~<invite code>"
+  // (mp.js). The check and the guards below are repeated in the base store on
+  // purpose: mp.js is loaded late and wraps these methods, so a load-order or
+  // wrapper mistake must still never write a server world into this browser's
+  // single-player database.
+  isServerWorld(id) { return typeof id === 'string' && id.startsWith('srv~'); },
+  // a new single-player world id: unique even when two worlds are made in the
+  // same millisecond (two tabs, an import right after a creation), so worlds
+  // with the same name can never overwrite each other
+  async newWorldId() {
+    for (let i = 0; i < 32; i++) {
+      const id = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      if (!(await this.getWorld(id))) return id;
+    }
+    throw new Error('无法生成唯一的世界 ID');
+  },
   // the first open: IndexedDB missing or failing -> localStorage, else memory. A database that is slow to answer
   // (another page holding it while it has to be repaired) doesn't keep the game from starting: after 8 s the title
   // comes up and what reads or saves waits for the connection (wait)
@@ -142,19 +158,24 @@ const DB = {
     if (this.backend === 'idb') all = await this.tx('worlds', 'readonly', s => s.getAll());
     else if (this.backend === 'local') all = LS.keys('mcjs:w:').map(k => LS.get(k)).filter(Boolean);
     else all = [...this.mem.worlds.values()];
-    return (all || []).sort((a, b) => b.lastPlayed - a.lastPlayed);
+    // (a server world that somehow reached the local database stays there - it
+    // is hidden from the single-player list instead of being deleted here)
+    return (all || []).filter(w => w && !this.isServerWorld(w.id)).sort((a, b) => b.lastPlayed - a.lastPlayed);
   },
   async getWorld(id) {
+    if (this.isServerWorld(id)) return undefined;
     if (this.backend === 'idb') return this.tx('worlds', 'readonly', s => s.get(id));
     if (this.backend === 'local') return LS.get('mcjs:w:' + id);
     return this.mem.worlds.get(id);
   },
   async putWorld(w) {
+    if (!w || this.isServerWorld(w.id)) return;
     if (this.backend === 'idb') return this.tx('worlds', 'readwrite', s => s.put(w));
     if (this.backend === 'local') { try { LS.set('mcjs:w:' + w.id, w); } catch (e) { throw this.nice(e); } return; }
     this.mem.worlds.set(w.id, w);
   },
   async deleteWorld(id) {
+    if (this.isServerWorld(id)) return;
     if (this.backend === 'idb') {
       await this.tx('worlds', 'readwrite', s => s.delete(id));
       for (const sid of [id, id + '~nether', id + '~end']) await this.tx('chunks', 'readwrite', s => s.delete(IDBKeyRange.bound(sid + ':', sid + ':￿')));
@@ -168,6 +189,7 @@ const DB = {
   },
   async loadChunks(id) {
     const out = new Map();
+    if (this.isServerWorld(id)) return out;
     if (this.backend === 'idb') {
       // (through tx like every other read: a closed or broken database is opened again / repaired first. A failed
       // read is an error, not "no saved chunks": that made the world come back as fresh terrain, saved over the edits)
@@ -193,12 +215,14 @@ const DB = {
   // (Game.savedReady): an imported world can hold tens of thousands of them
   async chunkKeys(id) {
     const out = new Set(), add = (k) => { const [, cx, cz] = k.split(':'); out.add(ckey(+cx, +cz)); };
+    if (this.isServerWorld(id)) return out;
     if (this.backend === 'idb') { for (const k of (await this.tx('chunks', 'readonly', s => s.getAllKeys(IDBKeyRange.bound(id + ':', id + ':\uffff')))) || []) add(k); }
     else if (this.backend === 'local') { for (const k of LS.keys('mcjs:c:' + id + ':')) add(k.slice(7)); }
     else for (const k of this.mem.chunks.keys()) if (k.startsWith(id + ':')) add(k);
     return out;
   },
   async getChunk(id, cx, cz) {
+    if (this.isServerWorld(id)) return undefined;
     const k = id + ':' + cx + ':' + cz;
     if (this.backend === 'idb') return this.tx('chunks', 'readonly', s => s.get(k));
     if (this.backend === 'local') { const v = LS.get('mcjs:c:' + k); return v ? this.lsChunk(v) : undefined; }
@@ -208,7 +232,7 @@ const DB = {
   // IndexedDB lost the water in its stairs, slabs, fences ... on every reload
   lsChunk(v) { const r = { b: new Uint16Array(v.b), m: new Uint16Array(v.m) }; if (v.w && v.w.length) r.w = new Uint32Array(v.w); return r; },
   async putChunks(id, list) {
-    if (!list.length) return;
+    if (!list.length || this.isServerWorld(id)) return;
     if (this.backend === 'idb') return this.tx('chunks', 'readwrite', s => { for (const [cx, cz, v] of list) s.put(v, id + ':' + cx + ':' + cz); });
     if (this.backend === 'local') {
       try { for (const [cx, cz, v] of list) LS.set('mcjs:c:' + id + ':' + cx + ':' + cz, v.w && v.w.length ? { b: Array.from(v.b), m: Array.from(v.m), w: Array.from(v.w) } : { b: Array.from(v.b), m: Array.from(v.m) }); }

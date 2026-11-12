@@ -370,7 +370,7 @@ class MPClient {
       };
     }
     return {
-      id: this.worldId, name: (room.name || '服务器房间') + '（服务器）', seed: w.seed, gen: 2, mode: room.gamemode || 'survival',
+      id: this.worldId, server: true, name: (room.name || '服务器房间') + '（服务器）', seed: w.seed, gen: 2, mode: room.gamemode || 'survival',
       flat: false, difficulty: w.difficulty ?? 2, hardcore: false, cheats: room.gamemode === 'creative',
       time: w.time || 6000, weather: w.weather || 0, rainTarget: w.rain || 0, spawn: this.spawn,
       tutorial: -1, created: room.createdAt || Date.now(), lastPlayed: Date.now(),
@@ -486,6 +486,8 @@ class MPClient {
     this.world = null; this.worldLoaded = false;
     this.ws = null;
     if (g.mpClient === this) g.mpClient = null;
+    // the room's world was never a local save; drop its meta with the session
+    if (g.worldMeta && g.worldMeta.id === this.worldId) g.worldMeta = null;
     this.state = 'left';
   }
 
@@ -998,7 +1000,8 @@ class MPServerScreen extends FormScreen {
       Font.center(c, '在本机项目目录运行 start-server.bat；然后刷新本页', cx, 178, '#C0C0C0');
       Font.center(c, '服务器只在你电脑开机时运行；关机/休眠后不可用', cx, 192, '#909090');
     } else {
-      Font.center(c, '邀请码由服务器生成；房主离开会自动转让房主', cx, 178, '#909090');
+      Font.center(c, '房间世界保存在服务器；与单人世界同名也不会互相覆盖', cx, 178, '#909090');
+      Font.center(c, '邀请码由服务器生成；房主离开会自动转让房主', cx, 192, '#909090');
     }
     if (this.session) Font.center(c, `上次：${this.session.code}（${Math.max(0, Math.round((Date.now() - this.session.at) / 1000))} 秒前）`, cx, 208, '#A0A0A0');
     if (this.note) Font.center(c, fitText(this.note, ui.w - 8), cx, ui.h - 58, this.noteColor);
