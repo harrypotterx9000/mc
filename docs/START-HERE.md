@@ -8,7 +8,7 @@
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
 - 现状：**phase-00 完成；phase-01/02/03 完成并验收（phase-03 端到端联机/重连 BLOCKED）；phase-04 完成并验收通过（带用户明确豁免）；phase-05 未开始。**
 - 代码：会话工作区 `D:\ds\REA\opusmc`；phase-04 代码 `553ceed`；docs 收尾为当前 HEAD。
-- 工作区：**干净**；未推送、未合并。
+- 工作区：**干净**；phase-04 已推送 `origin/opusmc-integration`，未合并。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；phase-01/02/03/04 都在 `develop`。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 仍打开，未合并。
 
@@ -43,7 +43,7 @@
 | phase-03 代码 | `025cba8` |
 | phase-04 代码 | `553ceed`（已提交；docs 收尾为当前 HEAD） |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
-| 远程 | 未推送 phase-04；PR #1 未合并；未强推 |
+| 远程 | phase-04 已推送 `origin/opusmc-integration`；PR #1 未合并；未强推 |
 
 ## 4. 运行方式
 
@@ -60,7 +60,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 5. 当前边界（务必遵守）
 
-- phase-04 已验收、代码已提交；**未推送**。推送/合并/PR 需用户另行确认。
+- phase-04 已验收、代码已提交并推送 `origin/opusmc-integration`；合并/PR 需用户另行确认。
 - 不擅自开始 phase-05 或任何游戏功能改造；每个阶段必须等用户明确指令。
 - 已提交/已推送的历史不得改写；不 force push。
 - 不新增强制账号/登录；不引入永久账号体系。
@@ -120,7 +120,7 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. phase-04 代码 `553ceed` 与 docs 已提交；**未推送**。推送/合并/PR 需用户另行确认，禁止强推。
+1. phase-04 代码 `553ceed` 与 docs 已提交并推送 `origin/opusmc-integration`；未合并。推送/合并/PR 需用户另行确认，禁止强推。
 2. phase-05 自建服务器必须处理：临时玩家 ID 签发/校验、真实短时重连、房间所有权（F-1）、`/api/skin`、
    管理员公告、旧 `mcjs-room-key`、服务端权威存档；届时决定是否恢复 `NET_CONFIG.announce`。
 3. 用户已明确不补测真实 Android/iOS；后续发布验收前仍应重新评估，不要把模拟写成真机通过。

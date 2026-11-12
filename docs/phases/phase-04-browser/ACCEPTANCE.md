@@ -9,7 +9,7 @@
 - 证据：`D:\ds\REA\_work\accept04-*`（结果 JSON、截图、测试脚本）
 - 原始独立验收结论：**未满足完整的 phase-04 验收标准；不宣称阶段完成，不进入 phase-05。**
 - **用户验收决定（2026-11-12）**：不补测真实 Android Chrome / iOS Safari；K-39 留到 phase-07 处理。
-  在该明确豁免下，phase-04 验收通过；真实设备仍不得写成已测试，K-39 仍是已知问题。代码提交 `553ceed`。
+  在该明确豁免下，phase-04 验收通过；真实设备仍不得写成已测试，K-39 仍是已知问题。代码提交 `553ceed`，已推送 `origin/opusmc-integration`。
 
 ## 1. 代码检查（静态）
 
@@ -127,5 +127,5 @@
 - 因此 phase-04 验收通过，但带两项记录在案的豁免/遗留：
   1. 真实 Android Chrome / iOS Safari 未测试，只使用 Chromium 模拟；不得宣传为真机通过。
   2. K-39 `chunk stall` 保留到 phase-07；Chrome headless 的 2 项 FAIL 不阻断本阶段。
-- 代码提交 `553ceed`；docs 收尾为后续 docs 提交后的当前 HEAD。
+- 代码提交 `553ceed`；docs 已收尾并推送 `origin/opusmc-integration`，当前 HEAD 与远程一致。
 - 不进入 phase-05；下一步由用户单独启动。

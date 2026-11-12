@@ -187,7 +187,7 @@
   6. **设备输入**：电脑保留键盘/鼠标/指针锁定/全屏；指针锁定失败时自由鼠标降级并提示。移动端保留摇杆/跳跃/攻击/使用/互动/多点触控；以 CSS `env(safe-area-inset-*)` + `visualViewport` 做安全区和浏览器视口适配；竖屏 CSS 旋转时按 90° 映射安全区；Android 可全屏并锁横屏，iOS 无元素全屏/鼠标锁定时不阻断。
   7. **关闭单机后台第三方轮询**：`NET_CONFIG.announce=false`；`social.js` 不再在单人游戏后台每分钟请求旧房间服务 `/api/announce`。旧房间服务仍用于用户主动打开的多人界面（phase-05 替换）；本项不删除公告能力代码，phase-05 自建服务器可重新启用。
   8. **范围约束**：不实现 phase-05 服务器、不改渲染/世界生成/红石/战斗、不做 PWA/Service Worker、不做真实 GPU 性能结论；真实 Android/iOS 真机、iOS WebKit 与真实 GPU 未测，必须标 NOT TESTED/BLOCKED。
-  9. **流程**：按用户约束留在 `develop`，不新建/切换/重置分支；实现测试后等待用户验收，验收前不提交、不推送；验收后提交 `553ceed`，未推送。
+  9. **流程**：按用户约束留在 `develop`，不新建/切换/重置分支；实现测试后等待用户验收，验收前不提交、不推送；验收后提交 `553ceed` 并推送 `origin/opusmc-integration`。
 - 影响：
   - `index.html` 85 → 86 个脚本；`js/` 89 → 90 个 `.js`（新增 `platform.js`）；加载顺序以 `platform.js` 开头。
   - 任何新的本地资源/Worker/存储/音频/全屏调用应优先走 `Platform`，避免再次散落供应商判断。
@@ -195,7 +195,7 @@
   - 单机不再有后台第三方网络请求；多人入口仍可能访问旧房间服务，属 phase-05 范围。
   - 真实设备/真机结论仍为空，phase-04 只能宣称“模拟与无头浏览器通过”。
 - 验证：90 个 JS `node --check`；Edge 157 桌面 37/37；Chrome 157 桌面 37/37；Chrome 83 旧版 9/9；Android/iOS 模拟 21/21；降级 7/7；兼容性面板 3/3；服务器白名单/缓存/304/HEAD/404 全部通过。独立验收另见 `ACCEPTANCE.md`：Edge 44/44、Chrome 43/45（2 项 K-39 `chunk stall`）、移动模拟 25/25、兼容/降级 7/7、phase-03 回归 33/33；真实 Android/iOS 真机 BLOCKED，受信任 F11/文件操作 NOT TESTED。
-- 状态：**已实现、已测试；用户验收通过（见 ADR-017），代码提交 `553ceed`；未推送。**
+- 状态：**已实现、已测试；用户验收通过（见 ADR-017），代码提交 `553ceed` 并推送 `origin/opusmc-integration`；未合并。**
 
 ## ADR-017 phase-04 验收豁免与遗留
 
@@ -211,4 +211,4 @@
   - `KNOWN_ISSUES.md` 保留 K-39/K-51/K-64/K-65/K-66，不得删除或改写成已解决。
   - phase-05 不得依赖“真机已验证”的假设；发布验收前仍应重新评估真实设备。
   - phase-07 必须处理 K-39；K-39 不是 phase-04 已修复项。
-- 状态：**已确认；phase-04 验收通过（带明确豁免）；代码 `553ceed`；未推送。**
+- 状态：**已确认；phase-04 验收通过（带明确豁免）；代码 `553ceed` 已推送 `origin/opusmc-integration`；未合并。**

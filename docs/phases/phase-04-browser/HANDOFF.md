@@ -6,7 +6,7 @@
 - 分支：`develop`（跟踪 `origin/opusmc-integration`；未新建/切换/重置分支）
 - 起点：`840b19c`（phase-03 docs 收尾）；代码基线 `025cba8`
 - 工作区：**干净**（代码 + docs 已提交）
-- 远程：**未推送**；未合并、未强推、未打标签
+- 远程：**已推送 `origin/opusmc-integration`**；未合并、未强推、未打标签
 
 ## 1. 本阶段目标
 
@@ -131,7 +131,7 @@
 | 本阶段代码 | `553ceed`（`feat(phase-04): run as an independent browser game`） |
 | HEAD | docs 收尾为当前 HEAD（见 `git log -1`） |
 | 工作区 | 干净 |
-| 远程 | 未推送、未合并、未强推、未打标签 |
+| 远程 | 已推送 `origin/opusmc-integration`；未合并、未强推、未打标签 |
 
 ## 7. 下一阶段前置条件（phase-05）
 

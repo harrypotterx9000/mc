@@ -15,7 +15,7 @@
 | phase-04 代码 | `553ceed`（`feat(phase-04): run as an independent browser game`） |
 | HEAD | docs 收尾为当前 HEAD（见 `git log -1`） |
 | 工作区 | **干净**（phase-04 代码与 docs 已提交） |
-| 远程 | **未推送**；未合并、未强推、未打标签 |
+| 远程 | **已推送 `origin/opusmc-integration`**；未合并、未强推、未打标签 |
 | 历史代码 | phase-03 `025cba8`；phase-02 `a9dc47b`；phase-01 `15154bd`；基线 `2798c08` |
 
 > `D:\Projects\OpusMC` 仍是 phase-01 副本；如以那份为准，需要用户确认后单独同步，禁止直接覆盖。
@@ -129,7 +129,7 @@
 
 ## 待办（phase-04 结束后）
 
-1. phase-04 代码与 docs 已提交；**未推送**。推送/合并/PR 需用户另行确认，禁止强推。
+1. phase-04 代码与 docs 已提交并推送 `origin/opusmc-integration`；未合并、未强推、未打标签。合并/PR 需用户另行确认。
 2. 不进入 phase-05，等待用户明确指令。
 3. phase-05 前置：自建服务器、临时玩家 ID 签发/校验、真实重连、房间所有权 F-1、`/api/skin`、管理员公告、
    旧 `mcjs-room-key`、服务端权威存档；决定是否恢复 `NET_CONFIG.announce`。

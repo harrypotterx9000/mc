@@ -4,7 +4,7 @@
 
 ## phase-04 浏览器独立运行 — 2026-11-12 — 提交 `553ceed`（代码）+ docs 收尾
 
-> 起点 `840b19c`；代码提交 `553ceed`；docs 收尾为当前 HEAD。phase-04 已验收通过，**未推送**、未合并、未强推、未打标签。
+> 起点 `840b19c`；代码提交 `553ceed`；docs 收尾为当前 HEAD。phase-04 已验收通过，并已推送 `origin/opusmc-integration`；未合并、未强推、未打标签。
 > 用户明确豁免真实 Android/iOS 补测；K-39 留 phase-07。
 
 - 新增文件：`js/platform.js`（浏览器平台适配层）、`favicon.svg`、`docs/phases/phase-04-browser/{PLAN,TEST_REPORT,HANDOFF,ACCEPTANCE}.md`
@@ -43,7 +43,7 @@
 - 未验证：真实 Android/iOS 真机、iOS WebKit、真实 GPU FPS、手机发热/长时间运行、HTTPS/WSS/公网。
   用户已明确不补测真实 Android/iOS；K-39 留 phase-07。
 - 修改原因：用户 phase-04 指令；PROJECT_SPEC §11.9；ADR-016/ADR-017。
-- 状态：**已实现、已测试、验收通过（带用户豁免：真实 Android/iOS 不补测，K-39 延期 phase-07）；代码提交 `553ceed`，未推送。** 详见 `docs/phases/phase-04-browser/ACCEPTANCE.md`。
+- 状态：**已实现、已测试、验收通过（带用户豁免：真实 Android/iOS 不补测，K-39 延期 phase-07）；代码提交 `553ceed`，已推送 `origin/opusmc-integration`；未合并。** 详见 `docs/phases/phase-04-browser/ACCEPTANCE.md`。
 
 ## phase-03 彻底移除账号系统并建立访客模式 — 2026-11-12 — 提交 `025cba8`（代码）+ docs 收尾
 

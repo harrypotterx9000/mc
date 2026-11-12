@@ -143,7 +143,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 
 - 开发基线：`2798c08`（`chore: integrate OpusMC project`），即 PR #1 的 `opusmc-integration` 内容。
 - 当前 HEAD：docs 收尾为当前 HEAD（见 `git log -1`）；phase-04 代码 `553ceed`，phase-03 代码 `025cba8` 已提交并推送。phase-01 代码 `15154bd`，phase-02 代码 `a9dc47b`。
-- 工作区：`D:\ds\REA\opusmc`；phase-04 已验收、代码与 docs 已提交，**未推送**；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04。
+- 工作区：`D:\ds\REA\opusmc`；phase-04 已验收、代码与 docs 已提交并推送 `origin/opusmc-integration`；`D:\Projects\OpusMC` 为 phase-01 同内容副本，未同步 phase-02/03/04。
 - 标签：`v0.0.0-original`（原始）、`v0.1.0-preproject`（早期文档基线）、`v0.1.0-integration`（PR #1 内容基线）。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 打开中，远程 `main` 未变。
 - 合并后：先 `git fetch origin && git branch -u origin/main main`，再把 `develop` 对齐新的 `origin/main`，然后才开新的阶段分支。
@@ -161,7 +161,7 @@ OpusMC 是一个**独立运行的浏览器体素游戏**，由原 B 站 Toy 平�
 同日第二次 phase-01 改动已完成独立验收，并提交到 `develop`（代码 `15154bd`）。
 phase-02 的改动已实现、测试、验收并提交（代码 `a9dc47b`，2026-11-12）；docs 收尾为 `73c8af5`。
 phase-03 客户端改造已完成、验收结束，代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD。
-phase-04 已实现、测试、独立验收与用户验收完成（带真实移动端豁免、K-39 延期）；代码 `553ceed` 提交，未推送（见 §11.9/§11.10、ADR-017）。
+phase-04 已实现、测试、独立验收与用户验收完成（带真实移动端豁免、K-39 延期）；代码 `553ceed` 已提交并推送 `origin/opusmc-integration`（见 §11.9/§11.10、ADR-017）。
 
 ### 11.4 阶段启动与合并的确认点
 
