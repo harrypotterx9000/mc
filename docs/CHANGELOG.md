@@ -4,7 +4,7 @@
 
 ## phase-03 彻底移除账号系统并建立访客模式 — 2026-11-12 — 提交 `025cba8`（代码）+ docs 收尾
 
-> 代码提交 `025cba8`；docs 收尾为当前 HEAD。phase-03 代码已推送 `origin/opusmc-integration`；docs 收尾随后推送。未合并、未强推、未打标签。客户端核心 10/10 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL。
+> 代码提交 `025cba8`；docs 收尾为当前 HEAD。phase-03 代码与 docs 均已推送 `origin/opusmc-integration`；未合并、未强推、未打标签。客户端核心 10/10 PASS；独立验收 68 PASS / 0 FAIL / 1 BLOCKED + F-1 非阻断 UI FAIL。
 
 - 新增文件：`js/guest.js`（`GuestSession`）；`docs/phases/phase-03-guest-mode/PLAN.md`、`TEST_REPORT.md`、`HANDOFF.md`、`ACCEPTANCE.md`
 - 删除文件：`js/account.js`（510 行）、`js/toy.js`（335 行）、`js/cloudsave.js`（323 行）、`js/checkin.js`（566 行）

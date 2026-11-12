@@ -1,12 +1,12 @@
 # phase-03 彻底移除账号系统并建立访客模式 · 交接
 
-- 状态：**客户端改造完成、验收结束、交接完成；代码已提交 `025cba8` 并推送；docs 收尾为当前 HEAD**
+- 状态：**客户端改造完成、验收结束、交接完成；代码与 docs 均已提交并推送**
 - 日期：2026-11-12
 - 工作区：`D:\ds\REA\opusmc`（会话工作区）
-- 分支：`develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步）
+- 分支：`develop`（跟踪 `origin/opusmc-integration`；与远程同步）
 - 基线：`73c8af5`（phase-02 docs 收尾）；phase-02 代码 `a9dc47b`
-- 工作区：docs 收尾后干净（代码已提交/推送；docs 收尾随本次交接提交）
-- 远程：phase-03 代码已推送 `origin/opusmc-integration`；docs 收尾随后推送
+- 工作区：**干净**（代码与 docs 已提交/推送）
+- 远程：已推送 `origin/opusmc-integration`
 
 > 路径说明：`D:\Projects\OpusMC` 是 phase-01 同内容副本；phase-02/03 的改动只在
 > `D:\ds\REA\opusmc`。如以 `D:\Projects\OpusMC` 为准，需要用户确认后单独同步，禁止直接覆盖。
@@ -111,16 +111,16 @@
 5. **多人房间能力不动**：邀请码/公开列表/直接连接/本地房间保留；只去掉账号 token 与账号特权。
 6. **Toy 整体移除**：B站内容检查/分享/二维码/容器模式不再保留；内容检查归 phase-05 服务端。
 7. **房间所有权不能用昵称推断**：同名昵称时客户端 `mine` 会误判满员房间（F-1/K-47）；phase-05 必须用服务端身份/所有权。
-8. **提交与推送**：代码 `025cba8` 已提交并推送；docs 收尾随后提交/推送；未强推。
+8. **提交与推送**：代码 `025cba8` 与 docs 收尾均已提交并推送；未强推。
 
 ## 6. 当前 Git
 
 | 项 | 值 |
 |---|---|
-| 分支 | `develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步） |
+| 分支 | `develop`（跟踪 `origin/opusmc-integration`；与远程同步） |
 | HEAD | docs 收尾为当前 HEAD（见 `git log -1`）；phase-03 代码 `025cba8` |
-| phase-03 | **已提交 `025cba8`；已推送 `origin/opusmc-integration`** |
-| 工作区 | docs 收尾后干净；代码+docs 均已提交 |
+| phase-03 | **已提交 `025cba8`；代码与 docs 已推送** |
+| 工作区 | **干净**；代码+docs 均已提交 |
 | 远程 | 已推送 phase-03；未合并、未强推、未打标签 |
 
 ## 7. 下一阶段前置条件（phase-04）

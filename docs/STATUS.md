@@ -4,19 +4,19 @@
 - 当前阶段：**phase-03 客户端改造完成，验收结束；代码已提交 `025cba8`，docs 收尾为当前 HEAD**
 - 下一阶段：**phase-04 浏览器兼容**（未开始，需用户明确指令）
 - 代码版本：`025cba8`（phase-03 代码）；docs 收尾为当前 HEAD
-- 当前分支：`develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步）
+- 当前分支：`develop`（跟踪 `origin/opusmc-integration`；与远程同步）
 
 ## Git
 
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区；`D:\Projects\OpusMC` 未同步） |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`；与远程同步） |
 | HEAD | docs 收尾为当前 HEAD（见 `git log -1`）；phase-03 代码 `025cba8` |
 | 代码基线 | `2798c08`；phase-01 `15154bd`；phase-02 `a9dc47b`；phase-03 `025cba8` |
 | phase-03 改动 | 修改 15 个源码/页面文件；删除 4 个模块；新增 `js/guest.js`；新增 4 个阶段文档；**已提交 `025cba8`** |
-| 工作区 | **docs 收尾后干净**（代码已提交并推送；docs 收尾随本次交接提交） |
-| 远程 | phase-03 代码已推送 `origin/opusmc-integration`；docs 收尾随本次交接提交并推送；未合并、未强推、未打标签 |
+| 工作区 | **干净**（代码与 docs 已提交；与远程同步） |
+| 远程 | phase-03 代码 `025cba8` + docs 收尾已推送 `origin/opusmc-integration`；未合并、未强推、未打标签 |
 
 > `D:\Projects\OpusMC` 仍是 phase-01 副本；如以那份为准，需要用户确认后单独同步，禁止直接覆盖。
 
@@ -135,7 +135,7 @@
 
 ## 待办（下一阶段前）
 
-1. **phase-03 代码已提交 `025cba8`；docs 收尾提交并推送**；不要重写历史、不要强推。
+1. **已完成**：phase-03 代码 `025cba8` 与 docs 收尾均已提交并推送 `origin/opusmc-integration`；不要重写历史、不要强推。
 2. 合并/PR 操作仍需用户确认；当前 PR #1 仍未合并。
 3. phase-05 自建服务器必须：签发并校验临时玩家 ID；实现真实短时重连；处理 `/api/skin`、管理员公告、旧 `mcjs-room-key` 替换；实现服务端权威外观/移动/存档；解决 F-1 的房间所有权。
 4. `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。

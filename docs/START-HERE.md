@@ -1,14 +1,14 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-12（phase-03 客户端改造完成、验收结束；代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD）
+> 最后更新：2026-11-12（phase-03 客户端改造完成、验收结束；代码 `025cba8` 与 docs 已提交并推送）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：**phase-00 完成；phase-01 完成并验收；phase-02 完成、验收并提交；phase-03 客户端改造完成、验收结束（代码 `025cba8` 已提交并推送；docs 收尾为当前 HEAD；端到端 BLOCKED）；phase-04 未开始。**
+- 现状：**phase-00 完成；phase-01 完成并验收；phase-02 完成、验收并提交；phase-03 客户端改造完成、验收结束（代码 `025cba8` 与 docs 已提交并推送；端到端 BLOCKED）；phase-04 未开始。**
 - 代码：会话工作区 `D:\ds\REA\opusmc`；phase-01 代码 `15154bd`；phase-02 代码 `a9dc47b`；phase-03 代码 `025cba8`；docs 收尾为当前 HEAD。
-- 工作区：docs 收尾后干净；phase-03 代码与文档均已提交。
+- 工作区：**干净**；phase-03 代码与文档均已提交并推送。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；phase-01/02/03 都在 `develop`。
 - 远程：`https://github.com/harrypotterx9000/mc`；PR #1 仍打开，未推送/未合并。
 
@@ -34,14 +34,14 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
-| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`；docs 收尾提交并推送后同步） |
+| 当前分支 | `develop`（跟踪 `origin/opusmc-integration`；与远程同步） |
 | HEAD | docs 收尾为当前 HEAD（见 `git log -1`） |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01 代码 | `15154bd` |
 | phase-02 代码 | `a9dc47b` |
 | phase-03 代码 | `025cba8` |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
-| 远程 | phase-03 已推送 `origin/opusmc-integration`；PR #1 未合并；未强推 |
+| 远程 | phase-03 代码与 docs 已推送 `origin/opusmc-integration`；PR #1 未合并；未强推 |
 
 ## 4. 运行方式
 
@@ -112,7 +112,7 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. **phase-03 代码已提交 `025cba8` 并推送；docs 收尾提交/推送后工作区干净**；不要重写历史。
+1. **已完成**：phase-03 代码 `025cba8` 与 docs 均已提交并推送；工作区干净；不要重写历史。
 2. 合并/PR 操作需用户另行确认；不要强推。
 3. 如用户要求，另行确认并同步 `D:\Projects\OpusMC`（不要覆盖未确认的副本）。
 4. phase-05 自建服务器必须处理：临时玩家 ID 签发/校验、真实短时重连、房间所有权（F-1）、`/api/skin`、管理员公告、旧 `mcjs-room-key`、服务端权威外观/移动/存档。
