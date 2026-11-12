@@ -1148,7 +1148,7 @@ class MultiplayerScreen extends FormScreen {
     this.loading = false;
     if (this.game.ui.screen === this) this.layout();
   }
-  rows() { return Math.max(2, Math.floor((this.game.ui.h - 82 - 62) / 24)); }
+  rows() { return Math.max(2, Math.floor((this.game.ui.h - 82 - 86) / 24)); }
   layout() {
     const u = this.game.ui, cx = u.w / 2, n = this.rows(), list = this.list || [];
     this.fields = {};
@@ -1170,6 +1170,8 @@ class MultiplayerScreen extends FormScreen {
         tip: [r.name, `房主 ${r.owner}，${r.players}/${r.max} 人，${GM_CN[r.gamemode] || ''}`].concat(mine ? ['你的房间：满员了也能进'] : []), onClick: () => this.join(r.code) });
     });
     this.widgets.push(
+      // phase-05: the self-hosted server (room codes, temporary ids, server world)
+      { x: cx - 152, y: u.h - 76, w: 302, h: 20, label: '自建服务器房间（本机 / 局域网）…', blue: true, tip: ['用自己电脑上的服务器开房间或输入邀请码加入', '需要先运行项目里的 start-server.bat'], onClick: () => this.go(MPServerScreen) },
       { x: cx - 152, y: u.h - 52, w: 98, h: 20, label: '创建房间', onClick: () => this.go(CreateRoomScreen) },
       { x: cx - 50, y: u.h - 52, w: 98, h: 20, label: '我的房间', onClick: () => this.go(MyRoomsScreen) },
       { x: cx + 52, y: u.h - 52, w: 100, h: 20, label: this.loading ? '正在刷新…' : '刷新列表', onClick: () => { this.list = null; this.layout(); this.load(); } },

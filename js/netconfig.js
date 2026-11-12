@@ -7,6 +7,10 @@ window.NET_CONFIG = {
   // its /api/announce in the background: a standalone single-player game must not talk to a third-party platform
   // when nobody asked it to. phase-05's own server replaces the room service and re-enables announcements.
   rooms: 'https://xz.honghemc.cn:8443',
+  // phase-05: the self-hosted server's address. Empty = this page's own origin
+  // (the game and the room service are the same process: node server/index.mjs).
+  // A LAN server can be entered in the game's 自建服务器 screen (mcjs-mp-server).
+  server: '',
   announce: false,
   share: '',
 };

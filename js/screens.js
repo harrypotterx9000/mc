@@ -466,6 +466,7 @@ class PauseScreen extends MenuScreen {
     // in a room the right of the fourth row is 房间…; the game mode (owner, members, administrators) gets a row of its
     // own under it - both sat on the same place and the mode button, first in the list, took every click (10-31)
     const room = !!(g.net && g.net.room), roomMode = room && (g.net.opLevel | 0) >= 2;
+    const mpRoom = !!(g.mpClient && g.mpClient.inRoom);
     this.widgets = [
       { x: cx - 102, y, w: Companion.shown ? 150 : 204, h: 20, label: '回到游戏', onClick: () => g.ui.close() },
       // (the AI companion, companion.js - only where the service has it on)
@@ -476,7 +477,9 @@ class PauseScreen extends MenuScreen {
       room && !roomMode ? null : { x: roomMode ? cx - 102 : cx + 4, y: roomMode ? y + 96 : y + 72, w: roomMode ? 204 : 98, h: 20, label: () => '模式：' + MODE_NAMES[g.mode], enabled: !!g.cheats || !!g.net, tip: g.cheats || g.net ? ['生存 → 创造 → 旁观（也可按 F3 + F4）'] : ['需要开启“允许命令”'], onClick: () => g.requestMode(MODE_NEXT[g.mode]) },
       { x: cx - 102, y: y + 72, w: 98, h: 20, label: '选项…', onClick: () => g.ui.open(new OptionsScreen(g, this)) },
       g.net && g.net.room ? { x: cx + 4, y: y + 72, w: 98, h: 20, label: '房间…', tip: ['邀请朋友、看在场的玩家；房主可以踢人、封禁、禁言'], onClick: () => g.ui.open(new RoomScreen(g, this)) } : null,
-      { x: cx - 102, y: y + (roomMode ? 120 : 96), w: 204, h: 20, label: '保存并退回到标题屏幕', onClick: () => g.quitToTitle() },
+      // phase-05: a room on the owner's own server
+      mpRoom ? { x: cx - 102, y: y + 96, w: 98, h: 20, label: '房间…', tip: ['邀请码、在场的玩家；房主可以移出玩家、关闭房间'], onClick: () => g.ui.open(new MPRoomScreen(g, this)) } : null,
+      { x: mpRoom ? cx + 4 : cx - 102, y: y + (roomMode ? 120 : 96), w: mpRoom ? 98 : 204, h: 20, label: mpRoom ? '离开房间' : '保存并退回到标题屏幕', onClick: () => g.quitToTitle() },
     ].filter(Boolean);
   }
   onEsc() { this.game.ui.close(); }

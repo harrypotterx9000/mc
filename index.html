@@ -61,11 +61,11 @@
 </div>
 <noscript>OpusMC 需要 JavaScript 才能运行。请在浏览器设置中启用 JavaScript，然后刷新页面。</noscript>
 <script>
-  // The loading bar: the 86 game scripts as they arrive, then start-up (textures, title world) creeping on until
+  // The loading bar: the 87 game scripts as they arrive, then start-up (textures, title world) creeping on until
   // the title screen is up. Errors are shown instead of leaving a dead 99% bar.
   // (No extra fetch of this page: the page itself is already being parsed.)
   (function () {
-    var bar = document.querySelector('#bootbar i'), txt = document.getElementById('boottext'), total = 86, got = 0, shown = 0, failed = [];
+    var bar = document.querySelector('#bootbar i'), txt = document.getElementById('boottext'), total = 87, got = 0, shown = 0, failed = [];
     window.__BOOT_TOTAL__ = total;
     window.__BOOT_FAILED__ = failed;
     function bootError(msg) {
@@ -100,7 +100,7 @@
     }, 90000);
     (function step() {
       var b = document.getElementById('boot'); if (!b || b.style.display === 'none') return;
-      // the 86 static page scripts are the bar; lazy scripts added later (sound_events.js and friends) must not
+      // the 87 static page scripts are the bar; lazy scripts added later (sound_events.js and friends) must not
       // stretch it, they are part of "preparing the world"
       var want = got < total ? 85 * Math.min(got, total) / total : 85 + 14 * (1 - Math.exp(-(performance.now() - (step.t || (step.t = performance.now()))) / 4000));
       shown = Math.max(shown, Math.min(99, want));
@@ -194,6 +194,7 @@
 <script src="js/extras.js"></script>
 <script src="js/cosmetics.js"></script>
 <script src="js/p2p.js"></script>
+<script src="js/mp.js"></script>
 <script src="js/panorama_data.js"></script>
 <script src="js/panorama.js"></script>
 <script>
