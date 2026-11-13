@@ -1,14 +1,14 @@
 # phase-07 电脑与手机性能优化 · 交接（HANDOFF）
 
 - 日期：2026-11-13
-- 状态：**验收结束；phase-07 代码 `508fcc8` 已提交；docs 收尾；未推送**
+- 状态：**验收结束；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已提交并推送**
 - 起点：HEAD `ea88dba`（phase-06 docs 收尾）；phase-06 代码 `b4833b8`
 - 仓库：`D:\ds\REA\opusmc`
 - 分支：`develop`（跟踪 `origin/opusmc-integration`；未新建/切换/重置）
-- 工作区：phase-07 代码已提交（8 个客户端 JS、4 个 server `.mjs` + `server/status.ps1` + `server/README.md`、
-  项目文档、3 个阶段文档；删除 1 个 `.gitkeep`），docs 收尾中
-- 当前代码版本：**phase-07 代码 `508fcc8`；docs 收尾为当前 HEAD**
-- 验收：用户声明“修改和验收已经结束”；代码已提交，docs 待收尾，未推送
+- 工作区：phase-07 代码/文档已提交（8 个客户端 JS、4 个 server `.mjs` + `server/status.ps1` + `server/README.md`、
+  项目文档、3 个阶段文档；删除 1 个 `.gitkeep`）；工作区干净
+- 当前代码版本：**phase-07 代码 `508fcc8`；docs `a2bdb0e`；推送记录为当前 HEAD**
+- 验收：用户声明“修改和验收已经结束”；已提交并推送
 
 ## 1. 本阶段目标
 
@@ -108,16 +108,17 @@
 | 项 | 值 |
 |---|---|
 | 分支 | `develop` |
-| HEAD | docs 收尾为当前 HEAD；phase-07 代码 `508fcc8` |
-| phase-07 | **代码 `508fcc8` 已提交；docs 收尾** |
-| 远程 | phase-05 `817bad3` 已推送；phase-06/07 未推送；未合并；未打标签 |
+| HEAD | 推送记录为当前 HEAD；phase-07 docs `a2bdb0e`；代码 `508fcc8` |
+| phase-07 | **代码 `508fcc8`、docs `a2bdb0e` 已提交并推送** |
+| 远程 | phase-05 `817bad3` 已推送；phase-06 未推送；phase-07 已推送 `origin/opusmc-integration`；未合并；未打标签 |
 | 验收 | **验收结束（2026-11-13，用户声明）** |
-| 提交/推送 | 代码已提交；docs 收尾；**推送待执行**；不自动进入 phase-08 |
+| 提交/推送 | **已提交并推送**；不自动进入 phase-08 |
 
 ## 7. 下一阶段前置条件
 
 - 下一阶段是 **phase-08 部署**（先 LAN；HTTPS/WSS、公网、NAT 后续）。本阶段未修改任何 phase-08 功能。
-- 先确认 phase-07 工作区是否提交/推送；不要在未确认时 reset/clean/覆盖工作区。
+- phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送 `origin/opusmc-integration`；新工作从 `develop` 继续，
+  不要 reset/clean 丢弃历史。
 - 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层` 存档模型。
 - 保持 87 个页面脚本、91 个 `js/*.js`；不引入构建系统/框架。
 - 服务器与客户端必须同版本部署；升级 `js/blocks.js`/世界生成前重新验证 `blockids` 与旧房间。

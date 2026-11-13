@@ -341,4 +341,4 @@
   - 服务器 tick 现在可能一次补两个，逻辑时间仍按 50 ms/次推进；不会在一次长停顿后无限追帧。
   - 服务器公开状态不再包含 `stats`/`perf`；管理接口保留。
 - 验证：见 `docs/phases/phase-07-performance/TEST_REPORT.md` 与 `docs/testing/performance-baseline.md`。
-- 状态：**验收结束（2026-11-13）；代码 `508fcc8`；docs 收尾；未推送。**
+- 状态：**验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e` 已推送 `origin/opusmc-integration`。**

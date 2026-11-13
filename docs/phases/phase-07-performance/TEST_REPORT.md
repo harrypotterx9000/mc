@@ -4,7 +4,7 @@
 - 阶段：phase-07 电脑与手机性能优化
 - 分支：`develop`（未新建/切换/重置）
 - 起点：HEAD `ea88dba`（phase-06 docs 收尾）；phase-06 代码 `b4833b8`
-- 状态：**验收结束；代码 `508fcc8`；docs 收尾；未推送**
+- 状态：**验收结束；代码 `508fcc8`、docs `a2bdb0e` 已推送**
 - 证据目录：`D:\ds\REA\_work\phase07-*`（仓库外，不随项目提交）
 - 原则：保留原 WebGL2 渲染体系与全部内容；不伪造性能数据；所有结论标注环境。
 
@@ -196,7 +196,7 @@ phase-05 单人回归输出中 `scripts:88,total:87` 是因为测试脚本自身
 服务器（5 + README）：`server/http.mjs`、`server/index.mjs`、`server/rooms.mjs`、`server/ws.mjs`、
 `server/status.ps1`、`server/README.md`。
 文档：`docs/phases/phase-07-performance/`、`docs/testing/performance-baseline.md`、项目总文档更新。
-**验收结束；代码 `508fcc8`；docs 收尾。**
+**验收结束；代码 `508fcc8`、docs `a2bdb0e` 已推送。**
 
 ## 11. 未测 / 边界 / 风险
 
@@ -227,7 +227,7 @@ phase-05 单人回归输出中 `scripts:88,total:87` 是因为测试脚本自身
   这是 headless + 集成 GPU 的边际波动，**不能宣称所有重复轮次都稳定 60**。真实显示器仍 NOT TESTED。
 - K-39 修复后仍为 0 次 `chunk stall`（SwiftShader + CPU 8×）。
 - 修复后 phase-05 单人回归 **6/6 PASS**；phase-05/06 服务端与双浏览器回归的改动路径未再变化（原 62/62 +
-  18/18 + 22/22 + 31/31 仍有效），静态检查见 §9；代码 `508fcc8`、docs 收尾。
+  18/18 + 22/22 + 31/31 仍有效），静态检查见 §9；代码 `508fcc8`、docs `a2bdb0e` 已推送。
 
 修复项证据：`D:\ds\REA\_work\phase07-acceptance-probe.json`、`fix1-probe`/`fix2-probe`/`fix3-probe` 输出、
 `_work/phase07-scenes/after-2026-11-13T01-31-17-744Z/result.json`。

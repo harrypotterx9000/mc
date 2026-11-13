@@ -1,18 +1,18 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-13（phase-07 验收结束；代码 `508fcc8`；docs 收尾；未推送）
+> 最后更新：2026-11-13（phase-07 验收结束；代码 `508fcc8`、docs `a2bdb0e` 已推送）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：phase-00/01/02/03/04/05/06 完成并验收；**phase-07 验收结束（代码 `508fcc8`；docs 收尾；未推送）**。
+- 现状：phase-00/01/02/03/04/05/06 完成并验收；**phase-07 验收结束（代码 `508fcc8`、docs `a2bdb0e` 已推送）**。
 - 代码：会话工作区 `D:\ds\REA\opusmc`；phase-07 代码 `508fcc8`；phase-06 代码 `b4833b8`；
-  phase-05 代码 `817bad3`；docs 收尾为当前 HEAD，未推送。
-- 工作区：phase-07 代码已提交；docs/阶段文档收尾中；无 staged、无 stash、无临时分支。
+  phase-05 代码 `817bad3`；docs 收尾 `a2bdb0e`。
+- 工作区：phase-07 代码/文档已提交；工作区干净；无 staged、无 stash、无临时分支。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
 - 远程：`https://github.com/harrypotterx9000/mc`；phase-05 已推送 `origin/opusmc-integration`；
-  phase-06/07 **未推送**。
+  phase-06 **未推送**；phase-07 **已推送**。
 
 > **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；phase-02/03/04/05/06/07 只在 `D:\ds\REA\opusmc`。
 > 如以 `D:\Projects\OpusMC` 为准，需要用户确认后单独同步，禁止直接覆盖。
@@ -35,13 +35,13 @@
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | docs 收尾为当前 HEAD；phase-07 代码 `508fcc8` |
+| HEAD | 推送记录为当前 HEAD；docs `a2bdb0e`；phase-07 代码 `508fcc8` |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01/02/03/04 代码 | `15154bd` / `a9dc47b` / `025cba8` / `553ceed` |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`** |
 | phase-06 | **已验收（2026-11-12），代码 `b4833b8`；docs 收尾 `ea88dba`；未推送** |
-| phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs 收尾；未推送** |
-| 远程 | phase-05 已推送 `origin/opusmc-integration`；phase-06/07 未推送；PR #1 未合并；未强推 |
+| phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
+| 远程 | phase-05 已推送 `origin/opusmc-integration`；phase-06 未推送；phase-07 已推送；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -88,8 +88,8 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 ## 5. 当前边界（务必遵守）
 
 - phase-05 **已验收、代码已提交并推送 `817bad3`**；phase-06 **已验收（2026-11-12）、代码 `b4833b8`、未推送**；
-  phase-07 **验收结束（2026-11-13）；代码 `508fcc8`；docs 收尾；未推送**。
-- 不自动进入 phase-08；推送需用户确认。已提交/已推送的历史不得改写；不 force push。
+  phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**。
+- 不自动进入 phase-08；已提交/已推送的历史不得改写；不 force push。
 - 不新增强制账号/登录；不引入永久账号体系。
 - 没有实测的功能一律标 **NOT TESTED**；推断不得写成事实。
 - 服务器不同步生物/红石/流体/战斗；世界存档是 `seed + 方块覆盖层`；无 TLS/公网；真实 LAN 双设备、
@@ -100,7 +100,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 6. phase-05 / phase-06 / phase-07 已实现内容
 
-### phase-07（验收结束；代码 `508fcc8`；docs 收尾）
+### phase-07（验收结束；代码 `508fcc8`；docs `a2bdb0e`；已推送）
 
 1. **测试基线**：固定 profile/世界/相机；桌面 headless Chrome 157 + 真实 ANGLE/AMD 核显；场景覆盖主菜单、
    普通地形、大型建筑、240 实体、战斗、光影 1–4、SwiftShader 限速 K-39、手机视口模拟、服务器机器人、长跑。
@@ -206,7 +206,7 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. **phase-07 验收结束**：代码 `508fcc8`；docs 收尾；未推送。推送需用户确认；不自动进入 phase-08。
+1. **phase-07 验收结束**：代码 `508fcc8`、docs `a2bdb0e` 已提交并推送；不自动进入 phase-08。
 2. 未测：真实手机/显示器、发热/电池、真实 LAN/公网/TLS、>1 小时运行；发布前重新评估。
 3. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；跨版本迁移未做。
 4. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`（K-36/K-44/K-45/K-63/K-77）；

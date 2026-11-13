@@ -143,7 +143,7 @@
 | 浏览器实测 | Chrome 157 headless + SwiftShader（双 profile）；Edge 未在本阶段重跑；真实 GPU/真机未测 |
 | 网络 | 阶段 8 先 LAN；HTTPS/WSS、NAT、公网未配置、未测试 |
 | 数据目录 | `server/data/`；不在静态白名单；不提交 Git |
-| 当前 Git | `develop`；phase-07 代码 `508fcc8`，docs 收尾为当前 HEAD，未推送；phase-06 代码 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
+| 当前 Git | `develop`；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送 `origin/opusmc-integration`；phase-06 代码 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
 
 ## 兼容性注意事项
 

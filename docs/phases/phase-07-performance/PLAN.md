@@ -5,7 +5,7 @@
 - 分支：`develop`（按用户指令未新建/切换/重置）
 - 起点：HEAD `ea88dba`（phase-06 docs 收尾）；phase-06 代码 `b4833b8`
 - 证据目录：`D:\ds\REA\_work\phase07-*`（仓库外）
-- 结果：**验收结束（2026-11-13）；代码 `508fcc8`；docs 收尾；未推送**；实际见 `TEST_REPORT.md` / `HANDOFF.md`
+- 结果：**验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e` 已推送**；实际见 `TEST_REPORT.md` / `HANDOFF.md`
 - 原则：保留原 WebGL2 渲染体系与全部游戏内容；不为帧率删功能；所有结论区分实测 / 模拟 / 未测。
 
 ## 1. 目标与边界
