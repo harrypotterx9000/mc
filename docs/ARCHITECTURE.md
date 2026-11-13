@@ -584,3 +584,100 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
 - 旧云存档不迁移/不删除；服务器世界不提供浏览器下载或统一列表；在线恢复备份无 UI；
   真实 LAN/公网/TLS/压力/长时间运行未测；K-73 跨版本仍未做。
 - 已知新增边界：K-81…K-86（`docs/KNOWN_ISSUES.md`）。
+
+## 16. 阶段 7 变更（2026-11-13，验收结束；代码 `508fcc8`；docs 收尾为当前 HEAD）
+
+> 本节是 phase-07 的实现事实。页面脚本仍 **87** 个、`js/` **91** 个 `.js`、服务端 **9** 个 `.mjs`；
+> 未改 WebGL2 渲染体系、数据库结构、服务器存档模型。所有性能数字见 `docs/testing/performance-baseline.md`。
+
+### 16.1 客户端帧预算
+
+- `FramePacer.budget()`：手机/平板主线程区块工作上限 **8 ms**，桌面 **12 ms**；仍按显示刷新、帧上限、
+  实测“其它主线程工作”和回退系数计算。区块任务不可拆分，因此这同时约束单次卡顿。
+- `Game.flushMesh()`：方块编辑不再一次同步重网格 5×5 个区块；按当前区块预算先做最近的，余下保持 dirty，
+  下一帧由 `updateChunks()` 的异步/同步队列继续。`_meshCand` 复用数组，减少每帧分配。
+- `PerfMon.ts` 保存每帧时间戳；`Game.longRun()` 按时间戳取“这一秒内”的帧，避免计时器延迟时环形缓冲重复
+  旧帧、把长跑 FPS 算高。
+- `PerfMon.measure(ms)` / `sampleStats()`：结构化帧时间、p50/p95/p99、CPU/区块/渲染、GPU timer；供测试与
+  画质建议复用。（`PerfMon.report()` 仍输出原来的文本报告。）
+
+### 16.2 动态分辨率（`DynRes`）
+
+- 目标：显式 `maxFps` 优先；否则 60 FPS（不再追求 90/144 Hz 面板刷新率，避免为不需要的帧降分辨率）。
+  实现为：显式限制用 `1000/limit`；VSync 跟随显示器用 `max(显示器间隔, 1000/60)`；VSync 关闭用
+  `1000/60`。因此 30 Hz 显示器目标 33.3 ms、90/144 Hz 目标 16.67 ms，不再退化为 11.1/4.17 ms。
+- 判定：1.5 s 窗口的**平均帧时间** + 迟到帧比例（>1.15×目标帧超过 5%），主线程平均低于 0.7×目标才归因 GPU；
+  只有 GPU 慢时才降分辨率。两个窗口连续慢：第一次降 20%，之后每次 10%。
+- 下限：手机/平板 0.4，桌面 0.5；恢复仍为两次按时窗口 +10%，带 30 s 防抖。
+- 手机/平板地形顶点 arena 页 **4 MB**（桌面 8 MB）；arena 仍按 used/total 压缩空闲页。
+
+### 16.3 画质与预算
+
+- 预设仍为低/中/高/极高 + 自定义；视频设置的轮换包含“自定义”。
+- `Game.applySettings()` 按画质档设置：
+  - `renderer.entityDist`：低 64、中 96、高 128、极高 160 格（并受实际渲染距离限制）；
+  - `renderer.entityShadowDist`：32/48/64/80 格；
+  - `Particles.max`：1200/2000/3200/4000。
+  这些是**瞬态/远距预算**，不删除生物、粒子类型或模型；高档仍保留全部。
+- 视频设置新增“测试性能并推荐画质…”：打开 `QualityScreen`，在实时画面上读回 GPU 完成时间，按实测推荐并应用；
+  Esc 可取消并恢复原设置。首次进入仍走原有 `QualityScreen`。
+- `Game.qualityAdvice()`：每个世界载入 12 s 后，用最近 240 帧的 FPS/p95 给一次提示，**不自动改**玩家画质；
+  与 `QualityScreen` 的实际测量互补。
+- `PerfMon.recommend()` 的 target 为 `min(60/30 目标, pacer.limit)`：玩家主动 `maxFps=30` 不会被误判为
+  设备性能不足；`maxFps=60` 且实测 30 FPS 时仍会建议降档。
+- 低/中档的实体距离/阴影/粒子上限是预算；`Particles.spawn()` 满额返回 `undefined`，调用方必须判空。
+
+### 16.4 实体/粒子/内存
+
+- `drawEntityList` 使用 `renderer.entityDist` 做水平距离裁剪；`drawMob` 只给 `entityShadowDist` 内的实体画地面阴影。
+- `Particles.spawn` 使用可调 `max`（默认 3000；按档位降低），不改变粒子类型/生命周期。
+- 已解码的存档区块记录（`World.savedChunks`）在 `decodeChunk` 后立即删除；记录只在“等待解码/未卸载的修改”时
+  保留。之前每条已加载柱都同时持有 encoded + decoded 两份数据。
+- `Renderer.visScratch` 复用可见区段数组；`VertexArena` 支持按设备选择页大小。
+
+### 16.5 网络诊断
+
+- `MPClient.netStats`：发送/接收字符数（近似字节；中文/emoji 会偏低，K-94）、消息数、5 s 一次 `ping` 的
+  RTT（服务器回 `pong{t0}`）。
+- F3 性能屏/性能报告显示延迟、上下行累计和接收速率；不影响原有同步频率（10 Hz state / 10 s pstate）。
+- 服务器广播（`Room.broadcast` / `broadcastToRoom`）只 `JSON.stringify` 一次，所有连接复用同一文本帧。
+
+### 16.6 服务器 20 TPS 与指标
+
+- 发现：Windows Node 的 50 ms `setInterval` 实际约 62.5 ms（16.1 TPS）；逻辑 tick 仅 0.14–0.60 ms。
+  修复后本机 2/5/10/30 连接 19.97–20.00 TPS，tick 0.12–0.39 ms，CPU 0.4–2.7%。
+- `RoomManager.start()`：10 ms 唤醒，`tickScheduler()` 按 50 ms 到期补 tick（一次最多 3 个），
+  目标 20 TPS；`stop()` 清定时器。
+- `RoomManager.perf`：5 s 滚动 TPS、tick 平均/最大、>100 ms 迟到 tick、CPU%；`perfStatus()` 另取 RSS/heap。
+  管理接口返回，公开 `/healthz`、`/api/status` 删除 `perf`（与 `stats` 一样仅管理可见）。
+- `server/index.mjs` `VERSION=0.7.0`。
+
+### 16.7 K-39
+
+- `Game.chunkWatchdog()` 不再只看“同一 7×7 缺失 8 s”：
+  - 缺失项仍有 `genPending` / `protoKeys` / `proto` 归属，且 12 s 内有进展 → 等；
+  - 有 saved-chunk 读取（`savedFetch`）→ 等（数据库层自己重试）；
+  - 生成/装饰/完成/网格队列仍忙，或 30 s 内任何区块/生成/worker 结果有进展 → 等；
+  - 只有“7×7 缺失 + 管线空闲 + 8 s 无任何进展”才报告并清理重请求。
+- 在 SwiftShader + CPU 8× 限速下：基线刷新 46.6/46.9 s + 3 次 `chunk stall`；优化后 8.8/8.7 s + 0 次。
+  phase-07 验收结束；真实设备仍未复测。
+
+### 16.8 测试与未测
+
+- 桌面固定场景首轮 8 项 60 FPS；重复轮次光影 3/4 为 59.8/57.1 FPS（K-93）；手机视口模拟 60 FPS；编辑、
+  K-39、服务器 2/5/10/30 连接、回归见 `phase-07/TEST_REPORT.md`。
+- 真实手机（Android/iOS）GPU/发热/触控、真实 LAN、公网/TLS、>1 小时连续运行仍 **NOT TESTED**；
+  模拟数据不得写成真机达标。phase-07 验收结束；代码 `508fcc8`；docs 收尾；未推送。
+
+### 16.9 依赖与调用关系（phase-07 后）
+
+- 客户端加载顺序：`screens.js` → `touch.js` → `perf.js` → `onboard.js`；`p2p.js` 仍在 `mp.js` 前。
+  `Game.init()` 在 `load` 事件后运行，因此 `Game.applySettings()` 使用 `perf.js` 的 `PRESETS`、`DynRes`，
+  以及 `touch.js` 的 `TouchDevice` 时这些符号已定义。
+- `Game` → `FramePacer`/`PerfMon`/`DynRes`（`js/perf.js`）；`Game.applySettings()` → `PRESETS`；
+  `Game.frame()` → `Game.qualityAdvice()` → `PerfMon.recommend()`；`Renderer.makeSectionVao()` → `TouchDevice`。
+- `OptionsListScreen`（`js/screens.js`）→ `QualityScreen`（`js/onboard.js`）→ `PerfMon`/`DynRes`；
+  `QualityScreen` 可包装 `Game.render`，仅用于测试，退出/取消必须 `unhook`。
+- 服务器：`RoomManager`（`rooms.mjs`）→ `tickScheduler()`/`perfStatus()`；`Room.broadcast()` →
+  `WSConnection.sendText()`（`ws.mjs`）；`http.mjs` 的公开状态过滤 `stats`/`perf`；`status.ps1` 读 admin。
+- 无新页面脚本/资源文件；仍是 87 个 `<script src>`、91 个 `js/*.js`、9 个 `server/*.mjs`。

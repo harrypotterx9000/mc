@@ -2,6 +2,37 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更；待验收阶段变更明确标注“工作区变更，未提交”。
 
+## phase-07 电脑与手机性能优化 — 2026-11-13 — 代码 `508fcc8`；docs 收尾；未推送
+
+> 起点 HEAD `ea88dba`；phase-06 代码 `b4833b8`。本阶段只改性能相关代码/文档，未新增页面脚本。
+> 桌面固定场景首轮 8 项 60 FPS（headless + 真实 ANGLE/AMD 核显；重复测试光影 3/4 为 59.8/57.1）；
+> 手机 3120×1440 视口模拟 30 s 60 FPS（基线 44.8，非真机）；K-39 基线 3 次/46 s → 0 次/约 9 s；
+> 服务器 2/5/10/30 连接 19.97–20.00 TPS。**代码已提交 `508fcc8`；docs 收尾；未推送；K-93/K-94 为已知边界。**
+
+- 修改原因：减少主线程区块/网格卡顿、动态分辨率稳定 60/30 目标、控制实体/粒子/显存、避免 K-39 误报
+  重请求、修正 Windows 服务器 16.1 TPS 的调度根因，并提供可观测/可回归的性能数据。
+- 修改文件（工作区）：
+  - 客户端（8）：`js/entity.js`、`js/game.js`、`js/mp.js`、`js/onboard.js`、`js/perf.js`、`js/render.js`、
+    `js/screens.js`、`js/terrain2.js`
+  - 服务器/说明（6）：`server/http.mjs`、`server/index.mjs`、`server/rooms.mjs`、`server/ws.mjs`、
+    `server/status.ps1`、`server/README.md`
+- 新增文档：`docs/phases/phase-07-performance/{PLAN,TEST_REPORT,HANDOFF}.md`；更新
+  `docs/{STATUS,ARCHITECTURE,DECISIONS,KNOWN_ISSUES,PROJECT_SPEC,START-HERE,CHANGELOG}.md`、
+  `docs/testing/performance-baseline.md`、`README.md`。
+- 删除文件：`docs/phases/phase-07-performance/.gitkeep`（占位文件；目录已有阶段文档）。
+- 关键变化：
+  - 帧预算：手机 8 ms/桌面 12 ms 区块主线程；编辑 `flushMesh` 按预算分批；复用可见列表/候选数组。
+  - 动态分辨率：平均帧 + 迟到比例判定；手机下限 0.4/桌面 0.5；首次降 20%；默认 60 目标（显式 maxFps 优先）。
+  - 画质：低/中/高/极高/自定义；视频设置“测试性能并推荐画质…”；每世界一次实测建议（不自动改）。
+  - 实体/粒子/内存：低/中档实体距离/阴影/粒子上限；手机顶点页 4 MB；解码后释放 encoded chunk。
+  - 网络：`MPClient` ping/RTT/流量；F3/报告显示；服务器广播一次编码多连接复用。
+  - 服务器：10 ms 唤醒 + 50 ms 补 tick（修复 Windows 16.1 TPS）；管理 `perf` 指标；公开接口隐藏诊断。
+  - K-39：watchdog 有进展/存档读取/管线忙时等待，不再过早删除 pending 重请求。
+- 独立验收修复（2026-11-13）：`DynRes.target()` 修正 90 Hz/无限制/30 Hz 目标；`ambientParticles()` 粒子满额
+  判空；`PerfMon.recommend()` 纳入玩家 `maxFps` 上限。复测光影 3/4 在重复轮次为 59.8/57.1 FPS（边际波动）。
+- 未验证：真实手机/显示器、发热/电池、真实 LAN/公网/TLS、>1 小时连续运行；模拟数据不得写成真机达标。
+- 状态：**代码 `508fcc8` 已提交；docs 收尾；未推送。**
+
 ## phase-06 双存档系统 — 2026-11-12 — 已验收；代码 `b4833b8` + docs 收尾
 
 > 起点 HEAD `41042c7`；phase-05 代码 `817bad3`。代码提交 `b4833b8`，docs 收尾为当前 HEAD。

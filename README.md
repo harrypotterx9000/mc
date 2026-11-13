@@ -29,10 +29,20 @@ node scripts\serve.mjs
 - 端口占用：`$env:PORT=8081; node scripts\serve.mjs`。
 - 项目文档从 [`docs/START-HERE.md`](docs/START-HERE.md) 开始。
 
+## 性能与画质
+
+- 视频设置 → **测试性能并推荐画质…**：在实时画面上测量帧时间和显卡完成时间，给出低/中/高/极高/自定义建议；
+  不会自动改设置，Esc 可取消并恢复。
+- 低/中画质会限制远距离实体、地面阴影和瞬态粒子，并自动降低分辨率（手机最低 40%、桌面 50%）；
+  高/极高保留完整渲染距离和光影档。可手动关闭动态分辨率。
+- 手机上 `renderDist`/阴影/显存页有单独预算；桌面优先 60 FPS，手机优先 30 FPS、中高性能争取 60。
+- 服务器 `/healthz` 只显示房间/玩家；TPS/tick/CPU/RSS 在管理员状态或 `server\status.ps1` 中查看。
+- 真实手机/显示器、真实 LAN 性能仍需实测；headless/视口模拟数据不代表真机（见
+  [`docs/testing/performance-baseline.md`](docs/testing/performance-baseline.md)）。
+
 ## 存档
 
 两种世界分开保存，互不覆盖：
-
 - **单人世界**：只保存在当前浏览器的 IndexedDB `mc-js-clone`；创建、加载、保存、删除、刷新恢复都不需要
   服务器或账号。
 - **服务器多人世界**：只保存在服务器电脑的 `server/data/worlds/room-<邀请码>/world.json`；由服务器定时保存、

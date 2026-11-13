@@ -1,7 +1,7 @@
 # 已知问题（KNOWN_ISSUES）
 
 > 只记录**已观察到**的问题与**明确的未知**；未测过的能力标 NOT TESTED。
-> 更新：2026-11-12（phase-05 已验收；代码 `817bad3`；docs 收尾为当前 HEAD；服务器不同步生物/红石/流体/战斗，存档为 seed+覆盖层）。
+> 更新：2026-11-13（phase-07 验收结束、代码 `508fcc8`、docs 收尾；phase-05 已验收推送、phase-06 已验收未推送；服务器不同步生物/红石/流体/战斗，存档为 seed+覆盖层）。
 > K-01…K-26 沿用阶段 0 编号，K-27… 为阶段 1/2/3/4/5 新增；已豁免项仍保留，不改成“已解决”。
 
 ## 运行 / 资源
@@ -66,7 +66,7 @@
 | K-36 | 正版玩家皮肤查询仍调用原房间服务 `/api/skin?name=`（Mojang 代理） | 权限已开放；服务不可用时只报错、不显示皮肤 | 已知；不属于账号 API；phase-05/后续自建 |
 | K-37 | 原房间服务可能仍按 `adm*` 校验管理员披风 | 客户端可显示/选择；真实联机可能被服务端拒绝 | 已知；phase-05 自建服务器统一处理 |
 | K-38 | 访客外观保存在本设备 `mcjs-look`，换设备不同步 | 符合“无账号访客”定位；不再有账号同步路径 | **已按设计保留** 2026-11-12 |
-| K-39 | 无头 SwiftShader 世界加载偶发 `chunk stall`（watchdog 重新请求区块） | 世界最终进入 `play`；Chrome 83/157 headless 均观察到；phase-04 Chrome 验收 2 项失败属此 | **未修复；phase-07 处理**（用户决定） |
+| K-39 | 无头 SwiftShader 世界加载偶发 `chunk stall`（watchdog 重新请求区块） | 世界最终进入 `play`；Chrome 83/157 headless 均观察到；phase-04 Chrome 验收 2 项失败属此 | **phase-07 已修复（2026-11-13，验收结束）**：watchdog 改为有进展/有存档读取/管线忙时等待；SwiftShader + CPU 8× 限速复现基线 3 次/46 s，修复后 0 次/约 9 s。详见 `docs/testing/performance-baseline.md` §6 |
 | K-40 | 公开房间列表依赖原房间服务，本机 403 | 多人界面可打开，列表为空并显示红色错误；邀请码输入仍在 | 已知；phase-05 |
 | K-41 | `renderDist=4` 且玩家在末地入口平台（距中心约 100 格）击杀末影龙时，中心 `(0,0)` 区块未加载，`onDragonKilled()` 的 `World.setBlock` 不生效，返回传送门与龙蛋不生成；`dragonKilled` 仍为 true、经验球正常 | 玩家无法进入返回传送门触发结局；默认 `renderDist=8` 时中心区块已加载，正常 | **新发现** 2026-11-12；按用户指令**单独立项**，本阶段不修复 |
 
@@ -90,20 +90,20 @@
 |---|---|---|---|
 | K-51 | 本阶段没有 Android/iOS 真机；移动端结论来自 Chromium 的 UA/视口/触控/安全区模拟 | 真机触控手感、软键盘、音频解锁、方向锁定、安全区、发热、内存未确认 | **NOT TESTED**；**用户明确不补测**；不得宣传真机通过 |
 | K-52 | `file://` 直接打开被明确阻断 | 用户双击 `index.html` 会看到“请通过本地服务器打开”，不能直接玩 | **按设计**；不是缺陷 |
-| K-53 | Chrome 83/157 headless + SwiftShader 偶发 `chunk stall` | 世界仍进入 `play`；Chrome 157 独立验收 2 项失败属此；Edge 157 未出现 | 已知环境噪音；**K-39 留 phase-07**；真实设备未测 |
+| K-53 | Chrome 83/157 headless + SwiftShader 偶发 `chunk stall` | 世界仍进入 `play`；Chrome 157 独立验收 2 项失败属此；Edge 157 未出现 | **K-39 已在 phase-07 修复（验收结束）**；真实设备未测 |
 | K-54 | 单机后台管理员公告轮询已关闭（`NET_CONFIG.announce=false`） | 单机不再自动收到旧服务公告；多人界面仍保留既有房间服务 | **按设计**；phase-05 自建服务器决定是否恢复 |
 | K-55 | 静态服务器仍是开发用：无 TLS、鉴权、限流、Range、压缩 | 仅适合本机/局域网验证，不适合公网 | 已知；phase-08 生产部署 |
 | K-56 | iOS Safari 没有元素全屏与 Pointer Lock；`Platform` 只能降级并提示 | 触控路径可用；外接鼠标为自由鼠标；不能网页全屏 | 已处理；真机 NOT TESTED（K-19） |
 | K-57 | 音效缓存按 URL 30 天；同名文件替换后浏览器可能在缓存期内继续用旧文件 | 更新音效时需改名或清缓存 | 已知；发布流程处理 |
 | K-58 | 未做 Service Worker/PWA 离线缓存 | 断网不能启动；首次仍需下载 18 MB 脚本 + 按需音效 | 本阶段不做；如需离线另立项 |
-| K-59 | 真实 GPU/手机 FPS、光影编译、动态分辨率未测 | 不能声称达到 60/30 FPS 目标 | NOT TESTED；phase-07 |
+| K-59 | 真实 GPU/手机 FPS、光影编译、动态分辨率 | 已用 headless Chrome 157 + 真实 ANGLE D3D11（AMD 核显）测桌面固定场景；手机仅做 3120×1440 视口模拟 | 桌面数据见 `performance-baseline.md`；**真实 Android/iOS 真机、发热、电池 NOT TESTED** |
 | K-60 | 平台能力在页面加载时探测一次；浏览器扩展注入的脚本被启动计数排除 | 极少见的热插拔能力变化不会重新探测 | 已知；刷新页面即可 |
 | K-61 | Chrome 83 旧 headless 不投递 CDP `Input.dispatchKeyEvent` | 测试用 DOM `KeyboardEvent` 验证游戏处理器；不代表用户键盘无效 | 测试环境限制；Edge/Chrome 157 已用受信任输入 |
 | K-62 | 真机 `visualViewport`/安全区在横竖屏切换时的实际行为未验证 | 模拟通过不等于真机通过 | NOT TESTED；用户明确不补测；发布前重新评估 |
 | K-63 | 旧房间服务、`/api/skin`、`mcjs-room-key` 仍存在；phase-05 新增自建服务器路径，但未删除旧路径 | 用户主动进入旧多人功能时仍会访问旧服务；单机后台已不再轮询 | 已知；旧路径保留，phase-08/后续清理 |
 | K-64 | 无头 Edge/Chrome 不投递受信任 F11 到页面 | F11 的 DOM 绑定 + 全屏 API 已验证；真实键盘 F11 未测试 | **NOT TESTED**；用户验收接受；需有头/真机补测（未安排） |
 | K-65 | 原生文件选择/照片下载无法在无头环境操作 | `Platform.files` API 存在，实际文件选择/下载未验证 | **NOT TESTED**；用户验收接受；需有头/真机补测（未安排） |
-| K-66 | 独立验收 Chrome headless 世界重载出现 K-39 `chunk stall` | 世界仍进入 play、方块恢复；`game.errLog` 有 2 条 | **FAIL（已知 K-39）**；phase-04 带豁免验收；phase-07 处理 |
+| K-66 | 独立验收 Chrome headless 世界重载出现 K-39 `chunk stall` | 世界仍进入 play、方块恢复；`game.errLog` 有 2 条 | **K-39 已在 phase-07 修复（验收结束）**；SwiftShader + 8× CPU 限速 0 次/约 9 s，真实设备未测 |
 
 ## phase-05 自建服务器新增
 
@@ -143,7 +143,7 @@
 | 浏览器实测 | Chrome 157 headless + SwiftShader（双 profile）；Edge 未在本阶段重跑；真实 GPU/真机未测 |
 | 网络 | 阶段 8 先 LAN；HTTPS/WSS、NAT、公网未配置、未测试 |
 | 数据目录 | `server/data/`；不在静态白名单；不提交 Git |
-| 当前 Git | `develop`；phase-06 代码 `b4833b8`；docs 收尾为当前 HEAD；phase-06 已验收、未推送；phase-05 代码 `817bad3` 已推送 `origin/opusmc-integration`；新会话不得 reset/clean/切换分支丢弃历史 |
+| 当前 Git | `develop`；phase-07 代码 `508fcc8`，docs 收尾为当前 HEAD，未推送；phase-06 代码 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
 
 ## 兼容性注意事项
 
@@ -162,18 +162,43 @@
 - phase-05 服务端与客户端必须同版本部署；升级 `js/blocks.js`/世界生成后要重新验证 `blockids` 与旧房间（K-68/K-73）。
 - Windows 脚本：`.ps1` 为 UTF-8 **带 BOM**（Windows PowerShell 5.1 中文），`.bat` 为 ASCII/CRLF；不要把 `.bat`
   改成 LF 或把 `.ps1` 去 BOM。
+- 服务器需 Node.js 20+；本机验证 v26.13.0。Windows Node 定时器约 15.6 ms 粒度，20 TPS 是平均目标，
+  单次 tick 间隔可能 46–62 ms（K-89）。
 - `server/data` 是运行数据，不提交；备份/恢复前先停服务器，避免文件锁。
 - phase-06 已完成单人 IndexedDB `mc-js-clone` 与服务器 `srv~` 世界的隔离与测试；不要把服务器世界写进单人存档。
 - `cloud` 元数据、`mcjs-cloud-dirty-*` 不主动删；每月清理前先备份。
 - 遥测模块已整体移除（K-27）；旧 `settings.telemetry` 键成为死数据，不读取。
 
+## phase-07 性能新增
+
+| # | 问题 | 影响 | 状态 |
+|---|---|---|---|
+| K-87 | 桌面性能数据来自 headless Chrome 157 + 真实 ANGLE/D3D11（AMD 核显），不是用户显示器/有头窗口 | 有头浏览器的合成器、刷新率、其他标签页会改变帧时间 | 已记录环境；有头/真实显示器未测 |
+| K-88 | 手机结论来自 3120×1440 视口模拟（Android UA/触控），GPU 仍是桌面 AMD 核显 | 不能代表真实手机 GPU、发热、电池、触控手感 | **NOT TESTED（真机）**；不得宣传真机 |
+| K-89 | Windows Node 定时器约 15.6 ms 粒度；20 TPS 用 10 ms 唤醒 + 50 ms 补 tick 实现 | TPS 平均 20，但单次 tick 间隔仍可能在 46–62 ms 间抖动；一次长停顿最多补 3 tick | 已处理；真实长时间/高负载抖动未测 |
+| K-90 | 低/中画质在 64/96 格裁掉远距离实体与地面阴影；粒子上限 1200/2000 | 远处生物/阴影会晚出现或不出现；这是画质分级，不是内容删除 | 按设计；玩家可切高/极高 |
+| K-91 | 动态分辨率会降像素保帧率；手机下限 40%、桌面 50% | 低分辨率下画面变软；可关闭 | 按设计；真机观感未测 |
+| K-92 | 服务器 30 连接测试是本机 Node 机器人 + 回环，不是真实 LAN/公网玩家 | 真实网络 RTT/丢包、真实客户端负载、长时间运行未覆盖 | **NOT TESTED** |
+| K-93 | 光影 3/4 固定分辨率 1280×720 重复测试为 59.8/57.1 FPS（首轮 60） | 集成 GPU/headless 接近 16.7 ms 目标时存在边际波动；不能宣称所有轮次稳定 60 | 已知；真实显示器/独立 GPU 未测；动态分辨率可缓解 |
+| K-94 | `MPClient.netStats` 用字符串长度统计发送/接收，不是 UTF-8 字节数 | 中文聊天/昵称/emoji 的流量显示偏低；不影响同步与 RTT | 已知统计近似；如需精确字节需额外编码成本 |
+
+### phase-07 兼容性/维护注意
+
+- `DynRes.target()`：显式 `maxFps` 优先；无显式上限时，VSync 跟随显示器取 `max(显示器间隔, 16.67 ms)`，
+  VSync 关闭取 16.67 ms；不要改回 `Math.min` 或追逐 90/144 Hz。
+- `PerfMon.recommend()` 的 target 为 `min(60/30 目标, pacer.limit)`；玩家限制低帧率不等于设备慢。
+- `Particles.max` 会随低/中/高/极高变为 1200/2000/3200/4000；`Particles.spawn()` 满额返回 `undefined`。
+  调用方必须判空（`ambientParticles` 已修复，其他调用点大多已有 `if (p)`）。
+- 公开 `/healthz`、`/api/status` 不返回 `stats`/`perf`；诊断只在 admin/`status.ps1`。
+- 服务器与客户端必须同版本部署；不要用旧客户端连接 phase-07 服务端（协议/版本字段可能不匹配）。
+
 ## 未测试（NOT TESTED）
 
-- 电脑端 60 FPS / 手机端 30–60 FPS：**无真实设备测量**
+- 电脑端真实显示器/有头浏览器稳定 60 FPS；手机端真机 30–60 FPS（K-87/K-88）
 - 手机/平板真机触控、横屏、安全区、发热、内存
 - iOS Safari 的 Pointer Lock / Fullscreen / 音频解锁
-- 长时间运行（>1 小时）内存与稳定性
-- 自建服务器真实 LAN 双设备、10 人压力、20 TPS 实际负载、100k 方块/5000 方块实体上限
+- 长时间运行（>1 小时）内存与稳定性；本阶段只跑 8 分钟（结果见 TEST_REPORT）
+- 自建服务器真实 LAN 双设备、真实 10 人客户端、公网/TLS；本机 2/5/10/30 机器人回环已测（K-92）
 - 真实房间服务加入/公开房间列表、真实 P2P 客人互连（原服务 403/CORS，K-02/K-40/K-43）
 - phase-05 已在本机双浏览器验证断线恢复/令牌恢复；真实网络中断、移动网络切换、服务器重启时正在对局未测
 - 两名玩家互看昵称/外观已在 E2E 验证；真实生存长时间对局、生物/红石/流体一致性未测
@@ -188,5 +213,5 @@
 - 服务器存档备份/恢复：已做“停止后损坏文件 → 最新备份恢复”；未做异地/长期备份恢复演练
 - phase-04 真实 Android Chrome / iOS Safari / iOS WebKit 真机（K-51/K-56）——**用户明确不补测，已带豁免验收**
 - phase-04 受信任 F11、文件选择/照片下载（K-64/K-65）——用户验收接受，未补测
-- phase-04 真实 GPU FPS、手机发热、长时间运行（K-59）——phase-07
-- K-39 `chunk stall`（K-39/K-53/K-66）——**phase-07 处理**，未修复
+- phase-04 真实 GPU FPS、手机发热、长时间运行（K-59）——phase-07 已补桌面 headless、手机模拟；真机仍 NOT TESTED
+- K-39 `chunk stall`（K-39/K-53/K-66）——**phase-07 已修复（验收结束）**；真实设备仍未复测。
