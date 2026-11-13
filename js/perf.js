@@ -87,18 +87,21 @@ class FramePacer {
   // the browser's own work (compositing, input, GC)
   budget() {
     const T = this.target();
-    return clamp((T - this.rest - Math.max(1, T * 0.15)) * this.backoff, 0.5, 12);
+    // phones: leave more of a 16.7 / 33.3 ms frame for input, touch handling and the browser's own work. A
+    // chunk job cannot be split, so this is also the longest single hitch the streamer may add.
+    const cap = TouchDevice.kind === 'phone' || TouchDevice.kind === 'tablet' ? 8 : 12;
+    return clamp((T - this.rest - Math.max(1, T * 0.15)) * this.backoff, 0.5, cap);
   }
 }
 
 // ---- measurements ------------------------------------------------------------------------------------
 const PerfMon = {
   N: 240, i: 0, n: 0,
-  dt: new Float32Array(240), cpu: new Float32Array(240), chunk: new Float32Array(240), render: new Float32Array(240), gpu: new Float32Array(240).fill(NaN),
+  dt: new Float32Array(240), cpu: new Float32Array(240), chunk: new Float32Array(240), render: new Float32Array(240), gpu: new Float32Array(240).fill(NaN), ts: new Float64Array(240),
   renderMs: 0, gpuOn: false, queries: [],
   frame(dt, cpu, chunk, g) {
     const i = this.i;
-    this.dt[i] = dt; this.cpu[i] = cpu; this.chunk[i] = chunk; this.render[i] = this.renderMs; this.gpu[i] = NaN;
+    this.dt[i] = dt; this.cpu[i] = cpu; this.chunk[i] = chunk; this.render[i] = this.renderMs; this.gpu[i] = NaN; this.ts[i] = performance.now();
     this.i = (i + 1) % this.N; this.n = Math.min(this.N, this.n + 1);
     this.pollGpu();
     if (this.rec) this.rec.push([dt, cpu, chunk, this.renderMs]);
@@ -139,6 +142,60 @@ const PerfMon = {
   gpuAvg(list) {
     const v = list || [...this.gpu].filter(x => !isNaN(x));
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  },
+  // a structured sample for tests / the quality advice: record `ms` of frames and return frame-time percentiles
+  // and the GPU time of the same window. Unlike record() this keeps no report text and can be called headlessly.
+  measure(ms = 5000) {
+    if (this.measuring) return Promise.reject(new Error('a performance sample is already running'));
+    const rows = [], gpu = [], wasGpu = this.gpuOn, old = this.frame;
+    this.measuring = true; this.gpuOn = true;
+    this.frame = function (dt, cpu, chunk, g) {
+      old.call(this, dt, cpu, chunk, g);
+      const i = (this.i - 1 + this.N) % this.N;
+      rows.push([dt, cpu, chunk, this.renderMs]);
+      if (!isNaN(this.gpu[i])) gpu.push(this.gpu[i]);
+    };
+    return new Promise((resolve) => setTimeout(() => {
+      this.frame = old; this.gpuOn = wasGpu; this.measuring = false;
+      resolve(this.sampleStats(rows, gpu));
+    }, Math.max(250, ms)));
+  },
+  sampleStats(rows, gpuList) {
+    if (!rows.length) return null;
+    const dts = rows.map(r => r[0]).sort((a, b) => a - b), total = dts.reduce((a, b) => a + b, 0);
+    const q = (p) => dts[Math.min(dts.length - 1, Math.floor(dts.length * p))];
+    const avg = (k) => rows.reduce((s, r) => s + (Number.isFinite(r[k]) ? r[k] : 0), 0) / rows.length;
+    const gpu = (gpuList || []).slice().sort((a, b) => a - b);
+    return {
+      frames: rows.length, fps: rows.length * 1000 / Math.max(0.001, total), avg: total / rows.length,
+      p50: q(0.5), p95: q(0.95), p99: q(0.99), max: dts[dts.length - 1],
+      cpu: avg(1), chunk: avg(2), render: avg(3),
+      gpuAvg: gpu.length ? gpu.reduce((a, b) => a + b, 0) / gpu.length : null,
+      gpuP95: gpu.length ? gpu[Math.min(gpu.length - 1, Math.floor(gpu.length * 0.95))] : null,
+    };
+  },
+  // an actual-performance quality suggestion (never applied automatically): compare the recent frame time with
+  // the display's target and move one preset step. The hardware-only detectPreset() is only the initial guess.
+  recommend(g) {
+    const s = this.summary();
+    if (!s || s.frames < 90 || !g || !g.settings) return null;
+    const phone = TouchDevice.kind === 'phone' || TouchDevice.kind === 'tablet';
+    // desktop: 60 fps; phone: 30 fps minimum (a phone that already runs faster is offered a higher preset).
+    // A player's own frame cap is not device slowness: recommend against the lower of the quality goal and
+    // that cap; otherwise a deliberate 30 fps limit would always suggest lower quality.
+    const goal = phone ? 30 : 60;
+    const cap = g.pacer && g.pacer.limit;
+    const target = cap ? Math.min(goal, cap) : goal, targetMs = 1000 / target;
+    const st = g.settings;
+    let cur = st.preset === 'auto' ? (st.autoPreset || 'medium') : st.preset;
+    if (!PRESETS[cur]) cur = (st.renderDist || 8) >= 12 ? 'high' : (st.renderDist || 8) >= 8 ? 'medium' : 'low';
+    const order = ['low', 'medium', 'high', 'ultra'];
+    let i = Math.max(0, order.indexOf(cur));
+    // use the 95th percentile, not a single fast frame: a stable 60 needs p95 <= ~17 ms
+    if (s.p95 > targetMs * 1.18 || s.fps < target * 0.85) i = Math.max(0, i - 1);
+    else if (s.p95 < targetMs * 0.9 && s.fps > target * 1.12) i = Math.min(order.length - 1, i + 1);
+    const preset = order[i];
+    return { preset, current: cur, fps: s.fps, p95: s.p95, target, gpu: this.gpuAvg() };
   },
   // memory figures (MB) - the page's JS heap (Chromium only), chunk data, terrain meshes on the GPU
   memory(g) {
@@ -197,6 +254,10 @@ const PerfMon = {
     L.push(`地形显存 ${r0(m.mesh)} / ${r0(m.meshAlloc)} MB`);
     L.push(`${r.canvas.width}x${r.canvas.height} (${r0(r.resScale * 100)}%)  ${PRESET_NAMES[g.settings.preset] || '自定义'}·${g.settings.graphics === 'fast' ? '流畅' : '高品质'}`);
     if (g.net) { const n = g.net; L.push(`联机：区块 ${n.stats.chunks}  实体 ${n.ents.size}  未显示的实体 ${[...n.unknown.values()].reduce((s, v) => s + v, 0)}  缺少方块 ${n.missing.size} 种`); }
+    if (g.mpClient && g.mpClient.netStats) {
+      const n = g.mpClient.netStats, sec = Math.max(1, (performance.now() - (g.mpClient.connectedAt || performance.now())) / 1000);
+      L.push(`联机：延迟 ${n.latency == null ? '…' : Math.round(n.latency)} ms  ↑${(n.sent / 1024).toFixed(0)} KB ↓${(n.recv / 1024).toFixed(0)} KB（${(n.recv / sec / 1024).toFixed(1)} KB/s）`);
+    }
     L.push(this.gpuShort(r.gl));
     L.push(`${navigator.hardwareConcurrency || '?'} 线程 · ${TouchDevice.name}`);
     return L;
@@ -250,6 +311,10 @@ const PerfMon = {
     const cw = g.chunkWorker && g.chunkWorker.stats;
     if (cw) L.push(`区块线程：忙 ${Math.round(cw.busy / cw.span * 100)}%，每秒 装饰 ${cw.nDecorate} / 完成 ${cw.nFinish} / 网格 ${cw.nMesh}，装饰 ${f1(cw.decorate / Math.max(1, cw.nDecorate))} ms/个，待装饰 ${cw.protos} 个（${f1(cw.protoMB)} MB）`);
     L.push(`地形生成线程 ${g.genPool ? g.genPool.workers.length : 0} 个`);
+    if (g.mpClient && g.mpClient.netStats) {
+      const n = g.mpClient.netStats;
+      L.push(`联机网络：延迟 ${n.latency == null ? '测量中' : Math.round(n.latency) + ' ms'}，发送 ${(n.sent / 1024).toFixed(1)} KB，接收 ${(n.recv / 1024).toFixed(1)} KB，消息 ${n.messages}/${n.frames}`);
+    }
     L.push(`内存：JS 堆 ${m.heap ? m.heap.toFixed(0) + ' / ' + m.heapLimit.toFixed(0) + ' MB' : '不可用'}${MemMon.all != null ? '，含后台线程 ' + MemMon.all.toFixed(0) + ' MB' : ''}，区块数据 ${f1(m.chunks)} MB，地形显存 ${f1(m.mesh)} MB（已分配 ${f1(m.meshAlloc)} MB）`);
     // the errors the game stepped over since the page loaded (Game.reportError), newest last
     const errs = g.errLog ? [...g.errLog.values()] : [];
@@ -284,14 +349,16 @@ const MemMon = {
 
 // ---- dynamic resolution ------------------------------------------------------------------------------
 // When frames come late but the main thread is not what holds them up, the GPU is: render fewer pixels
-// (down to 50 %), and give them back once frames are on time again. Judged a 1.5 s window at a time by the
-// window's median frame (one stutter or a little jitter decides nothing):
-// - late: the median frame over 1.15x the target while the median main-thread time is under 0.6x of it (with
-//   GPU timing, the overlay open: the GPU's own time over 0.9x). Two late windows in a row: 10 % fewer pixels;
-// - on time: the median within 1.05x. Two on-time windows in a row: 10 % more. A raise that is followed straight
-//   away by a drop is not tried again for 30 s (no see-sawing between two steps);
-// - the target is the display's refresh (or the frame limit): with VSync off and no limit there's no frame
-//   rate to keep, so the display's rate stands in - 144 fps with no limit is not "slow";
+// (down to 40 % on phones, 50 % on desktop), and give them back once frames are on time again. Judged a 1.5 s
+// window at a time by the window's mean frame and the fraction of missed refreshes (one stutter or a little
+// jitter decides nothing):
+// - late: the mean frame over 1.03x the target (or more than 5 % of frames past 1.15x) while the mean
+//   main-thread time is under 0.7x of it (with GPU timing, the overlay open: the GPU's own time over 0.9x).
+//   Two late windows in a row: the first correction takes 20 % of the pixels, later ones 10 %;
+// - on time: the mean within 1.02x and under 2.5 % late. Two on-time windows in a row: 10 % more. A raise that
+//   is followed straight away by a drop is not tried again for 30 s (no see-sawing between two steps);
+// - the target is an explicit frame limit, else 60 fps. On a 90/144 Hz display without a limit the project still
+//   aims at a stable 60, so the panel rate is not chased (that would lower resolution for frames nobody needs);
 // - a stall (a frame over 4x the target: a huge explosion, loading, the window hidden) drops the window it is in
 //   and the one after. It used to need 97 % of frames on time to come back up, which jitter alone kept from
 //   happening: after a stall (7000 TNT going off) the picture stayed blurry, and got blurrier while walking.
@@ -299,8 +366,16 @@ const DynRes = {
   scale: 1, t: 0, frames: 0, dts: [], cpus: [], slow: 0, good: 0, skip: 0, lastRaise: 0, noRaiseUntil: 0,
   target(g) {
     const P = g.pacer, lim = P.limit;
-    return P.vsync ? P.target() : lim ? 1000 / lim : P.refresh;
+    // An explicit frame limit is the target. With "follow the display", the project still aims at a stable 60:
+    // the target is the slower of the display interval and 16.67 ms (a 30 Hz display is 33.3 ms; 90/144 Hz is
+    // 16.67 ms). With VSync off and no limit, use 60 rather than the pacer's 240 Hz chunk-work interval.
+    if (lim) return 1000 / lim;
+    if (!P.vsync) return 1000 / 60;
+    return Math.max(P.target(), 1000 / 60);
   },
+  // the lowest scale: phones may need to go a little lower than a desktop to keep 30 fps, but stay above the
+  // point where the pixel art and the interface become unreadable.
+  minScale() { return TouchDevice.kind === 'phone' || TouchDevice.kind === 'tablet' ? 0.4 : 0.5; },
   reset(g) { this.dts.length = this.cpus.length = 0; this.slow = this.good = 0; this.skip = 1; this.t = performance.now(); if (this.scale !== 1) this.set(g, 1); },
   frame(g, dt, cpu) {
     if (!g.settings.dynRes || g.state !== 'play' || (g.ui.screen && g.ui.screen.pauses)) { if (this.scale !== 1 && !g.settings.dynRes) this.set(g, 1); this.t = performance.now(); this.dts.length = this.cpus.length = 0; return; }
@@ -309,18 +384,25 @@ const DynRes = {
     this.dts.push(dt); this.cpus.push(cpu);
     const now = performance.now();
     if (now - this.t < 1500 || this.dts.length < 30) return;
-    const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
-    const mdt = med(this.dts), mcpu = med(this.cpus), gpu = PerfMon.gpuOn ? PerfMon.lastGpu : null;
+    const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+    const mdt = avg(this.dts), mcpu = avg(this.cpus), gpu = PerfMon.gpuOn ? PerfMon.lastGpu : null;
+    // A median alone hides the common "most frames 16.7, every eighth 33.3" case: that is ~55 fps but its median is
+    // on time. The late fraction and the mean see the missed refreshes, so a 60 fps target stays 60.
+    const lateFrac = this.dts.filter((d) => d > T * 1.15).length / this.dts.length;
     this.t = now; this.dts.length = this.cpus.length = 0;
     if (this.skip > 0) { this.skip--; return; }
-    const late = gpu != null ? gpu > T * 0.9 : mdt > T * 1.15 && mcpu < T * 0.6;
-    const onTime = mdt <= T * 1.05 && (gpu == null || gpu < T * 0.75);
+    const late = gpu != null ? gpu > T * 0.9 : (mdt > T * 1.03 || lateFrac > 0.05) && mcpu < T * 0.7;
+    const onTime = mdt <= T * 1.02 && lateFrac < 0.025 && (gpu == null || gpu < T * 0.8);
     this.slow = late ? this.slow + 1 : 0;
     this.good = onTime && !late ? this.good + 1 : 0;
-    if (this.slow >= 2 && this.scale > 0.5) {
+    const floor = this.minScale();
+    if (this.slow >= 2 && this.scale > floor + 0.001) {
       // (a raise that didn't hold: leave the resolution alone for a while)
       if (now - this.lastRaise < 4000) this.noRaiseUntil = now + 30000;
-      this.slow = 0; this.good = 0; this.set(g, Math.max(0.5, Math.round((this.scale - 0.1) * 100) / 100));
+      this.slow = 0; this.good = 0;
+      // the first correction is larger: a GPU 20 % over budget should not spend 15 s stepping down
+      const step = this.scale > 0.99 ? 0.2 : 0.1;
+      this.set(g, Math.max(floor, Math.round((this.scale - step) * 100) / 100));
     } else if (this.good >= 2 && this.scale < 1 && now >= this.noRaiseUntil) {
       this.good = 0; this.lastRaise = now; this.set(g, Math.min(1, Math.round((this.scale + 0.1) * 100) / 100));
     }
@@ -387,6 +469,26 @@ Game.prototype.graphicsChanged = function () {
   if (this.world) for (const ch of this.world.chunks.values()) ch.dirty = ALL_SECTIONS;
 };
 
+// ---- quality advice from the frames actually rendered ------------------------------------------------
+// The first-run QualityScreen benchmarks shaders, but a player who kept an old settings file never sees it.
+// Once per world, after the first load has settled, compare the real frame time with the target and offer one
+// preset step. This only messages: it never changes the player's quality behind their back (the video settings
+// has a button that runs the same live benchmark and applies the recommendation).
+Game.prototype.qualityAdvice = function (now) {
+  if (this._qualityAdvice || this.state !== 'play' || !this.world) return;
+  if (this.ui.screen && this.ui.screen.pauses) return;
+  if (now - (this.playStart || now) < 12000) return;
+  const rec = PerfMon.recommend(this);
+  if (!rec) return;
+  this._qualityAdvice = true;
+  const current = this.settings.preset === 'auto' ? this.settings.autoPreset : this.settings.preset;
+  if (!rec.preset || rec.preset === current) {
+    if (current === 'low' || current === 'medium') this.ui.message(`实测 ${rec.fps.toFixed(0)} FPS（P95 ${rec.p95.toFixed(1)} ms），当前画质合适`, '#AAAAAA');
+    return;
+  }
+  this.ui.message(`实测 ${rec.fps.toFixed(0)} FPS（P95 ${rec.p95.toFixed(1)} ms），建议${PRESET_NAMES[rec.preset]}画质；视频设置里可以切换或重新测试`, '#FFFF55');
+};
+
 // ---- report ------------------------------------------------------------------------------------------------
 // (the clipboard API refused - inside some web views on Edge, feedback 2026-11-01 「复制不了」 - falls back
 // to the old copy command, which works there)
@@ -422,7 +524,7 @@ Game.prototype.longRun = function (min = 60) {
   if (this.longRunTimer) return '已经在运行';
   if (this.state !== 'play' || this.mode !== 'creative') return '先进入一个创造模式的世界';
   const g = this, ui = g.ui, p = g.player, rows = [], N = PerfMon.N, rd0 = g.settings.renderDist, y0 = p.pos[1];
-  let sec = 0, lastI = PerfMon.i;
+  let sec = 0, lastT = performance.now();
   const setRD = (d) => { if (g.settings.renderDist !== d) { g.settings.renderDist = d; g.applySettings(); } };
   const lockPause0 = g.noLockPause; g.noLockPause = true; // run from the console: no mouse lock, no pause menu popping up
   const finish = () => {
@@ -439,10 +541,16 @@ Game.prototype.longRun = function (min = 60) {
   };
   g.longRunTimer = setInterval(() => {
     sec++;
-    // the frames since the last row, from the frame-time ring
-    const k = (PerfMon.i - lastI + N) % N, dts = [];
-    for (let j = 0; j < k; j++) dts.push(PerfMon.dt[(lastI + j) % N]);
-    lastI = PerfMon.i;
+    // the frames since the last row, newest first. The ring index alone wrapped when the timer was late or the
+    // page had a long stall, repeating old frames and reporting a frame rate above the display's; timestamps
+    // make each row exactly the frames that arrived in its second.
+    const nowT = performance.now(), dts = [];
+    for (let j = 1; j <= N; j++) {
+      const idx = (PerfMon.i - j + N) % N;
+      if (!PerfMon.ts[idx] || PerfMon.ts[idx] <= lastT) break;
+      dts.push(PerfMon.dt[idx]);
+    }
+    lastT = nowT;
     dts.sort((a, b) => a - b);
     const tot = dts.reduce((a, b) => a + b, 0);
     let mobs = 0, items = 0;

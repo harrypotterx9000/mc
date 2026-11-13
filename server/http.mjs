@@ -123,7 +123,8 @@ export function createHttpServer({ cfg, log, manager, onShutdown, onAdminStatus 
         if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }); return res.end(); }
         if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method Not Allowed');
         const s = manager.status();
-        if (pathname === '/api/status') { delete s.stats; }
+        // public endpoints keep the room/player counts; CPU, memory and tick diagnostics stay admin-only
+        delete s.stats; delete s.perf;
         return sendJson(res, 200, s, { 'Access-Control-Allow-Origin': '*' });
       }
 

@@ -135,6 +135,12 @@ server/data/
 
 - 浏览器或命令行访问 `http://127.0.0.1:8080/healthz` 查看运行状态。
 - `server\status.ps1` 查看状态和房间（可加 `-Config <配置文件>`）。
+- 管理员状态 `GET /api/admin/status`（仅本机 + `X-Admin-Token`）额外返回 phase-07 性能字段：
+  `perf.tps`（5 s 滚动）、`tickAvgMs`/`tickMaxMs`、`lateTicks`、`cpuPct`、`rssMB`/`heapUsedMB`。
+  这些字段不在公开的 `/healthz`、`/api/status` 中。
+- 服务器时钟使用 50 ms 逻辑 tick。Windows 的 Node 定时器最小粒度约 15.6 ms，因此不再用单个
+  `setInterval(50)`（实测只有约 16 TPS），而是 10 ms 唤醒、按 50 ms 到期补 tick；一次长时间停顿最多补 3 个，
+  避免卡顿后爆发式追帧。
 - 日志在 `server/data/logs/`，常见事件：`server_start`、`room_created`、`room_joined`、`world_saved`、
   `owner_transferred`、`world_recovered_from_backup`、`world_recovered_written`、`world_dir_mismatch`、
   `shutdown_done`。

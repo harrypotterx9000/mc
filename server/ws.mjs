@@ -52,6 +52,12 @@ export class WSConnection {
     return this._sendFrame(OP.TEXT, Buffer.from(text, 'utf8'));
   }
 
+  // broadcast helper: the caller has already encoded the JSON once for every receiver
+  sendText(text) {
+    if (this.closed) return false;
+    return this._sendFrame(OP.TEXT, Buffer.from(String(text), 'utf8'));
+  }
+
   sendRaw(buffer) {
     if (this.closed) return false;
     return this._sendFrame(OP.BINARY, Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer));

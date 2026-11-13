@@ -120,6 +120,18 @@ class Game {
   applySettings() {
     const s = this.settings;
     this.renderer.renderDist = s.renderDist; this.renderer.gamma = s.gamma; this.renderer.showClouds = s.clouds;
+    // Budgets that follow the quality tier. They cap transient work (how far entities are drawn, how many
+    // particles may exist at once), never remove a game feature: a far-away cow simply pops in at the same
+    // distance for every player with that preset, and the next particle after the cap still spawns.
+    let tier = s.preset === 'auto' ? (s.autoPreset || 'medium') : s.preset;
+    if (!PRESETS[tier]) tier = (s.renderDist || 8) >= 12 ? 'high' : (s.renderDist || 8) >= 8 ? 'medium' : 'low';
+    const budget = tier === 'low' ? { entity: 64, shadow: 32, particles: 1200 }
+      : tier === 'medium' ? { entity: 96, shadow: 48, particles: 2000 }
+        : tier === 'high' ? { entity: 128, shadow: 64, particles: 3200 }
+          : { entity: 160, shadow: 80, particles: 4000 };
+    this.renderer.entityDist = Math.min((s.renderDist || 8) * 16, budget.entity);
+    this.renderer.entityShadowDist = budget.shadow;
+    if (this.particles) this.particles.max = budget.particles;
     Sound.setVolume(s.volume);
     const rs = s.resScale * DynRes.scale;
     if (this.renderer.resScale !== rs) { this.renderer.resScale = rs; this.resize(); }
@@ -356,7 +368,8 @@ class Game {
     }
     if (this.meshResQ && this.meshResQ.length) this.applyMeshResults(t0, budgetMs);
     // meshing: dirty chunks whose neighbours exist
-    const cand = [];
+    const cand = this._meshCand || (this._meshCand = []);
+    cand.length = 0;
     for (const ch of w.chunks.values()) {
       if (!ch.dirty) continue;
       const dx = ch.cx - pcx, dz = ch.cz - pcz;
@@ -512,6 +525,7 @@ class Game {
     if (saved) {
       ch = new Chunk(cx, cz);
       decodeChunk(saved, ch);
+      w.savedChunks.delete(ckey(cx, cz)); // the encoded record is not kept alongside the decoded chunk
       for (let z = 0; z < 16; z++) for (let x = 0; x < 16; x++) {
         const c = w.flat ? { temp: 0.3, humid: 0.2, h: 60, river: 0, cont: 0.3, mount: 0 } : w.column(cx * 16 + x, cz * 16 + z);
         ch.biome[z * 16 + x] = w.biomeOf(c);
@@ -526,6 +540,7 @@ class Game {
   }
   // a finished chunk enters the world: light it, mark it (and its neighbours) for meshing, restore its mobs
   finishChunk(ch, saved) {
+    this.lastChunkAt = performance.now();
     const w = this.world, cx = ch.cx, cz = ch.cz;
     w.chunks.set(ckey(cx, cz), ch);
     ch.dirty = ALL_SECTIONS;
@@ -609,6 +624,8 @@ class Game {
           if (this.worldMeta.bonus && !this.worldMeta.bonusPlaced) { this.worldMeta.bonusPlaced = true; this.placeBonusChest(x, z); }
         }
         this.state = 'play';
+        this.playStart = performance.now();
+        this._qualityAdvice = false;
         this.ui.close();
         // a new world (or dimension) starts at full resolution, whatever the last one had come down to
         if (typeof DynRes !== 'undefined') DynRes.reset(this);
@@ -625,6 +642,7 @@ class Game {
     if (this.state !== 'play') return;
     this.updateChunks(this.chunkBudget());
     if (!this.net) this.chunkWatchdog(Math.floor(this.player.pos[0]) >> 4, Math.floor(this.player.pos[2]) >> 4, now);
+    this.guard('quality advice', () => this.qualityAdvice(now));
     if (now - this.lastSave > 45000) { this.lastSave = now; this.saveWorld(true); }
     // mouse look handled in input; continuous mining handled in tick
   }
@@ -725,6 +743,12 @@ class Game {
   // record being read) is forgotten and they are asked for again. Before, a chunk lost on its way (an error,
   // an answer that never came) was never asked for again: loading stopped (区块：60) or a hole stayed open
   // with its neighbours undrawn.
+  //
+  // K-39: the old watchdog measured only how long the same 7 x 7 was incomplete. On a slow-but-working device
+  // (SwiftShader / CPU-throttled headless, a busy phone) generation of those chunks took longer than 8 s and it
+  // reported a "stall", deleted the pending jobs and asked again - extra work that made the slow load slower.
+  // A stall is now only reported when no chunk, generation reply, decoration, finish or mesh result has arrived
+  // during the window (or when the missing chunks have no owner in any queue for 8 s).
   chunkWatchdog(pcx, pcz, now) {
     const w = this.world;
     if (!w || w.remote || now - (this.wdT || 0) < 1000) return;
@@ -736,9 +760,28 @@ class Game {
     const sig = pcx + ',' + pcz + ':' + missing.join(',');
     if (!missing.length || sig !== this.wdSig) { this.wdSig = sig; this.wdSince = now; return; }
     if (now - this.wdSince < 8000) return;
+    const cw = this.chunkWorker;
+    const active = missing.filter((k) =>
+      (this.genPending && this.genPending.has(k)) ||
+      (w.protoKeys && w.protoKeys.has(k)) ||
+      (w.proto && w.proto.has(k)) ||
+      (w.savedFetch instanceof Map && w.savedFetch.has(k)));
+    const last = Math.max(this.lastChunkAt || 0, this.lastGenAt || 0, cw && cw.lastResult || 0);
+    const quiet = now - last;
+    // A saved-chunk read is a one-shot IndexedDB request: the database layer retries it, and re-requesting the
+    // chunk while that read is in flight only adds a second read. This was the remaining K-39 false positive.
+    if (w.savedFetch instanceof Map && w.savedFetch.size) { this.wdSince = now; return; }
+    // any work in the chunk pipeline means a missing column may still be behind an unrelated chunk; re-requesting
+    // it now just duplicates jobs and was the K-39 amplification. Wait for the pipeline to go quiet first.
+    const busy = (this.genPending && this.genPending.size) || (w.protoKeys && w.protoKeys.size) || (w.proto && w.proto.size) ||
+      (this.finalQ && this.finalQ.length) || (w.savedFetch instanceof Map && w.savedFetch.size) || (cw && cw.meshCb.size);
+    if (busy && quiet < 30000) { this.wdSince = now; return; }
+    // jobs are still owned and something happened recently: this is slow, not lost
+    if (active.length && quiet < 12000) { this.wdSince = now; return; }
+    if (!active.length && quiet < 8000) { this.wdSince = now; return; }
     this.wdSince = now;
-    this.reportError('区块加载停住了，重新请求 ' + missing.length + ' 个区块', new Error('chunk stall'), true);
-    const cw = this.chunkWorker, gone = [];
+    this.reportError('区块加载停住了，重新请求 ' + missing.length + ' 个区块（' + Math.round(quiet) + ' ms 无进度）', new Error('chunk stall'), true);
+    const gone = [];
     for (const k of missing) {
       if (this.genPending) this.genPending.delete(k);
       if (w.protoKeys && w.protoKeys.delete(k)) gone.push(k);
@@ -776,8 +819,8 @@ class Game {
         const m = w.getMeta(x, y, z);
         let fx = x + 0.5, fy = y + 0.7, fz = z + 0.5;
         if (m) { fx += DIRS[m][0] * 0.27 * -1 + DIRS[m][0] * 0.38 * 0; fx = x + 0.5 + DIRS[m][0] * 0.38 - DIRS[m][0] * 0.32 * 0.6 * 1; fz = z + 0.5 + DIRS[m][2] * 0.38 - DIRS[m][2] * 0.32 * 0.6; fy = y + 0.92; }
-        this.particles.spawn('flame', fx, fy, fz, 0, 0.002, 0).life = 12;
-        this.particles.spawn('smoke', fx, fy + 0.05, fz, 0, 0.01, 0).size = 0.06;
+        const flame = this.particles.spawn('flame', fx, fy, fz, 0, 0.002, 0); if (flame) flame.life = 12;
+        const smoke = this.particles.spawn('smoke', fx, fy + 0.05, fz, 0, 0.01, 0); if (smoke) smoke.size = 0.06;
       } else if (id === LAVA && w.getBlock(x, y + 1, z) === 0 && Math.random() < 0.05) {
         this.particles.spawn('lava', x + Math.random(), y + 1, z + Math.random(), (Math.random() - 0.5) * 0.1, 0.25, (Math.random() - 0.5) * 0.1);
         if (Math.random() < 0.3) Sound.noise([x, y, z], { type: 'bandpass', freq: 400, q: 2, dur: 0.1, vol: 0.3 });
@@ -1715,14 +1758,25 @@ class Game {
     if (h.dmg >= ITEMS[h.id].durability) { p.inv.slots[p.inv.sel] = null; Sound.block('break', 'wood', p.pos); this.ui.actionBar = { text: ITEMS[h.id].cn + ' 损坏了', t: performance.now(), color: '#FF5555' }; }
   }
   flushMesh() {
-    // remesh dirty sections near the player immediately for responsive edits
+    // Remesh the dirty chunks near the player for responsive edits, but keep the same frame budget as the
+    // streamer. Before, a block placed next to a chunk border could mesh five or nine chunks back to back on
+    // the main thread (14 ms each in the measured scene): a visible 60-120 ms hitch on every edit. The rest
+    // stay dirty and are picked up by updateChunks() on the next frame (through the chunk worker when it is up).
     const p = this.player, pcx = Math.floor(p.pos[0]) >> 4, pcz = Math.floor(p.pos[2]) >> 4;
+    const dirty = [];
     for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) {
       const ch = this.world.getChunk(pcx + a, pcz + b);
       if (!ch || !ch.dirty) continue;
       let ok = true;
       for (let i = -1; i <= 1 && ok; i++) for (let j = -1; j <= 1; j++) if (!this.world.getChunk(ch.cx + i, ch.cz + j)) { ok = false; break; }
-      if (ok) this.meshChunk(ch);
+      if (ok) dirty.push([ch, a * a + b * b]);
+    }
+    if (!dirty.length) return;
+    dirty.sort((a, b) => a[1] - b[1]);
+    const t0 = performance.now(), budget = Math.min(8, this.chunkBudget ? this.chunkBudget() : 6);
+    for (let i = 0; i < dirty.length; i++) {
+      if (i && performance.now() - t0 >= budget) break;
+      this.timedWork('mesh', () => this.meshChunk(dirty[i][0]));
     }
   }
   // vanilla attack speed (attacks per second) of the held item
@@ -2448,7 +2502,8 @@ class Game {
     for (const e of list) try {
       const ip = e.ipos(a);
       const dx = ip[0] - cam[0], dz = ip[2] - cam[2];
-      if (dx * dx + dz * dz > (r.renderDist * 16) ** 2) continue;
+      const maxD = r.entityDist || (r.renderDist * 16);
+      if (dx * dx + dz * dz > maxD * maxD) continue;
       const big = e instanceof EnderDragon ? 14 : e instanceof Ghast ? 5 : 2;
       if (!aabbInFrustum(r.planes, ip[0] - big, ip[1] - big, ip[2] - big, ip[0] + big, ip[1] + 3 + big, ip[2] + big)) continue;
       const l = e.lightAt();
@@ -2592,13 +2647,17 @@ class Game {
       r.drawModel('sheep_wool', 'sheep_wool', m, poses, lt, env, { overlay, tint: col });
     }
     if (e.type === 'spider') { gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthFunc(gl.LEQUAL); r.drawModel('spider', 'spider_eyes', m, poses, [1, 1], env, {}); gl.disable(gl.BLEND); gl.depthFunc(gl.LESS); }
-    // shadow on the ground below
+    // shadow on the ground below (near entities only: a 40-pixel blob under every cow at 100 blocks was a
+    // measurable part of the low/medium presets' draw count)
     if (e.deathTime === 0 && !e.displayMatrix) {
-      const fx = Math.floor(ip[0]), fz = Math.floor(ip[2]);
-      let gy = Math.floor(ip[1] + 0.01);
-      for (let k = 0; k < 4 && gy > 0 && !SOLIDCUBE[this.world.getBlock(fx, gy - 1, fz)] && !BLOCKS[this.world.getBlock(fx, gy - 1, fz)].solid; k++) gy--;
-      const h = ip[1] - gy;
-      if (h < 3) r.drawShadow(ip[0], gy, ip[2], e.w * 0.75 * (1 - h / 6), 0.55 * (1 - h / 3));
+      const scx = ip[0] - r.camPos[0], scz = ip[2] - r.camPos[2], sd = r.entityShadowDist || 64;
+      if (scx * scx + scz * scz <= sd * sd) {
+        const fx = Math.floor(ip[0]), fz = Math.floor(ip[2]);
+        let gy = Math.floor(ip[1] + 0.01);
+        for (let k = 0; k < 4 && gy > 0 && !SOLIDCUBE[this.world.getBlock(fx, gy - 1, fz)] && !BLOCKS[this.world.getBlock(fx, gy - 1, fz)].solid; k++) gy--;
+        const h = ip[1] - gy;
+        if (h < 3) r.drawShadow(ip[0], gy, ip[2], e.w * 0.75 * (1 - h / 6), 0.55 * (1 - h / 3));
+      }
     }
   }
   // worn armour (vanilla humanoid armour layers; leather is dyed #A06540 with an undyed overlay): [helmet, chestplate,

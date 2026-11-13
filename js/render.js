@@ -191,8 +191,8 @@ function loadImage(src) {
 const ARENA_PAGE = 8 << 20, ARENA_ALIGN = 256;
 class VertexArena {
   // attribs(base): points the bound VAO's attributes at the bound buffer from byte base (for moving a mesh)
-  constructor(gl, attribs) { this.gl = gl; this.attribs = attribs; this.pages = []; this.used = 0; this.total = 0; this.pagedUsed = 0; this.pagedTotal = 0; }
-  newPage(size) {
+  constructor(gl, attribs, page = ARENA_PAGE) { this.gl = gl; this.attribs = attribs; this.page = page; this.pages = []; this.used = 0; this.total = 0; this.pagedUsed = 0; this.pagedTotal = 0; }
+  newPage(size = this.page) {
     const gl = this.gl, buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, size, gl.STATIC_DRAW);
@@ -218,10 +218,10 @@ class VertexArena {
   alloc(bytes) {
     const size = Math.ceil(bytes / ARENA_ALIGN) * ARENA_ALIGN;
     this.used += size;
-    if (size > ARENA_PAGE / 2) { const pg = this.newPage(size); pg.free = []; pg.used = size; pg.solo = true; return { pg, off: 0, size }; }
+    if (size > this.page / 2) { const pg = this.newPage(size); pg.free = []; pg.used = size; pg.solo = true; return { pg, off: 0, size }; }
     let a = this.fit(size, null);
     if (!a) {
-      const pg = this.newPage(ARENA_PAGE); this.pagedTotal += ARENA_PAGE;
+      const pg = this.newPage(this.page); this.pagedTotal += this.page;
       pg.free[0][0] = size; pg.free[0][1] -= size; pg.used = size;
       a = { pg, off: 0, size };
     }
@@ -254,7 +254,7 @@ class VertexArena {
   // meshes move into the others' gaps (a GPU-side copy, the same VAO pointed at the new place; at most `budget`
   // bytes a call) until it is empty and deleted
   compact(budget = 1 << 20) {
-    if (this.pagedTotal - this.pagedUsed < ARENA_PAGE * 1.5 || this.pagedTotal < this.pagedUsed * 1.3) return 0;
+    if (this.pagedTotal - this.pagedUsed < this.page * 1.5 || this.pagedTotal < this.pagedUsed * 1.3) return 0;
     let src = null;
     for (const pg of this.pages) if (!pg.solo && (!src || pg.used < src.used)) src = pg;
     if (!src) return 0;
@@ -301,6 +301,7 @@ class Renderer {
     this.proj = M4.create(); this.view = M4.create(); this.vp = M4.create();
     this.identity = M4.create();
     this.fov = 70; this.renderDist = 8;
+    this.entityDist = 128; this.entityShadowDist = 64;
     this.camPos = [0, 0, 0];
     this.sections = new Map(); // key -> {o: {vao, buf}, n, t, tn, x, y, z, m: model matrix}
     this.secVis = new Map();   // key -> face visibility of sections with blocks (missing: all open)
@@ -479,7 +480,9 @@ class Renderer {
   }
   // a section's vertices go into a range of the shared arena (no buffer of its own); its VAO points there
   makeSectionVao(data) {
-    const gl = this.gl, a = (this.arena || (this.arena = new VertexArena(gl, (base) => this.setupSectionAttribs(base)))).alloc(data.byteLength);
+    const gl = this.gl;
+    const page = (TouchDevice.kind === 'phone' || TouchDevice.kind === 'tablet') ? 4 << 20 : ARENA_PAGE;
+    const a = (this.arena || (this.arena = new VertexArena(gl, (base) => this.setupSectionAttribs(base), page))).alloc(data.byteLength);
     gl.bindBuffer(gl.ARRAY_BUFFER, a.pg.buf);
     gl.bufferSubData(gl.ARRAY_BUFFER, a.off, data);
     const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
@@ -995,7 +998,9 @@ class Renderer {
     gl.disable(gl.BLEND);
     const cam = this.camPos, maxD = (this.renderDist + 1) * 16;
     if (P.u.u_sec) gl.uniform1i(P.u.u_sec, 1);
-    const vis = [], cand = this.updateCulling() || this.sections.values();
+    const vis = this.visScratch || (this.visScratch = []);
+    vis.length = 0;
+    const cand = this.updateCulling() || this.sections.values();
     for (const s of cand) {
       if (s.dead) continue;
       const dx = s.x + 8 - cam[0], dz = s.z + 8 - cam[2];

@@ -153,6 +153,9 @@ class MPClient {
     this.reconnectTries = 0;
     this.left = false; this.ending = false; this.metaLoaded = false;
     this.pendingChat = [];
+    // phase-07 network diagnostics: the F3 screen / performance report can show what a room actually costs.
+    // ping is one tiny message every 5 s; the server echoes t0, so the RTT needs no clock sync.
+    this.netStats = { sent: 0, recv: 0, messages: 0, frames: 0, latency: null, lastPing: 0 };
   }
 
   // ---- connection ------------------------------------------------------------
@@ -183,6 +186,8 @@ class MPClient {
       };
       ws.onmessage = (e) => {
         if (this.ws !== ws) return;
+        this.netStats.recv += typeof e.data === 'string' ? e.data.length : (e.data.byteLength || 0);
+        this.netStats.frames++;
         let m; try { m = JSON.parse(e.data); } catch (err) { return; }
         try { this.onMessage(m); } catch (err) { console.warn('mp message', err); }
       };
@@ -198,7 +203,11 @@ class MPClient {
 
   send(o) {
     if (!this.ws || this.ws.readyState !== 1) return false;
-    try { this.ws.send(JSON.stringify(o)); return true; } catch (e) { return false; }
+    try {
+      const text = JSON.stringify(o);
+      this.netStats.sent += text.length; this.netStats.messages++;
+      this.ws.send(text); return true;
+    } catch (e) { return false; }
   }
 
   afterHello() {
@@ -305,7 +314,9 @@ class MPClient {
         if (this.worldLoaded) this.syncItems();
         return;
       case 'left': return;
-      case 'pong': return;
+      case 'pong':
+        if (typeof m.t0 === 'number' && isFinite(m.t0)) this.netStats.latency = Math.max(0, performance.now() - m.t0);
+        return;
       default: return;
     }
   }
@@ -399,6 +410,8 @@ class MPClient {
     this.finished = true;
     this.loading = false;
     this.state = 'joined';
+    this.connectedAt = performance.now();
+    this.netStats.sent = 0; this.netStats.recv = 0; this.netStats.messages = 0; this.netStats.frames = 0;
     try { this.g.ui.close(); } catch (e) { }
     this.g.ui.message(`已进入「${this.room.name}」（邀请码 ${this.code}）`, '#55FF55');
     this.sendState();
@@ -731,6 +744,10 @@ class MPClient {
     const now = performance.now();
     if (now - this.lastState >= 100) { this.lastState = now; this.sendState(); }
     if (now - this.lastPstate >= 10000) { this.lastPstate = now; this.sendPstate(); }
+    if (now - (this.netStats.lastPing || 0) >= 5000) {
+      this.netStats.lastPing = now;
+      this.send({ t: 'ping', t0: now });
+    }
     if (this.outBlocks.size) {
       const list = [];
       for (const [k, v] of this.outBlocks) { list.push(v); this.outBlocks.delete(k); if (list.length >= 8) break; }

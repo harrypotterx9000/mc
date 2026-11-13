@@ -151,7 +151,13 @@ class Room {
   }
 
   broadcast(obj, exceptConn = null) {
-    for (const [conn, p] of this.conns) { if (conn !== exceptConn) conn.send(obj); }
+    // Snapshot messages go to every player: encode once, not once per connection. The old per-connection
+    // JSON.stringify was the largest CPU cost of a 10-player room (measured in the phase-07 load test).
+    let text = obj;
+    if (typeof obj !== 'string') {
+      try { text = JSON.stringify(obj); } catch (e) { return; }
+    }
+    for (const [conn, p] of this.conns) { if (conn !== exceptConn) conn.sendText ? conn.sendText(text) : conn.send(text); }
   }
 
   sendTo(pid, obj) { const p = this.players.get(pid); if (p && p.conn) p.conn.send(obj); }
@@ -528,6 +534,14 @@ export class RoomManager {
     this.startedAt = Date.now();
     this.timer = null;
     this.stats = { connections: 0, joins: 0, created: 0, messages: 0, protocolErrors: 0, rejected: 0, saves: 0 };
+    // phase-07 server performance: what the browser / the operator can read (admin status; public status drops
+    // the CPU/memory figures). TPS is measured over a rolling 5 s window, not assumed from setInterval.
+    this.perf = {
+      lastTickAt: 0, lastTickMs: 0, tickAvgMs: 0, tickMaxMs: 0, lateTicks: 0, ticks: 0,
+      windowStart: performance.now(), windowTicks: 0, tps: null,
+    };
+    this.cpu0 = process.cpuUsage();
+    this.wall0 = Date.now();
   }
 
   load(records) {
@@ -547,8 +561,23 @@ export class RoomManager {
 
   start() {
     if (this.timer) return;
-    this.timer = setInterval(() => this.tick(), TICK_MS);
-    this.log.info('rooms_started', { rooms: this.rooms.size, tickMs: TICK_MS });
+    // Windows' Node timers are quantised to ~15.6 ms: a 50 ms setInterval only fires about every 62.5 ms, so the
+    // old server actually ran at ~16 TPS (measured in the phase-07 load test). Wake up more often and run every
+    // 50 ms slot that is due, with a small catch-up limit so one long stop cannot replay a burst of ticks.
+    this._tickAt = performance.now();
+    this.timer = setInterval(() => this.tickScheduler(), 10);
+    this.log.info('rooms_started', { rooms: this.rooms.size, tickMs: TICK_MS, timerMs: 10 });
+  }
+  tickScheduler() {
+    const now = performance.now();
+    if (now - this._tickAt < TICK_MS - 0.5) return;
+    let n = 0;
+    while (now - this._tickAt >= TICK_MS - 0.5 && n < 3) {
+      this._tickAt += TICK_MS;
+      this.tick();
+      n++;
+    }
+    if (n >= 3) this._tickAt = now; // a debugger pause, a huge save: continue from here, do not spiral
   }
 
   async stop() {
@@ -670,7 +699,7 @@ export class RoomManager {
     ctx.state = 'lobby';
     ctx.conn.send({
       t: 'hello', ok: true, v: PROTO,
-      server: { name: this.cfg.serverName, version: 'phase-05' },
+      server: { name: this.cfg.serverName, version: 'phase-07' },
       limits: { maxPlayersPerRoom: this.cfg.maxPlayersPerRoom, maxRooms: this.cfg.maxRooms, inviteCodeLength: this.cfg.inviteCodeLength, snapshotHz: this.cfg.snapshotHz },
     });
   }
@@ -795,10 +824,20 @@ export class RoomManager {
     this.log.info('room_closed', { room: room.code, reason, players: conns.length });
   }
 
-  broadcastToRoom(room, obj) { for (const [conn] of room.conns) conn.send(obj); }
+  broadcastToRoom(room, obj) {
+    let text = obj;
+    if (typeof obj !== 'string') { try { text = JSON.stringify(obj); } catch (e) { return; } }
+    for (const [conn] of room.conns) conn.sendText ? conn.sendText(text) : conn.send(text);
+  }
 
   tick() {
-    const now = Date.now();
+    const now = Date.now(), t0 = performance.now(), pf = this.perf;
+    if (pf.lastTickAt) {
+      // a 50 ms slot served by a 15.6 ms Windows timer can legitimately be 62 ms apart; two missed slots (>100 ms)
+      // is the useful "late" signal.
+      if (now - pf.lastTickAt > TICK_MS * 2) pf.lateTicks++;
+    }
+    pf.lastTickAt = now;
     for (const room of this.rooms.values()) {
       try { room.tick(); } catch (e) { this.log.error('room_tick_failed', { room: room.code, error: e.message }); }
       if (now - room.lastSave >= this.cfg.autosaveSeconds * 1000 && (room.dirty || room.onlineCount)) {
@@ -809,16 +848,40 @@ export class RoomManager {
       this._lastIpClean = now;
       for (const [ip, b] of this.ipBuckets) if (now - b.last > 600000) this.ipBuckets.delete(ip);
     }
+    const dur = performance.now() - t0;
+    pf.lastTickMs = dur;
+    pf.tickAvgMs = pf.tickAvgMs ? pf.tickAvgMs * 0.9 + dur * 0.1 : dur;
+    if (dur > pf.tickMaxMs) pf.tickMaxMs = dur;
+    pf.ticks++;
+    pf.windowTicks++;
+    const span = performance.now() - pf.windowStart;
+    if (span >= 5000) {
+      pf.tps = +(pf.windowTicks * 1000 / span).toFixed(2);
+      pf.windowTicks = 0; pf.windowStart = performance.now();
+    }
   }
 
   // ---- status -----------------------------------------------------------------
+  perfStatus() {
+    const pf = this.perf, cpu = process.cpuUsage(this.cpu0), wallUs = Math.max(1, (Date.now() - this.wall0) * 1000);
+    // rolling interval: the next status call reports the CPU used since this one (the load tests poll once a
+    // second), instead of an all-time average diluted by idle time
+    this.cpu0 = process.cpuUsage(); this.wall0 = Date.now();
+    const mem = process.memoryUsage();
+    return {
+      tps: pf.tps, tickAvgMs: +pf.tickAvgMs.toFixed(2), tickMaxMs: +pf.tickMaxMs.toFixed(2),
+      lastTickMs: +pf.lastTickMs.toFixed(2), lateTicks: pf.lateTicks, ticks: pf.ticks,
+      cpuPct: +(((cpu.user + cpu.system) / wallUs) * 100).toFixed(1),
+      rssMB: +(mem.rss / 1048576).toFixed(1), heapUsedMB: +(mem.heapUsed / 1048576).toFixed(1),
+    };
+  }
   status() {
     let players = 0;
     for (const r of this.rooms.values()) players += r.onlineCount;
     return {
-      ok: true, name: this.cfg.serverName, version: 'phase-05', uptime: Math.floor((Date.now() - this.startedAt) / 1000),
+      ok: true, name: this.cfg.serverName, version: 'phase-07', uptime: Math.floor((Date.now() - this.startedAt) / 1000),
       rooms: this.rooms.size, players, maxRooms: this.cfg.maxRooms, maxPlayersPerRoom: this.cfg.maxPlayersPerRoom,
-      connections: this.ctx.size, stats: { ...this.stats },
+      connections: this.ctx.size, stats: { ...this.stats }, perf: this.perfStatus(),
     };
   }
 

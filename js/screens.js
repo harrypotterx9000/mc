@@ -408,9 +408,11 @@ class OptionsListScreen extends MenuScreen {
     const fpsLabel = () => '最大帧率：' + (s.maxFps ? s.maxFps + ' fps' : '无限制');
     return [
       bt(() => '画质预设：' + (PRESET_NAMES[s.preset] || '自定义') + (s.preset === 'auto' && s.autoPreset ? '（' + PRESET_NAMES[s.autoPreset] + '）' : ''), () => {
-        const order = ['auto', 'low', 'medium', 'high', 'ultra'];
+        const order = ['auto', 'low', 'medium', 'high', 'ultra', 'custom'];
         applyPreset(g, order[(order.indexOf(s.preset) + 1) % order.length]);
-      }, { tip: ['自动：按设备性能选择（' + TouchDevice.name + '）', '低 / 中 / 高 / 极高：渲染距离、分辨率、云、图形品质'] }),
+      }, { tip: ['自动：按设备性能选择（' + TouchDevice.name + '）', '低 / 中 / 高 / 极高：渲染距离、分辨率、云、图形品质', '自定义：保留当前设置，单项改动也会切到这里'] }),
+      bt('测试性能并推荐画质…', () => g.ui.open(new QualityScreen(g, () => g.ui.open(this), { cancellable: true })),
+        { tip: ['在实时画面上测量帧时间、显卡耗时，按实测结果推荐画质和光影', '打开时游戏继续运行，约 1-12 秒'] }),
       bt(() => '图形品质：' + (s.graphics === 'fast' ? '流畅' : '高品质'), own(() => { s.graphics = s.graphics === 'fast' ? 'fancy' : 'fast'; g.graphicsChanged(); }),
         { tip: ['流畅：树叶不透明，相邻树叶之间的面不绘制', '省显存和显卡，森林里更流畅'] }),
       bt(() => '光影：' + FX_NAMES[s.shaders || 0] + (g.renderer.fx && !g.renderer.fx.ok ? '（不支持）' : ''), () => { if (g.renderer.fx && g.renderer.fx.ok) s.shaders = ((s.shaders || 0) + 1) % FX_NAMES.length; }, { tip: ['关 / 低 / 中 / 高 / 极限：实时阴影、水面反射、体积光等'] }),

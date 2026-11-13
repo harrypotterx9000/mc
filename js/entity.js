@@ -1089,9 +1089,9 @@ class Arrow extends Entity {
 // Particles
 // ---------------------------------------------------------------------------
 class Particles {
-  constructor(game) { this.game = game; this.list = []; this.pickups = []; }
+  constructor(game) { this.game = game; this.list = []; this.pickups = []; this.max = 3000; }
   spawn(type, x, y, z, vx, vy, vz, extra) {
-    if (this.list.length > 3000) return;
+    if (this.list.length >= this.max) return;
     const p = { type, x, y, z, px: x, py: y, pz: z, vx, vy, vz, age: 0, life: 20, size: 0.1, grav: 0, layer: 0, u0: 0, v0: 0, us: 1, col: [255, 255, 255], bright: false, frames: 0, base: 0 };
     const r = Math.random;
     switch (type) {

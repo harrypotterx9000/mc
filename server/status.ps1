@@ -37,6 +37,10 @@ if (Test-Path $TokenPath) {
   $token = (Get-Content $TokenPath -Raw -Encoding UTF8).Trim()
   try {
     $admin = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/admin/status" -Headers @{ 'X-Admin-Token' = $token } -TimeoutSec 4
+    if ($admin.perf) {
+      $tpsText = if ($null -eq $admin.perf.tps) { '测量中' } else { $admin.perf.tps }
+      Write-Host ("  性能：TPS {0}  tick {1}/{2} ms  迟到 {3}  CPU {4}%  RSS {5} MB" -f $tpsText, $admin.perf.tickAvgMs, $admin.perf.tickMaxMs, $admin.perf.lateTicks, $admin.perf.cpuPct, $admin.perf.rssMB) -ForegroundColor DarkGray
+    }
     if ($admin.roomsList.Count -eq 0) { Write-Host "  （没有打开的房间）" }
     foreach ($r in $admin.roomsList) {
       Write-Host ""

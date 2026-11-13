@@ -13,7 +13,7 @@ import { WSServer } from './ws.mjs';
 import { loadBlockIds } from './blockids.mjs';
 import { LIMITS } from './protocol.mjs';
 
-const VERSION = '0.5.0';
+const VERSION = '0.7.0';
 const cfg = loadConfig();
 
 let logger = null;

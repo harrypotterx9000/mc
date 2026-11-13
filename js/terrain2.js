@@ -272,7 +272,7 @@ Game.prototype.genSetup = function (seed) {
 class ChunkWorker {
   constructor(game) {
     this.game = game; this.ready = false; this.failed = false; this.epoch = 0; this.world = null;
-    this.meshCb = new Map(); this.nextId = 1;
+    this.meshCb = new Map(); this.nextId = 1; this.lastResult = performance.now();
     if (location.protocol === 'file:' || !Platform.workers.supported) { this.failed = true; return; }
     this.w = Platform.workers.create('js/chunk_worker.js');
     if (!this.w) { this.failed = true; return; }
@@ -330,9 +330,10 @@ class ChunkWorker {
     const g = this.game, w = this.world;
     switch (m.type) {
       case 'ready': this.ready = true; break;
-      case 'mesh': { this.lastMesh = performance.now(); const cb = this.meshCb.get(m.id); this.meshCb.delete(m.id); if (cb) cb(m.error ? null : m); break; }
+      case 'mesh': { this.lastMesh = this.lastResult = performance.now(); const cb = this.meshCb.get(m.id); this.meshCb.delete(m.id); if (cb) cb(m.error ? null : m); break; }
       case 'final':
         if (m.epoch !== this.epoch || !w) break;
+        this.lastResult = performance.now();
         w.protoKeys.delete(ckey(m.cx, m.cz));
         (g.finalQ || (g.finalQ = [])).push(m);
         break;
@@ -364,6 +365,9 @@ Game.prototype.finishFromWorkerIn = function (m, w, k) {
   if (m.sx && m.sx.wl) ch.wl = new Set(m.sx.wl);
   const saved = w.savedChunks && w.savedChunks.get(k);
   if (saved) decodeChunk(saved, ch);
+  // the encoded record was only needed until the chunk arrays exist. Keeping it duplicated the chunk in memory
+  // for every loaded column (measured ~70 MB in a 300-chunk world); a later unload saves the decoded chunk again.
+  if (saved) w.savedChunks.delete(k);
   if (ch.sx) this.structureExtras(ch, !!saved);
   this.chunkTints(ch);
   ch.nb = null;
@@ -460,6 +464,7 @@ Game.prototype.genStep = function (pcx, pcz, R, t0, budget) {
   }
 };
 Game.prototype.genReceive = function (m) {
+  this.lastGenAt = performance.now();
   const w = this.world, k = ckey(m.cx, m.cz);
   if (w.useCW && this.chunkWorker && !this.chunkWorker.failed) {
     if (w.chunks.has(k) || w.protoKeys.has(k)) return;
@@ -495,6 +500,7 @@ Game.prototype.finaliseChunk = function (ch) {
   ch.final = true; // decoration of a (re)generated neighbour must not write into it any more
   const saved = w.savedChunks && w.savedChunks.get(k);
   if (saved) decodeChunk(saved, ch);
+  if (saved) w.savedChunks.delete(k); // see finishFromWorkerIn: the decoded chunk is authoritative now
   if (ch.sx) { this.structureExtras(ch, !!saved); }
   this.chunkTints(ch);
   ch.recount();

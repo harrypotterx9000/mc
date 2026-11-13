@@ -20,9 +20,10 @@ const SHADER_CARDS = [
   { lv: 4, name: '极限', sub: '体积光，最吃显卡', cost: 3 },
 ];
 class QualityScreen extends MenuScreen {
-  constructor(game, next) {
+  constructor(game, next, opts = {}) {
     super(game, null); this.next = next; this.pauses = false; this.blurBg = false; this.bgDim = 0;
     this.phase = 'detect'; this.t0 = performance.now(); this.rec = null;
+    this.orig = { ...game.settings }; this.cancellable = !!opts.cancellable;
     const g = game, gl = g.renderer.gl;
     this.hw = { gpu: PerfMon.gpuName(gl) || '未知显卡', cores: navigator.hardwareConcurrency || 0, mem: navigator.deviceMemory || 0, phone: TouchDevice.kind === 'phone' || TouchDevice.kind === 'tablet' };
     this.q = g.settings.preset && QUALITY_CARDS.some((c) => c.id === g.settings.preset) ? g.settings.preset : detectPreset(gl);
@@ -154,7 +155,16 @@ class QualityScreen extends MenuScreen {
     for (const w of this.widgets) if (!w.card) ui.button(w);
     for (const w of this.widgets) if (w.tip && ui.hit(w)) ui.tooltip(w.tip.map((t) => ({ text: t })), ui.mouse.x, ui.mouse.y);
   }
-  onEsc() { }
+  onEsc() {
+    if (!this.cancellable) return;
+    this.unhook && this.unhook();
+    const changedGraphics = this.game.settings.graphics !== this.orig.graphics;
+    Object.assign(this.game.settings, this.orig);
+    this.game.applySettings();
+    if (changedGraphics) this.game.graphicsChanged();
+    this.game.saveSettings();
+    const n = this.next; this.next = null; n && n();
+  }
 }
 
 // ---- step 2b (after the quality): which device - the detected one chosen already, the player may pick the other.
