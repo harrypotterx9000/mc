@@ -1,7 +1,7 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；已推送 `origin/opusmc-integration`；远程 tip `597a15f`）
+> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；已推送 `origin/opusmc-integration`；phase-08 内容 tip `597a15f`）
 
 ## 1. 三十秒摘要
 

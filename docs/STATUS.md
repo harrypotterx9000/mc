@@ -3,7 +3,7 @@
 - 更新时间：2026-11-14
 - 当前阶段：**phase-08 网络部署 — 验收结束；已提交并推送 `origin/opusmc-integration`**
 - 下一阶段：**phase-09 验收**（未开始；不自动进入）
-- 代码版本：phase-08 代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送（远程 tip `597a15f`；推送记录为当前 HEAD）
+- 代码版本：phase-08 代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送（phase-08 内容 tip `597a15f`；远程 HEAD 为推送记录/当前 HEAD）
 - 当前分支：`develop`（未新建/切换/重置分支）
 
 ## Git

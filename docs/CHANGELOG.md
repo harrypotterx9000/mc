@@ -12,7 +12,7 @@
 > **真实手机 LAN（单人/移动/视角/放置/破坏/刷新）与手机蜂窝公网（HTTPS/进入/渲染/移动/视角/放置/破坏/刷新）
 > 用户报告 PASS（2026-11-14）**；服务器日志分别有 LAN 客户端（E7UDCMQT）与蜂窝 IPv6 客户端（XF6BT4YQ）加入。
 > Caddy 为备用模板、不属于正式验收路径；用户未提供手机型号/网络/截图。
-> **已推送 `origin/opusmc-integration`（远程 tip `597a15f`；推送记录为当前 HEAD）。**
+> **已推送 `origin/opusmc-integration`（phase-08 内容 tip `597a15f`；远程 HEAD 为推送记录/当前 HEAD）。**
 
 - 修改原因：阶段 8 要求先让同一 Wi-Fi 的手机/电脑访问同一台服务器，再提供外网 HTTPS/WSS；
   原服务器默认只绑定 `127.0.0.1`，且反向代理/隧道会让源站把所有请求看成 `127.0.0.1`，
@@ -26,7 +26,7 @@
   7 个项目文档（`docs/{STATUS,START-HERE,PROJECT_SPEC,ARCHITECTURE,DECISIONS,KNOWN_ISSUES,CHANGELOG}.md`）。
 - 提交拆分：代码/部署资产 `ef8c540`（12 个文件）；项目/阶段文档 `d8b237a`（13 个文件）+
   `597a15f`（HANDOFF 细节）；推送记录为当前 HEAD。
-- 推送：`origin/opusmc-integration`，远程 phase-08 tip `597a15f`；未合并、未强推。
+- 推送：`origin/opusmc-integration`，phase-08 内容 tip `597a15f`；远程 HEAD 为推送记录/当前 HEAD；未合并、未强推。
 - 关键变化：
   - LAN：`--lan`/`start-lan.bat` 绑定 `0.0.0.0`；**主地址优先有效私有 IPv4**，`127.0.0.1` 标为
     “仅本机访问”；邀请链接专项 8/8 覆盖多次建房/刷新/恢复；防火墙脚本默认只放行专用网络。

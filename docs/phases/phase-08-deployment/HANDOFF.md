@@ -143,7 +143,7 @@
 | 分支 | `develop`（未切换/未重置） |
 | HEAD | 推送记录为当前 HEAD；phase-08 内容 tip `597a15f`；代码 `ef8c540` |
 | 工作区 | phase-08 代码/文档已提交并推送；除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>` 外干净 |
-| 远程 | **已推送 `origin/opusmc-integration`（远程 tip `597a15f`）**；未合并；未 force push |
+| 远程 | **已推送 `origin/opusmc-integration`（phase-08 内容 tip `597a15f`；远程 HEAD 为推送记录/当前 HEAD）**；未合并；未 force push |
 | 验收 | **验收结束（真实设备用户实测）**；代码 `ef8c540`；docs `d8b237a`/`597a15f` |
 
 ## 7. 下一阶段前置条件（phase-09，只检查不实现）
