@@ -201,6 +201,7 @@ phase-05（自建服务器）**实现、测试与修复复核完成并已验收�
 详见 §11.11、ADR-018/019 与 `docs/phases/phase-05-server/`。
 phase-06（双存档）**实现、测试与验收完成**（2026-11-12）；代码 `b4833b8`，docs 收尾为当前 HEAD，未推送。服务端双存档 22/22、浏览器双存档 31/31、旧存档样本复验、phase-05 回归 62/62 + 18/18 + 6/6；数据库结构未改；旧云存档只保留不迁移。详见 §11.12、ADR-020 与 `docs/phases/phase-06-dual-save/`。
 phase-07（性能）**验收结束（2026-11-13，用户确认修改与验收结束）**；代码 `508fcc8`、docs `a2bdb0e` 已推送 `origin/opusmc-integration`。桌面固定场景首轮 60 FPS、手机视口模拟 60 FPS（非真机）、K-39 修复（SwiftShader 限速 0 次/约 9 s）、服务器 2/5/10/30 连接 19.97–20.00 TPS；重复测试光影 3/4 为 59.8/57.1（K-93）；真实手机/显示器、真实 LAN/公网/TLS、>1 小时未测。详见 §11.13、ADR-021 与 `docs/phases/phase-07-performance/`。
+phase-08（网络部署）**验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。LAN 主地址/127 标注与邀请链接一致性 8/8、LAN 协议 22/22 + 双浏览器 15/15；真实手机 LAN（单人/移动/视角/放置/破坏/刷新）通过；Cloudflare Tunnel 公网 HTTPS/WSS 协议 22/22 + 浏览器 15/15（前两次 quick tunnel 资产流超时，第三次通过）；真实手机蜂窝公网通过；外部节点 5/6 200；公网管理接口（含令牌）403；Caddy 为备用模板、不属于正式验收路径；用户未提供手机型号/网络细节。详见 §11.14、ADR-022 与 `docs/phases/phase-08-deployment/`。
 
 ### 11.6 phase-01 执行约束（2026-11-06）
 
@@ -315,3 +316,44 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
 - 未测：真实手机/显示器、发热/电池、真实 LAN/公网/TLS、>1 小时连续运行；不得把模拟数据写成真机达标。
 - 已知新增边界：K-87…K-94；K-39 已修复；K-93 为光影 3/4 固定分辨率重复轮次的边际波动。
 - 后续：phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送；不自动进入 phase-08。
+
+### 11.14 phase-08 执行结果（2026-11-14，验收结束；代码 `ef8c540`；docs 收尾；未推送）
+
+- 状态：**验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。
+  Cloudflare Tunnel 为正式验收路径；Caddy 为备用模板（未运行验证，不属于正式验收）。
+  分支 `develop`；只改部署相关服务端/脚本/文档，未改渲染、地形、`mc-js-clone`、`srv~` 或存档模型。
+- 验收修复（2026-11-13）：
+  - LAN 启动输出优先选择有效私有 IPv4 作为主游戏地址；`127.0.0.1` 单独标为“仅本机访问”，
+    不再作为 LAN 首要地址；默认 `start-server.bat` 仍只绑定 `127.0.0.1`。
+  - 邀请链接专项 8/8：多次建房、刷新/恢复、多个邀请码均使用 LAN 地址。
+  - 文档文件数量/路径/标题引用修正；补充 phase-08 文档路径。
+  - 明确 Cloudflare Tunnel 为正式支持/验收的公网路径；Caddy 保留为备用模板，未运行验证，
+    不属于正式验收路径。
+- 模式 A（LAN）：
+  - `node server\index.mjs --lan` / `start-lan.bat` 绑定 `0.0.0.0`，主地址为有效私有 IPv4；
+    默认 `start-server.bat` 仍只绑定 `127.0.0.1`。
+  - 所有设备（含电脑）使用同一个“游戏地址（局域网）”；同源 `ws://`；邀请链接使用该地址。
+  - `deploy/windows/firewall-lan.ps1`：管理员、默认仅专用网络、`-Remove`、`-IncludePublic`。
+  - 实测：LAN 主地址/127 标注 PASS；邀请链接一致性 8/8；LAN 协议 22/22、双浏览器 15/15；
+    建房/加入、同 seed、方块/聊天/玩家同步；LAN 管理接口 403、回环+令牌 200；
+    `server/data`/`docs`/`scripts`/`.git` 不可访问。
+  - **真实手机 LAN（用户报告 2026-11-14）**：单人/移动/视角/放置/破坏/刷新通过；服务器日志有
+    LAN 私有地址客户端加入房间 E7UDCMQT。
+- 模式 B（外网）：
+  - 新增 `server/netutil.mjs`：只有直连回环才信任 `X-Forwarded-For`/`CF-Connecting-IP`；
+    管理接口要求“直连回环 + 转发地址回环”；WS 的 `conn.ip` 使用真实客户端 IP。
+  - **Cloudflare Tunnel（正式验收路径）**：公网 HTTPS/WSS 协议 22/22、浏览器 15/15
+    （前两次 quick tunnel 资产流超时，第三次通过）；公网管理接口无令牌/带令牌均 403；
+    修复后 check-host.net 外部节点 5/6 200（1 个超时）。
+  - **真实手机蜂窝公网（用户报告 2026-11-14）**：关闭 Wi-Fi 经 Cloudflare HTTPS 进入世界、渲染、移动、
+    视角、放置、破坏、刷新通过；日志有蜂窝 IPv6 客户端加入房间 XF6BT4YQ。用户说明“PIN 验证”是
+    Cloudflare 临时地址邮箱验证，属于外部流程，OpusMC 没有 PIN/邮箱验证功能（K-100）。
+  - `deploy/Caddyfile` 保留为备用模板；`deploy/cloudflared/config.yml.example` 为命名隧道模板；
+    `docs/deployment/REMOTE.md` 含验收范围、NAT/CGNAT、端口转发、安全、排查与限制。
+- 未测/边界：Caddy + 公网 IPv4/域名、路由器端口转发、Windows 防火墙脚本实际添加/删除、
+  公网长期稳定性/带宽/10 人并发；quick tunnel 为临时地址；用户未提供手机型号/OS/浏览器/截图/录屏。
+  已知 K-95…K-100。
+- 测试（修复后复跑）：LAN 邀请链接 8/8、LAN 协议 22/22、LAN 浏览器 15/15；
+  公网协议 22/22、公网浏览器 15/15（第三次通过）；真实手机 LAN/蜂窝（用户报告 PASS）；
+  phase-05 62/62 + 18/18 + 6/6、phase-06 22/22 + 31/31、91 JS + 10 server mjs `node --check`。
+- 后续：phase-08 代码 `ef8c540`、docs 收尾为当前 HEAD；未推送；不自动进入 phase-09。

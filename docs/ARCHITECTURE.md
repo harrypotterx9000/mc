@@ -35,6 +35,8 @@
 - phase-04 新增：`js/platform.js`（浏览器平台层）；页面脚本 85 → 86，`js/` 89 → 90。
 - phase-05 新增：`js/mp.js`（自建服务器客户端与界面）；页面脚本 86 → 87，`js/` 90 → 91；新增 `server/`
   （9 个 `.mjs`、配置、Windows 脚本与部署说明）。
+- phase-08 新增：`server/netutil.mjs`（代理感知的客户端 IP）、`start-lan.bat`、`deploy/`
+  （Caddyfile、cloudflared 模板、防火墙脚本）；`server/` 9 → **10 个 `.mjs`**；页面脚本/`js/` 数量不变。
 
 ## 3. 关键对象与状态归属（[事实]）
 
@@ -680,4 +682,72 @@ phase-01 只删除了解锁界面；phase-02 修改真正的权限判断：
   `QualityScreen` 可包装 `Game.render`，仅用于测试，退出/取消必须 `unhook`。
 - 服务器：`RoomManager`（`rooms.mjs`）→ `tickScheduler()`/`perfStatus()`；`Room.broadcast()` →
   `WSConnection.sendText()`（`ws.mjs`）；`http.mjs` 的公开状态过滤 `stats`/`perf`；`status.ps1` 读 admin。
-- 无新页面脚本/资源文件；仍是 87 个 `<script src>`、91 个 `js/*.js`、9 个 `server/*.mjs`。
+- 无新页面脚本/资源文件；仍是 87 个 `<script src>`、91 个 `js/*.js`、10 个 `server/*.mjs`（phase-08 新增
+  `netutil.mjs`）。
+
+## 17. 阶段 8 变更（2026-11-14，验收结束；代码 `ef8c540`；docs 收尾；未推送）
+
+> 页面脚本 87、`js/` 91 不变；`server/` 9 → 10（新增 `netutil.mjs`）。不引入构建系统/npm 依赖；
+> TLS 不在 Node 进程内终止。
+
+### 17.1 部署形态
+
+```
+本机：      node server/index.mjs                  → 127.0.0.1:8080
+局域网：    node server/index.mjs --lan            → 0.0.0.0:8080，主地址 http://<私有IPv4>:8080/
+远程 A：    cloudflared → 127.0.0.1:8080           → Cloudflare 边缘提供 HTTPS/WSS（正式验收路径）
+远程 B：    Caddy :443 → 127.0.0.1:8080            → 备用模板，未运行验证，不属于正式验收
+```
+
+- 默认仍只绑定 `127.0.0.1`；LAN 必须显式 `start-lan.bat` / `--lan` / 改 `host`。
+- LAN 主地址优先选择有效私有 IPv4（RFC 1918），`127.0.0.1` 单独标为“仅本机访问”；
+  客户端 `MPServer.base()` 取页面同源，WebSocket/邀请链接自动为该地址。
+- 公网页面是 HTTPS 时，`MPServer.ws()` 的 `http→ws` 替换自动得到 `wss://`；不需要改客户端代码。
+- `deploy/windows/firewall-lan.ps1`：管理员、默认仅专用网络、`-Remove`、`-IncludePublic`。
+
+### 17.2 代理感知的客户端身份（`server/netutil.mjs`）
+
+| 函数 | 作用 |
+|---|---|
+| `cleanIp` | 去 `[ ]`、`IPv4:port`、`::ffff:` 前缀；非法返回空 |
+| `isLoopback` | `127.0.0.1` / `::1` |
+| `forwardedIp` | `X-Forwarded-For` **最后一项**（最近代理追加），其次 `CF-Connecting-IP`、`X-Real-IP` |
+| `clientIp` | 只有直连 socket 是回环时才信转发头；否则用 socket 地址 |
+
+- 管理接口：直连必须回环，且（若有转发头）转发地址也必须是回环；否则 403。
+  这修复了反向代理/隧道让源站误以为所有请求都来自本机的问题。
+- WebSocket：`WSConnection.ip = clientIp(req)`，限流桶/日志按真实客户端 IP；
+  LAN 客户端自带 `X-Forwarded-For` 不会被信任。
+- 代理层（Caddyfile）仍把 `/api/admin/*` 直接 404，作为第二层防御。
+
+### 17.3 数据/管理边界（公网）
+
+- 静态白名单未放宽：`server/data`、`docs/`、`scripts/`、`.git` 仍不可通过 HTTP 获取。
+- `/healthz`、`/api/status` 公开字段仍只有房间/玩家计数；`stats`/`perf` 仍仅管理接口。
+- 公网方案不建议直接转发 8080：Tunnel 源站只连回环；Caddy 方案由 443 反代到回环。
+- 本阶段没有配置路由器端口转发/域名/证书；Caddy 公网入站 **NOT TESTED**，且 Caddy 只是备用模板，
+  不属于正式验收路径。
+
+### 17.4 启动/版本
+
+- `server/index.mjs` `VERSION = 0.8.0`；`hello`/`/healthz` 的版本字符串 `phase-08`。
+- `--lan` 启动时枚举 `os.networkInterfaces()` 的可用 IPv4，过滤回环/`0.0.0.0`/`169.254.*`，
+  优先选择私有 IPv4 作为主地址；`127.0.0.1` 只作为“仅本机访问”显示，不作为 LAN 主地址。
+- `start-lan.bat`：ASCII/CRLF，调用 `node server\index.mjs --lan`；`start-server.bat` 行为不变。
+
+### 17.5 测试与未测
+
+- LAN：主地址输出/127 仅本机 PASS；邀请链接一致性 8/8（多次建房、刷新/恢复、多邀请码）；
+  协议 22/22、双浏览器 15/15（同一 LAN 地址、建房/加入、同 seed、方块/聊天/玩家同步）。
+- 公网：Cloudflare quick tunnel HTTPS/WSS 协议 22/22、浏览器 15/15（前两次资产流超时，第三次通过）；
+  修复后 check-host.net 5/6 外部节点 200（1 个超时）；公网管理接口无令牌/带令牌均 403；
+  `server/data` 等 404。
+- **真实手机（用户报告 2026-11-14）**：LAN 单人/移动/视角/放置/破坏/刷新 PASS；关闭 Wi-Fi 后
+  蜂窝 + Cloudflare HTTPS 进入世界/渲染/移动/视角/放置/破坏/刷新 PASS；服务器日志有 LAN 客户端
+  （E7UDCMQT）和蜂窝 IPv6 客户端（XF6BT4YQ）加入。用户未提供型号/OS/浏览器/截图/录屏。
+  “PIN/邮箱验证”是 Cloudflare 临时地址外部流程，不是应用功能（K-100）。
+- 回归（修复后）：phase-05 62/62 + 18/18 + 6/6；phase-06 22/22 + 31/31；
+  91 JS + 10 server mjs `node --check`。
+- **NOT TESTED / BLOCKED**：Caddy + 公网 IPv4/域名/端口转发（备用模板，不属于正式验收路径）；
+  Windows 防火墙脚本实际添加/删除；手机型号/OS/GPU/发热/帧率；公网长期稳定性/带宽/10 人并发。
+- 新增已知边界：K-95…K-100（`docs/KNOWN_ISSUES.md`）。

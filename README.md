@@ -14,8 +14,36 @@ node server\index.mjs
 然后用 Chrome / Edge 打开 `http://127.0.0.1:8080/`，进入“多人游戏 → 自建服务器房间”。
 
 - 正常关闭：`stop-server.bat` 或服务器窗口 `Ctrl+C`。
-- 本阶段服务器只默认绑定 `127.0.0.1`；局域网/公网/TLS 说明见 [`server/README.md`](server/README.md)。
+- 默认只绑定 `127.0.0.1`；局域网和外网说明见下面的“局域网”和“外网”两节。
 - 电脑关机、休眠或注销时服务器停止，多人世界在这段时间不可用。
+
+### 局域网（手机 + 电脑，同一 Wi-Fi）
+
+```powershell
+# 双击 start-lan.bat，或在项目目录运行：
+node server\index.mjs --lan
+```
+
+启动后会打印：
+
+```
+游戏地址（局域网）：http://<电脑局域网IP>:8080/
+仅本机访问（服务器电脑）：http://127.0.0.1:8080/
+```
+
+**所有设备（包括这台电脑）都打开同一个“游戏地址（局域网）”**，再进入“多人游戏 → 自建服务器房间”
+创建/加入。`127.0.0.1` 只用于服务器电脑本机，不要用它生成/分享邀请链接。
+首次需要允许 Windows 防火墙的专用网络。完整步骤、防火墙脚本和排查见
+[`docs/deployment/LAN.md`](docs/deployment/LAN.md)。
+
+### 外网（HTTPS/WSS）
+
+- **Cloudflare Tunnel 是本阶段正式支持并通过实测的公网部署路径**（不需要公网 IPv4、不需要端口转发）。
+- 有公网 IPv4 + 域名时也保留了 [`deploy/Caddyfile`](deploy/Caddyfile)，但它是**备用模板**：
+  尚未完成实际运行验证，**不属于本阶段正式验收通过的部署路径**。
+- 管理接口和 `server/data/` 不会暴露到公网；**不要把 8080 直接端口转发到公网**。
+- 完整方案、NAT/CGNAT 限制与实测边界见 [`docs/deployment/REMOTE.md`](docs/deployment/REMOTE.md)。
+  本阶段没有配置任何端口转发；Caddy 公网入站未实测，不得写成已通过。
 
 ### 单人（静态页面）
 

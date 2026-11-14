@@ -1,33 +1,35 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-13（phase-07 验收结束；代码 `508fcc8`、docs `a2bdb0e` 已推送）
+> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：phase-00/01/02/03/04/05/06 完成并验收；**phase-07 验收结束（代码 `508fcc8`、docs `a2bdb0e` 已推送）**。
-- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-07 代码 `508fcc8`；phase-06 代码 `b4833b8`；
-  phase-05 代码 `817bad3`；docs 收尾 `a2bdb0e`。
-- 工作区：phase-07 代码/文档已提交；工作区干净；无 staged、无 stash、无临时分支。
+- 现状：phase-00…07 完成并验收；**phase-08 网络部署验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。
+- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-08 代码 `ef8c540`；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送。
+- 工作区：phase-08 代码/文档已提交；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`，
+  4,988 B，误重定向输出）；无 stash、无临时分支。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
-- 远程：`https://github.com/harrypotterx9000/mc`；phase-05 已推送 `origin/opusmc-integration`；
-  phase-06 **未推送**；phase-07 **已推送**。
+- 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07 已推送；phase-06/08 未推送；
+  PR #1 未合并。
 
-> **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；phase-02/03/04/05/06/07 只在 `D:\ds\REA\opusmc`。
+> **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；
+> phase-02/03/04/05/06/07/08 只在 `D:\ds\REA\opusmc`。
 > 如以 `D:\Projects\OpusMC` 为准，需要用户确认后单独同步，禁止直接覆盖。
 
 ## 2. 阅读顺序
 
 1. `docs/START-HERE.md`（本文件）
-2. `docs/PROJECT_SPEC.md` —— 长期总规范（§11.12 phase-06、§11.13 phase-07）
+2. `docs/PROJECT_SPEC.md` —— 长期总规范（§11.12 phase-06、§11.13 phase-07、§11.14 phase-08）
 3. `docs/STATUS.md` —— 当前阶段、Git、测试与待办
-4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§15 phase-06、§16 phase-07
-5. `docs/DECISIONS.md` —— ADR-001…021（ADR-020 phase-06，ADR-021 phase-07）
-6. `docs/KNOWN_ISSUES.md` —— K-01…K-94、NOT TESTED
-7. `docs/phases/phase-07-performance/{TEST_REPORT,HANDOFF,PLAN}.md` —— 当前阶段
-8. `docs/phases/phase-06-dual-save/{TEST_REPORT,HANDOFF,PLAN}.md` —— 上一阶段
-9. `server/README.md` —— 服务器部署、配置、存档、备份、安全、性能状态
+4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§15 phase-06、§16 phase-07、§17 phase-08
+5. `docs/DECISIONS.md` —— ADR-001…022（ADR-021 phase-07，ADR-022 phase-08）
+6. `docs/KNOWN_ISSUES.md` —— K-01…K-100、NOT TESTED
+7. `docs/phases/phase-08-deployment/{TEST_REPORT,HANDOFF,PLAN}.md` —— 当前阶段
+8. `docs/deployment/{LAN,REMOTE}.md` —— 用户部署说明
+9. `docs/phases/phase-07-performance/{TEST_REPORT,HANDOFF,PLAN}.md` —— 上一阶段
+10. `server/README.md` —— 服务器配置、存档、备份、安全、性能状态、部署入口
 
 ## 3. Git 现实（以实际仓库为准）
 
@@ -35,13 +37,14 @@
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | 推送记录为当前 HEAD；docs `a2bdb0e`；phase-07 代码 `508fcc8` |
+| HEAD | docs 收尾为当前 HEAD；phase-08 代码 `ef8c540` |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01/02/03/04 代码 | `15154bd` / `a9dc47b` / `025cba8` / `553ceed` |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`** |
-| phase-06 | **已验收（2026-11-12），代码 `b4833b8`；docs 收尾 `ea88dba`；未推送** |
+| phase-06 | **已验收（2026-11-12），代码 `b4833b8`；未推送** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
-| 远程 | phase-05 已推送 `origin/opusmc-integration`；phase-06 未推送；phase-07 已推送；PR #1 未合并；未强推 |
+| phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送** |
+| 远程 | phase-05/07 已推送 `origin/opusmc-integration`；phase-06/08 未推送；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -50,15 +53,19 @@
 
 ```powershell
 cd D:\ds\REA\opusmc
-.\start-server.bat
-# 或 node server\index.mjs
-# Chrome / Edge 打开 http://127.0.0.1:8080/
+.\start-server.bat        # 只绑定 127.0.0.1（本机）
+# 或 .\start-lan.bat      # 绑定 0.0.0.0，打印局域网地址
+# 或 node server\index.mjs --lan
 ```
 
+- 本机：Chrome / Edge 打开 `http://127.0.0.1:8080/`。
+- 局域网：所有设备（包括电脑）打开打印的 **`游戏地址（局域网）`**；`127.0.0.1` 仅本机；
+  手机/电脑同一 Wi-Fi；防火墙放行专用网络。完整说明 `docs/deployment/LAN.md`。
+- 公网：**Cloudflare Tunnel 是本阶段正式支持/验收的公网路径**；`docs/deployment/REMOTE.md`。
+  Caddy + 公网 IPv4/域名是备用模板，未运行验证，不属于正式验收路径；本阶段未配置端口转发。
 - 页面 → 多人游戏 → 自建服务器房间 → 创建房间或输入邀请码。
 - 正常关闭：`.\stop-server.bat` 或服务器窗口 `Ctrl+C`。
 - 状态：`http://127.0.0.1:8080/healthz` 或 `server\status.ps1`。
-- 局域网：`server/config.json` 的 `host` 改 `0.0.0.0`，防火墙放行；本阶段不做公网/TLS。
 - 电脑关机/休眠/注销时服务器停止；没有后台常驻。
 
 ### 4.2 单人静态页面
@@ -80,25 +87,55 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 - phase-07 K-39：`node D:\ds\REA\_work\k39-check.mjs <baseline|after> <root>`（SwiftShader + CPU 8×）。
 - phase-07 服务器负载：`node D:\ds\REA\_work\phase07-server-perf.mjs`（自起临时服务器）。
 - phase-07 长跑：`node D:\ds\REA\_work\perf-long.mjs 8`（固定 profile）。
+- phase-08 LAN/公网协议：`node D:\ds\REA\_work\phase08-net-test.mjs <base-url> [admin-token] [loopback-url]`。
+- phase-08 浏览器：`$env:PHASE08_BASE='<base-url>/'; node D:\ds\REA\_work\phase08-browser-test.mjs <lan|public>`。
+- phase-08 邀请链接一致性：`$env:PHASE08_BASE='<lan-url>/'; node D:\ds\REA\_work\phase08-fix-invite-test.mjs`。
+- phase-08 公网隧道：`_work\bin\cloudflared.exe tunnel --url http://127.0.0.1:8080`（临时地址）。
 - phase-05 服务端回归：`node D:\ds\REA\_work\phase05-server-test.mjs`。
 - phase-05 双浏览器 E2E：先启动一个 18080 测试服务器，再 `node D:\ds\REA\_work\phase05-browser-test.mjs`。
 - phase-05 单人回归：先起 18080 静态服务器，再 `node D:\ds\REA\_work\phase05-sp-regression.mjs`。
-- 测试脚本在仓库外 `D:\ds\REA\_work\`，不随项目提交；详见 phase-05/06/07 的 `TEST_REPORT.md`。
+- 测试脚本在仓库外 `D:\ds\REA\_work\`，不随项目提交；详见 phase-05/06/07/08 的 `TEST_REPORT.md`。
 
 ## 5. 当前边界（务必遵守）
 
 - phase-05 **已验收、代码已提交并推送 `817bad3`**；phase-06 **已验收（2026-11-12）、代码 `b4833b8`、未推送**；
-  phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**。
-- 不自动进入 phase-08；已提交/已推送的历史不得改写；不 force push。
+  phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**；
+  phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。
+- 不自动进入 phase-09；已提交/已推送的历史不得改写；不 force push。
 - 不新增强制账号/登录；不引入永久账号体系。
 - 没有实测的功能一律标 **NOT TESTED**；推断不得写成事实。
-- 服务器不同步生物/红石/流体/战斗；世界存档是 `seed + 方块覆盖层`；无 TLS/公网；真实 LAN 双设备、
-  真实 10 人客户端、长时间运行未测。不得写成“完整服务端模拟/完整反作弊/公网可用”。
+- 服务器不同步生物/红石/流体/战斗；世界存档是 `seed + 方块覆盖层`；真实 10 人客户端、长时间运行未测。
+  不得写成“完整服务端模拟/完整反作弊/公网长期可用”。
+- **phase-08 部署边界**：LAN 已实测（主地址为 LAN、127 仅本机、邀请链接一致性 8/8、双 Chrome profile），
+  **真实手机 LAN 已由用户实测通过**（单人/移动/视角/放置/破坏/刷新；服务器日志有 LAN 客户端加入）；
+  Cloudflare Tunnel HTTPS/WSS 已实测，**真实手机蜂窝公网已由用户实测通过**（HTTPS/进入世界/渲染/移动/
+  视角/放置/破坏/刷新；日志有蜂窝 IPv6 客户端加入）；**Caddy + 公网 IPv4/域名/端口转发未配置、未测；
+  Caddy 仅备用模板，不属于正式验收路径**；quick tunnel 是临时地址；Windows 防火墙脚本实际添加/删除未测。
+  用户未提供手机型号/OS/浏览器/截图/录屏，不得写成性能或所有设备已验证；不得写成“Caddy 公网已通过”。
+- 用户澄清“PIN 验证”是 Cloudflare quick tunnel 临时地址的**邮箱验证**（Cloudflare/外部流程），
+  OpusMC 没有 PIN/邮箱验证功能（K-100）。
 - 双存档：单人 `mc-js-clone`、服务器 `srv~`；不要互相写入；旧云存档只保留不迁移、不删除。
 - K-39 已在 phase-07 修复（验收结束）；真实 Android/iOS 真机按 phase-04 用户决定未补测。
 - 性能数字必须带环境：headless 真实 GPU、SwiftShader、手机视口模拟不能混写为真机达标。
 
-## 6. phase-05 / phase-06 / phase-07 已实现内容
+## 6. phase-05 / phase-06 / phase-07 / phase-08 已实现内容
+
+### phase-08（验收结束；代码 `ef8c540`；docs 收尾）
+
+1. **LAN**：`--lan` / `start-lan.bat` 绑定 `0.0.0.0`；主地址优先选择有效私有 IPv4，
+   `127.0.0.1` 单独标为“仅本机访问”；邀请链接专项 8/8（多次建房、刷新/恢复、多邀请码）；
+   防火墙脚本 `deploy/windows/firewall-lan.ps1`（默认仅专用网络）。
+2. **代理感知身份**：`server/netutil.mjs`；只有直连回环才信转发头；管理接口“直连+转发都回环”；
+   WS 限流/日志按真实客户端 IP；LAN 伪造 XFF 无效。
+3. **HTTPS/WSS**：**Cloudflare Tunnel 是本阶段正式支持/验收的公网路径**（quick/命名已实测）；
+   `deploy/Caddyfile` 是备用模板，未运行验证，不属于正式验收路径；
+   `docs/deployment/REMOTE.md` 说明验收范围、NAT/CGNAT、端口转发、安全、排查。
+4. **边界**：公网管理接口（含正确令牌）403；`server/data`/`docs`/`scripts`/`.git` 404；
+   本阶段未配置路由器端口转发；Caddy 公网入站未运行验证。
+5. **真实设备（用户报告 2026-11-14）**：手机 LAN 单人/移动/视角/放置/破坏/刷新通过；
+   手机蜂窝关闭 Wi-Fi 经 Cloudflare HTTPS 进入世界/渲染/移动/视角/放置/破坏/刷新通过；
+   服务器日志分别有 LAN 私有地址客户端与蜂窝 IPv6 客户端加入。用户未提供型号/OS/浏览器/截图；
+   “PIN/邮箱验证”是 Cloudflare 临时地址外部流程，不是应用功能（K-100）。
 
 ### phase-07（验收结束；代码 `508fcc8`；docs `a2bdb0e`；已推送）
 
@@ -143,6 +180,26 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 7. 测试结果
 
+### phase-08
+
+- LAN 启动输出：主地址 `http://192.168.1.18:18110/`，`127.0.0.1` 单独标为“仅本机访问”；
+  默认本机模式仍只显示 `127.0.0.1`。
+- LAN 邀请链接一致性 8/8：多次建房、刷新/恢复、多个邀请码均为 LAN 地址。
+- LAN 协议 22/22：LAN 地址 HTTP/WS、建房/加入、同 seed、方块双向广播、管理接口 403、静态边界 404。
+- LAN 浏览器 15/15：两个独立 Chrome profile 从 LAN 地址进入同一房间；同 seed、玩家/位置/方块/聊天同步。
+- 公网 Cloudflare Tunnel：HTTPS/WSS 协议 22/22、浏览器 15/15（`wss://`、无 mixed-content；
+  前两次 quick tunnel 资产流超时，第三次通过）；公网管理接口无令牌/带令牌均 403；`server/data` 等 404。
+- check-host.net：修复后 5/6 外部节点 200（1 个超时）。
+- **真实手机 LAN（用户报告 2026-11-14）**：单人、移动、转视角、放置、破坏、刷新重进 PASS；
+  服务器日志显示 LAN 私有地址客户端加入房间 E7UDCMQT。
+- **真实手机蜂窝公网（用户报告 2026-11-14）**：关闭 Wi-Fi 经 Cloudflare HTTPS 进入世界、渲染、移动、
+  转视角、放置、破坏、刷新重进 PASS；日志显示蜂窝 IPv6 客户端加入房间 XF6BT4YQ。
+  “PIN/邮箱验证”是 Cloudflare 临时地址外部流程，不是 OpusMC 功能（K-100）。
+- 回归（修复后）：phase-05 62/62 + 18/18 + 6/6；phase-06 22/22 + 31/31；91 JS + 10 server mjs `node --check`。
+- **未测**：Caddy + 公网 IPv4/域名/端口转发、Windows 防火墙脚本实际添加/删除、公网长期稳定性/带宽/
+  10 人并发、手机型号/OS/GPU/发热/帧率（用户不提供设备信息）。Caddy 是备用模板，不属于正式验收路径。
+  详见 `docs/phases/phase-08-deployment/TEST_REPORT.md`。
+
 ### phase-07
 
 - 桌面固定场景（headless + 真实 ANGLE/AMD 核显，maxFps=60）：首轮普通/建筑/240 实体/战斗/光影 1–4 全部 60 FPS；
@@ -177,12 +234,18 @@ D:\ds\REA\opusmc\
   js\               91 个 .js + emoji.webp（新增 mp.js）
   sounds\sfx\       4,849 个原版音效（43.2 MB）
   scripts\serve.mjs 单机静态服务器（无 WS）
-  server\           自建服务器（9 个 .mjs + config.json + README.md + 2 个 ps1）
-  start-server.bat  一键启动
+  server\           自建服务器（10 个 .mjs + config.json + README.md + 2 个 ps1）
+  deploy\           Caddyfile（备用模板）、Cloudflare Tunnel 模板、Windows 防火墙脚本
+  start-server.bat  一键启动（仅本机）
+  start-lan.bat     局域网启动（0.0.0.0，打印局域网主地址；127 仅本机）
   stop-server.bat   正常关闭
-  docs\             项目文档与阶段记录
+  docs\             项目文档与阶段记录（deployment\ 部署说明、phases\phase-08-deployment\ 阶段文档）
 ```
 
+- phase-08 证据：`_work/phase08-fix-*`（修复回归）、`_work/phase08-real-device-evidence.txt`、
+  `server/data/logs/`（真实设备房间 E7UDCMQT / XF6BT4YQ）；脚本 `phase08-net-test.mjs`、
+  `phase08-browser-test.mjs`、`phase08-fix-invite-test.mjs`；
+  真实设备型号/网络/截图未提供（用户明确不提交）。
 - phase-07 证据：`_work/phase07-baseline/`、`phase07-compare/`、`phase07-scenes/`、`phase07-mobile/`、
   `phase07-k39/`、`phase07-server/`、`phase07-edit/`、`phase07-long/`；脚本 `perf-scenes.mjs`、
   `perf-mobile.mjs`、`perf-edit.mjs`、`k39-check.mjs`、`phase07-server-perf.mjs`、`perf-long.mjs`。
@@ -206,10 +269,15 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. **phase-07 验收结束**：代码 `508fcc8`、docs `a2bdb0e` 已提交并推送；不自动进入 phase-08。
-2. 未测：真实手机/显示器、发热/电池、真实 LAN/公网/TLS、>1 小时运行；发布前重新评估。
-3. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；跨版本迁移未做。
+1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs 收尾为当前 HEAD；未推送。
+   不自动进入 phase-09。
+2. 未测：Caddy + 公网 IPv4/域名/端口转发、Windows 防火墙脚本实际添加/删除、公网长期稳定性/带宽/
+   10 人并发、手机型号/OS/GPU/发热/帧率（用户不提供设备信息）；发布前重新评估（K-95…K-100）。
+   Caddy 是备用模板，不属于正式验收路径。
+3. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；跨版本迁移未做；
+   服务端新增 `netutil.mjs`，部署时不能只复制旧 `server/`。
 4. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`（K-36/K-44/K-45/K-63/K-77）；
    `NET_CONFIG.announce=false`；旧云存档残留不删除。
-5. K-39 已修复（验收结束）；真实 LAN/公网/TLS 属 phase-08。
+5. K-39 已修复（验收结束）；LAN/HTTPS/WSS 已在 phase-08 实测（含真实手机）；
+   Caddy/端口转发未配置，Caddy 不得写成已通过。
 6. `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。

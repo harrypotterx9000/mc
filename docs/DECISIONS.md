@@ -342,3 +342,45 @@
   - 服务器公开状态不再包含 `stats`/`perf`；管理接口保留。
 - 验证：见 `docs/phases/phase-07-performance/TEST_REPORT.md` 与 `docs/testing/performance-baseline.md`。
 - 状态：**验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e` 已推送 `origin/opusmc-integration`。**
+
+## ADR-022 phase-08 先 LAN、再边缘 TLS、代理感知的管理边界
+
+- 日期：2026-11-13
+- 背景：phase-08 要求先让同一 Wi-Fi 的手机/电脑访问同一台服务器，再提供外网 HTTPS/WSS。
+  服务器默认只绑定 `127.0.0.1`；一旦前面加 Caddy/Cloudflare Tunnel，源站 socket 会变成 `127.0.0.1`，
+  原来的“管理接口只允许本机”会被绕过，所有远程玩家也会共用 `127.0.0.1` 的限流桶。
+  本机没有公网 IPv4/域名；设计时没有第二台物理设备（后续 2026-11-14 用户用真实手机补测 LAN/蜂窝）。
+- 决策：
+  1. **安全默认不变**：`server/config.json` 的 `host` 仍是 `127.0.0.1`；LAN 必须显式
+     `start-lan.bat` / `--lan` / 改配置。启动时优先选择有效私有 IPv4 作为主游戏地址，
+     `127.0.0.1` 单独标为“仅本机访问”。
+  2. **所有设备用同一个地址**：包括服务器电脑；邀请链接和 WebSocket 都取页面同源。
+     不用 `127.0.0.1` 分享，避免链接在手机上打不开；邀请链接专项覆盖多次建房/刷新/恢复。
+  3. **TLS 不写进 Node**：Node 继续零依赖，只做 HTTP/WS/房间/存档；HTTPS/WSS 由成熟组件终止：
+     - **Cloudflare Tunnel：本阶段正式支持/验收的公网路径**（无需公网 IPv4/端口转发；
+       quick tunnel 仅临时，命名隧道+域名长期）；
+     - Caddy（有公网 IPv4 + 域名时的备用模板；自动 ACME；需要路由器 80/443 转发；
+       未运行验证，不属于正式验收路径）。
+  4. **代理身份只在“直连是本机回环”时可信**：`server/netutil.mjs` 解析 `X-Forwarded-For` 最后一项/
+     `CF-Connecting-IP`/`X-Real-IP`；`clientIp()` 对 LAN 直连不信任转发头。
+     管理接口要求“直连回环 + 转发地址回环”；WS 的 `conn.ip` 用真实客户端地址。
+  5. **管理接口双层保护**：Caddyfile 对 `/api/admin/*` 直接 404；源站再做转发头校验 403。
+     Tunnel 没有 Caddy 时，源站这一层仍能拒绝带正确令牌的远程请求。
+  6. **不伪造部署完成**：本阶段不配置路由器端口转发、不申请域名/证书；Caddy 只作为备用模板，
+     未运行验证，不写成正式验收通过。Quick Tunnel 的 URL 标临时，不作为长期地址。
+  7. **防火墙脚本默认最小放行**：只放行 TCP 端口的专用网络入站；家用 Wi-Fi 被 Windows 标为
+     Public 时需改专用或显式 `-IncludePublic`；不在公共 Wi-Fi 用。
+- 影响：
+  - LAN：`start-lan.bat`/`--lan` 绑定 `0.0.0.0`；主地址自动选择私有 IPv4，`127.0.0.1` 仅本机；
+    `start-server.bat` 行为不变。
+  - 远程：HTTPS 页面自动得到 `wss://`；管理接口/`server/data` 经公网不可达。
+  - 同一 NAT/同一出口 IP 的玩家仍共享限流桶；隧道后按真实公网 IP 计（不是 `127.0.0.1`）。
+  - `server/` 由 9 个 `.mjs` 变为 10 个（新增 `netutil.mjs`）；页面脚本/`js/` 数量不变。
+- 验证（修复后）：LAN 主地址/127 标注 PASS；邀请链接一致性 8/8；LAN 协议 22/22、双浏览器 15/15；
+  Cloudflare Tunnel 公网 HTTPS/WSS 协议 22/22、浏览器 15/15（前两次 quick tunnel 资产流超时，
+  第三次通过）；外部节点 5/6 200；公网管理接口（含正确令牌）403；phase-05/06 回归全部 PASS。
+  **真实手机 LAN（单人/移动/视角/放置/破坏/刷新）与手机蜂窝公网（HTTPS/进入/渲染/移动/视角/放置/破坏/刷新）
+  由用户实测通过（2026-11-14）**；服务器日志有 LAN 与蜂窝客户端加入。用户未提供型号/网络/截图。
+- 状态：**验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送。**
+  Caddy 备用模板/端口转发/防火墙脚本实际添加删除/长期公网/10 人仍 **NOT TESTED / BLOCKED**
+  （K-95…K-100）；“PIN/邮箱验证”是 Cloudflare 外部流程，不是应用功能（K-100）。

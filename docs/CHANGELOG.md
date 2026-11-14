@@ -2,6 +2,49 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更；待验收阶段变更明确标注“工作区变更，未提交”。
 
+## phase-08 网络部署 — 2026-11-14 — 验收结束；代码 `ef8c540`；docs 收尾；未推送
+
+> 起点 HEAD `221d4ea`（phase-07 docs 推送记录）；phase-07 代码 `508fcc8`；phase-08 代码 `ef8c540`。
+> LAN 主地址/127 标注 PASS、邀请链接一致性 8/8、LAN 协议 22/22 + 双浏览器 15/15；
+> Cloudflare Tunnel 公网 HTTPS/WSS 协议 22/22 + 浏览器 15/15（前两次 quick tunnel 资产流超时，第三次通过）；
+> 外部节点 5/6 200；公网管理接口（含正确令牌）403。
+> **真实手机 LAN（单人/移动/视角/放置/破坏/刷新）与手机蜂窝公网（HTTPS/进入/渲染/移动/视角/放置/破坏/刷新）
+> 用户报告 PASS（2026-11-14）**；服务器日志分别有 LAN 客户端（E7UDCMQT）与蜂窝 IPv6 客户端（XF6BT4YQ）加入。
+> Caddy 为备用模板、不属于正式验收路径；用户未提供手机型号/网络/截图。
+> **代码 `ef8c540`；docs 收尾为当前 HEAD；未推送。**
+
+- 修改原因：阶段 8 要求先让同一 Wi-Fi 的手机/电脑访问同一台服务器，再提供外网 HTTPS/WSS；
+  原服务器默认只绑定 `127.0.0.1`，且反向代理/隧道会让源站把所有请求看成 `127.0.0.1`，
+  导致管理接口本机限制被绕过、所有远程玩家共用限流桶。验收又发现 LAN 模式把回环地址作为
+  主游戏地址，可能生成 loopback 邀请链接。
+- 新增文件（11）：`server/netutil.mjs`、`start-lan.bat`、`deploy/README.md`、`deploy/Caddyfile`、
+  `deploy/cloudflared/config.yml.example`、`deploy/windows/firewall-lan.ps1`、
+  `docs/deployment/{LAN,REMOTE}.md`、`docs/phases/phase-08-deployment/{PLAN,TEST_REPORT,HANDOFF}.md`。
+- 修改文件（14）：7 个代码/说明（`README.md`、`server/README.md`、`server/config.mjs`、
+  `server/http.mjs`、`server/index.mjs`、`server/rooms.mjs`、`server/ws.mjs`）+
+  7 个项目文档（`docs/{STATUS,START-HERE,PROJECT_SPEC,ARCHITECTURE,DECISIONS,KNOWN_ISSUES,CHANGELOG}.md`）。
+- 提交拆分：代码/部署资产 `ef8c540`（12 个文件）；项目/阶段文档 docs 收尾为当前 HEAD（13 个文件）。
+- 关键变化：
+  - LAN：`--lan`/`start-lan.bat` 绑定 `0.0.0.0`；**主地址优先有效私有 IPv4**，`127.0.0.1` 标为
+    “仅本机访问”；邀请链接专项 8/8 覆盖多次建房/刷新/恢复；防火墙脚本默认只放行专用网络。
+  - 安全：`server/netutil.mjs` 的 `clientIp`/`forwardedIp`；转发头只在本机回环代理时可信；
+    管理接口“直连 + 转发都回环”；WS 限流/日志按真实客户端 IP。
+  - 外网：**Cloudflare Tunnel 为正式支持/验收路径**；Caddy 为备用模板（未运行验证，不属于正式验收）；
+    Node 不终止 TLS；`server/data`/`/api/admin/*` 经公网不可达；未配置路由器端口转发。
+  - 版本：`server/index.mjs` `0.8.0`；`hello`/`/healthz` 版本 `phase-08`；`server/` 10 个 `.mjs`。
+- 关键函数/状态：`server/index.mjs` 的 `isPrivateIPv4`/`lanInfo`/启动输出；`server/netutil.mjs` 的
+  `cleanIp`/`isLoopback`/`forwardedIp`/`clientIp`；`server/http.mjs` 管理接口代理感知；
+  `server/ws.mjs` `WSConnection.ip`。
+- 回归（修复后复跑）：phase-05 62/62 + 18/18 + 6/6；phase-06 22/22 + 31/31；
+  91 JS + 10 server mjs `node --check`。
+- **真实设备（用户报告 2026-11-14）**：手机 LAN 单人/移动/视角/放置/破坏/刷新 PASS；手机蜂窝
+  关闭 Wi-Fi 经 Cloudflare HTTPS 进入/渲染/移动/视角/放置/破坏/刷新 PASS；服务器日志有 LAN 与蜂窝客户端。
+  用户未提供型号/网络/截图；“PIN/邮箱验证”是 Cloudflare 临时地址外部流程，不是应用功能。
+- 未验证：Windows 防火墙脚本实际添加/删除、Caddy 公网入站/端口转发、公网长期稳定性/带宽/10 人并发、
+  手机型号/性能/截图；quick tunnel 为临时地址。K-95…K-100。
+- 删除文件：无。
+- 状态：**验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送；不自动进入 phase-09。**
+
 ## phase-07 电脑与手机性能优化 — 2026-11-13 — 代码 `508fcc8`、docs `a2bdb0e`；已推送
 
 > 起点 HEAD `ea88dba`；phase-06 代码 `b4833b8`。本阶段只改性能相关代码/文档，未新增页面脚本。
