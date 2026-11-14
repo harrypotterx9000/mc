@@ -1,19 +1,22 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；已推送 `origin/opusmc-integration`；phase-08 内容 tip `597a15f`）
+> 最后更新：2026-11-14（phase-09 完整验收：带条件验收通过；本机/自动化 256/256 + 回归 184/184；
+> 真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；代码未改仍 `ef8c540`；docs 已提交、未推送）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：phase-00…07 完成并验收；**phase-08 网络部署验收结束（真实设备用户实测）；代码 `ef8c540`；已推送 `origin/opusmc-integration`**。
-- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-08 代码 `ef8c540`；docs `d8b237a`/`597a15f`；
-  phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送。
-- 工作区：phase-08 代码/文档已提交并推送；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`，
-  4,988 B，误重定向输出）；无 stash、无临时分支。
+- 现状：phase-00…08 完成并验收；**phase-09 完整验收：带条件验收通过（用户 2026-11-14）**。
+  本机/自动化 256/256 + 回归 184/184 PASS；Android Chrome/iOS Safari 真机与两台不同物理设备
+  本阶段 NOT TESTED（用户接受 phase-08 真实设备证据作为参考）。
+- 代码：会话工作区 `D:\ds\REA\opusmc`；被验收代码 = phase-08 `ef8c540`（与 phase-08 docs 起点
+  `b4c66a1` 只有 docs 差异）；phase-09 未改功能代码；docs 已提交、未推送。
+- 工作区：phase-08 代码/文档已提交并推送；phase-09 docs 已提交；另有 1 个与本阶段无关的
+  未跟踪文件 `REAopusmc<U+F022>`，4,988 B，误重定向输出；无 stash。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
 - 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07/08 已推送；phase-06 未推送；
-  PR #1 未合并。
+  phase-09 未推送；PR #1 未合并。
 
 > **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；
 > phase-02/03/04/05/06/07/08 只在 `D:\ds\REA\opusmc`。
@@ -22,15 +25,16 @@
 ## 2. 阅读顺序
 
 1. `docs/START-HERE.md`（本文件）
-2. `docs/PROJECT_SPEC.md` —— 长期总规范（§11.12 phase-06、§11.13 phase-07、§11.14 phase-08）
+2. `docs/PROJECT_SPEC.md` —— 长期总规范（§11.12 phase-06、§11.13 phase-07、§11.14 phase-08、§11.15 phase-09）
 3. `docs/STATUS.md` —— 当前阶段、Git、测试与待办
-4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§15 phase-06、§16 phase-07、§17 phase-08
-5. `docs/DECISIONS.md` —— ADR-001…022（ADR-021 phase-07，ADR-022 phase-08）
-6. `docs/KNOWN_ISSUES.md` —— K-01…K-100、NOT TESTED
-7. `docs/phases/phase-08-deployment/{TEST_REPORT,HANDOFF,PLAN}.md` —— 当前阶段
-8. `docs/deployment/{LAN,REMOTE}.md` —— 用户部署说明
-9. `docs/phases/phase-07-performance/{TEST_REPORT,HANDOFF,PLAN}.md` —— 上一阶段
-10. `server/README.md` —— 服务器配置、存档、备份、安全、性能状态、部署入口
+4. `docs/ARCHITECTURE.md` —— 分层、补丁矩阵、§15 phase-06、§16 phase-07、§17 phase-08、§18 phase-09
+5. `docs/DECISIONS.md` —— ADR-001…023（ADR-021 phase-07，ADR-022 phase-08，ADR-023 phase-09）
+6. `docs/KNOWN_ISSUES.md` —— K-01…K-104、NOT TESTED
+7. `docs/phases/phase-09-acceptance/{PLAN,TEST_REPORT,ACCEPTANCE,HANDOFF}.md` —— 当前阶段
+8. `docs/phases/phase-08-deployment/{TEST_REPORT,HANDOFF,PLAN}.md` —— 上一阶段
+9. `docs/deployment/{LAN,REMOTE}.md` —— 用户部署说明
+10. `docs/testing/performance-baseline.md` —— 性能基线
+11. `server/README.md` —— 服务器配置、存档、备份、安全、部署
 
 ## 3. Git 现实（以实际仓库为准）
 
@@ -38,14 +42,15 @@
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | 推送记录为当前 HEAD；phase-08 内容 tip `597a15f`；代码 `ef8c540` |
+| HEAD | `b4c66a1`（phase-08 docs 推送记录，远程 HEAD 相同）；phase-08 代码 `ef8c540` |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01/02/03/04 代码 | `15154bd` / `a9dc47b` / `025cba8` / `553ceed` |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`** |
 | phase-06 | **已验收（2026-11-12），代码 `b4833b8`；未推送** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
 | phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送** |
-| 远程 | phase-05/07/08 已推送 `origin/opusmc-integration`；phase-06 未推送；PR #1 未合并；未强推 |
+| phase-09 | **带条件验收通过（用户 2026-11-14）；docs 已提交；代码 `ef8c540` 未改；未推送** |
+| 远程 | phase-05/07/08 已推送 `origin/opusmc-integration`；phase-06/09 未推送；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -80,6 +85,9 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ### 4.3 测试
 
+- phase-09 验收（脚本在仓库外 `D:\ds\REA\phase09-work\`）：
+  `node p09-static.mjs`、`node p09-session.mjs`、`node p09-mp.mjs`、`node p09-local.mjs`、
+  `node p09-quality.mjs`、`node p09-ui.mjs <chrome|edge|android|ios>`；回归 `powershell -File run-regressions.ps1`。
 - phase-06 服务端双存档：`node D:\ds\REA\_work\phase06-server-test.mjs`（自起临时服务器）。
 - phase-06 浏览器双存档：`node D:\ds\REA\_work\phase06-browser-test.mjs`（使用 18085 临时服务器与旧存档 profile）。
 - phase-07 固定场景：`node D:\ds\REA\_work\perf-scenes.mjs <baseline|after> <root>`（固定 profile/世界）。
@@ -101,8 +109,13 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 - phase-05 **已验收、代码已提交并推送 `817bad3`**；phase-06 **已验收（2026-11-12）、代码 `b4833b8`、未推送**；
   phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**；
-  phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送**。
-- 不自动进入 phase-09；已提交/已推送的历史不得改写；不 force push。
+  phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送**；
+  phase-09 **带条件验收通过（用户 2026-11-14）；docs 已提交；代码 `ef8c540` 未改；未推送**。
+- 不自动进入下一阶段（phase-09 是最后一个阶段）；已提交/已推送的历史不得改写；不 force push。
+- **phase-09 边界**：Android Chrome / iOS Safari 真机、两台不同物理设备本阶段 **NOT TESTED**；
+  用户接受 phase-08 真实设备证据作为参考，但 phase-08 未提供手机 OS/浏览器型号，不能断言具体浏览器
+  各自通过。本机只有 Chromium UA/视口模拟与 Chrome+Edge 两个浏览器进程；真实显示器/有头浏览器、
+  手机发热/电池、>1 小时长跑、真实公网 Tunnel 本轮重跑也未测。
 - 不新增强制账号/登录；不引入永久账号体系。
 - 没有实测的功能一律标 **NOT TESTED**；推断不得写成事实。
 - 服务器不同步生物/红石/流体/战斗；世界存档是 `seed + 方块覆盖层`；真实 10 人客户端、长时间运行未测。
@@ -119,7 +132,21 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 - K-39 已在 phase-07 修复（验收结束）；真实 Android/iOS 真机按 phase-04 用户决定未补测。
 - 性能数字必须带环境：headless 真实 GPU、SwiftShader、手机视口模拟不能混写为真机达标。
 
-## 6. phase-05 / phase-06 / phase-07 / phase-08 已实现内容
+## 6. phase-05 / phase-06 / phase-07 / phase-08 / phase-09 已实现/验收内容
+
+### phase-09（带条件验收通过；真机接受 phase-08 证据；代码未改；docs 已提交）
+
+1. **没有修改功能代码**：`js/`、`server/`、`index.html`、`deploy/` 与 phase-08 `ef8c540` 相同；
+   只新增 `docs/phases/phase-09-acceptance/` 与文档更新。
+2. **本机/自动化 256/256**：静态 29、4 个浏览器 UI 各 29、会话 29、双客户端/双存档 47、
+   本地 IndexedDB 17、代码质量/内存 18。**阶段回归 184/184**（phase-05/06/08）。
+3. **验证事实**：指定菜单删除项全部不存在；无账号/B 站/Toy；昵称 + `p_` 临时 ID；同名消歧；
+   120 s resume/过期重建；本地与服务器存档互不覆盖；刷新/重启不丢服务器世界；
+   4 个浏览器 0 未捕获异常；监听器/补丁完整；3 分钟 heap 稳定。
+4. **性能**：桌面固定场景 8/8 60 FPS（GPU 5.58–15.31 ms）；Chrome/Edge 60 FPS；手机视口模拟
+   57.7/60.0 FPS（非真机）；服务器 19.97–20.01 TPS；5 分钟长跑 59.36 FPS。
+5. **真机处理**：用户 2026-11-14 接受 phase-08 真实设备证据作为 E/F 参考；phase-09 本阶段仍标
+   NOT TESTED；phase-08 未提供手机 OS/浏览器型号，不能断言具体浏览器各自通过。
 
 ### phase-08（验收结束；代码 `ef8c540`；已推送）
 
@@ -181,6 +208,19 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 7. 测试结果
 
+### phase-09
+
+- 本机/自动化 **256/256 PASS**：静态 29/29；Chrome/Edge/Android UA/iOS UA UI 各 29/29；
+  访客会话 29/29；Chrome+Edge 双客户端与双存档 47/47；本地 IndexedDB 17/17；代码质量/内存 18/18。
+- 阶段回归 **184/184 PASS**：phase-05 62/62 + 18/18 + 6/6；phase-06 22/22 + 31/31；
+  phase-08 LAN 22/22 + 15/15 + 8/8。
+- 性能：桌面固定场景 8/8 60 FPS（GPU 5.58–15.31 ms）；Chrome/Edge 60.0 FPS；
+  手机视口模拟 57.7/60.0 FPS（**非真机**）；服务器 2/5/10/30 连接 19.97–20.01 TPS；
+  5 分钟长跑平均 59.36 FPS、heap 151–480 MB 锯齿无单调增长。
+- **未测**：Android Chrome/iOS Safari 真机、两台不同物理设备（本阶段；用户接受 phase-08 证据）、
+  真实显示器/有头浏览器、手机发热/电池、>1 小时长跑、真实公网 Tunnel 本轮重跑。
+  详见 `docs/phases/phase-09-acceptance/TEST_REPORT.md`。
+
 ### phase-08
 
 - LAN 启动输出：主地址 `http://192.168.1.18:18110/`，`127.0.0.1` 单独标为“仅本机访问”；
@@ -240,9 +280,13 @@ D:\ds\REA\opusmc\
   start-server.bat  一键启动（仅本机）
   start-lan.bat     局域网启动（0.0.0.0，打印局域网主地址；127 仅本机）
   stop-server.bat   正常关闭
-  docs\             项目文档与阶段记录（deployment\ 部署说明、phases\phase-08-deployment\ 阶段文档）
+  docs\             项目文档与阶段记录（deployment\ 部署说明、phases\phase-09-acceptance\ 阶段文档）
 ```
 
+- phase-09 证据：`D:\ds\REA\phase09-work\`（仓库外，不提交）：`p09-static-result.json`、
+  `phase09-ui-*-result.json`、`p09-session-result.json`、`p09-mp-result.json`、`p09-local-result.json`、
+  `p09-quality-result.json`、`p09-reg-*.log`、`phase07-scenes/`、`phase07-mobile/`、`phase07-server/`、
+  `phase07-long/`、`p09-perf-*.json`；脚本 `p09-*.mjs`、`run-regressions.ps1`。
 - phase-08 证据：`_work/phase08-fix-*`（修复回归）、`_work/phase08-real-device-evidence.txt`、
   `server/data/logs/`（真实设备房间 E7UDCMQT / XF6BT4YQ）；脚本 `phase08-net-test.mjs`、
   `phase08-browser-test.mjs`、`phase08-fix-invite-test.mjs`；
@@ -267,18 +311,21 @@ D:\ds\REA\opusmc\
   31/31 通过。未在干净 profile 复现，记录为 headless/profile 复用噪音，不改核心 DB 打开逻辑。
 - phase-07 的 headless 固定场景有 Chrome 合成器波动（个别 p95 20.8 ms）；以中位数/多轮结果为准，不据此
   宣称真实显示器完全无抖动。
+- phase-09 的 headless 双浏览器 + SwiftShader 在本机加载服务器世界很慢（一次约 7 分钟、约 2.8 FPS，
+  两个浏览器竞争 CPU）；同一测试最终 47/47 通过，不是应用错误（K-102）。
+- 旧多人界面的公开房间区域在本机仍显示旧服务错误“不允许从这个网页访问”（K-77/K-103）；
+  自建服务器入口不受影响。
 
 ## 10. 下一步
 
-1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs `d8b237a`/`597a15f`；
-   已推送 `origin/opusmc-integration`；不自动进入 phase-09。
-2. 未测：Caddy + 公网 IPv4/域名/端口转发、Windows 防火墙脚本实际添加/删除、公网长期稳定性/带宽/
-   10 人并发、手机型号/OS/GPU/发热/帧率（用户不提供设备信息）；发布前重新评估（K-95…K-100）。
-   Caddy 是备用模板，不属于正式验收路径。
-3. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；跨版本迁移未做；
-   服务端新增 `netutil.mjs`，部署时不能只复制旧 `server/`。
-4. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`（K-36/K-44/K-45/K-63/K-77）；
+1. **phase-09 带条件验收通过（用户 2026-11-14）**：本机/自动化 256/256 + 回归 184/184；
+   代码仍为 phase-08 `ef8c540`（未改功能代码）；phase-09 docs 已提交；**未推送**。
+2. **没有下一阶段**；不自动进入任何新阶段。
+3. 真机 E/F 按用户决定接受 phase-08 真实设备证据（LAN 手机 + 电脑、蜂窝手机 + 电脑），
+   phase-09 本阶段仍标 NOT TESTED；phase-08 未提供手机 OS/浏览器型号，不能断言具体浏览器各自通过。
+4. 未测：真实显示器/有头浏览器、手机发热/电池、>1 小时长跑、真实公网 Tunnel 本轮重跑。
+5. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`/选项占位（K-02/K-34/K-44/K-45/K-63/K-77）；
    `NET_CONFIG.announce=false`；旧云存档残留不删除。
-5. K-39 已修复（验收结束）；LAN/HTTPS/WSS 已在 phase-08 实测（含真实手机）；
-   Caddy/端口转发未配置，Caddy 不得写成已通过。
-6. `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。
+6. 如需推送 phase-09 docs：先展示范围、用户确认后再推 `origin/opusmc-integration`；不 force push、不合并。
+7. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；`server/` 10 个 `.mjs`，部署时不能只复制旧 `server/`。
+   `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。

@@ -3,7 +3,8 @@
 > 本文件是 OpusMC 项目唯一的长期总规范。所有阶段的目标、边界与验收均以本文件为准；
 > 与本文件冲突的临时需求必须先更新本文件再实施。
 >
-> 版本：1.10（2026-11-13，phase-07 验收结束；代码 `508fcc8`、docs `a2bdb0e` 已推送）
+> 版本：1.11（2026-11-14，phase-09 完整验收：带条件验收通过；真机 E/F 接受 phase-08 证据；
+> 代码未改；docs 已提交）
 > 状态：生效
 
 ## 1. 项目定位
@@ -359,3 +360,26 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
   phase-05 62/62 + 18/18 + 6/6、phase-06 22/22 + 31/31、91 JS + 10 server mjs `node --check`。
 - 后续：phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`；
   不自动进入 phase-09。
+
+### 11.15 phase-09 执行结果（2026-11-14，带条件验收通过；真机接受 phase-08 证据；docs 已提交）
+
+- 状态：**带条件验收通过（用户 2026-11-14）；真实 Android Chrome / iOS Safari / 两台不同物理设备
+  本阶段 NOT TESTED，接受 phase-08 真实设备证据作为参考；代码仍为 phase-08 `ef8c540`
+  （本阶段未改功能代码）；phase-09 docs 已提交、未推送。**
+- 范围：按用户 A–H 清单逐项验收；本阶段**只新增/更新文档**，没有修改 `js/`、`server/`、`index.html`、`deploy/`。
+- 自动化/本机（256/256 PASS）：
+  - 静态审计 29/29；Chrome/Edge/Android UA/iOS UA 菜单与账号 UI 各 29/29；
+  - 访客会话协议 29/29；Chrome+Edge 双客户端与双存档 47/47；本地 IndexedDB 17/17；代码质量/内存 18/18。
+- 阶段回归（184/184 PASS，在验收提交上重跑）：phase-05 62/62 + 18/18 + 6/6；
+  phase-06 22/22 + 31/31；phase-08 LAN 22/22 + 15/15 + 8/8；91 JS + 10 mjs `node --check`。
+- 性能：桌面固定场景 8/8 60 FPS（GPU 5.58–15.31 ms）；Chrome/Edge 同场景 60 FPS；
+  手机视口模拟 57.7/60.0 FPS（非真机）；服务器 2/5/10/30 连接 19.97–20.01 TPS；
+  5 分钟长跑平均 59.36 FPS、heap 151–480 MB 锯齿无单调增长。
+- A–H 结论：A（指定项）通过、B 通过、C 通过、D 通过、E 的 Windows Chrome/Edge 通过、
+  F 的 Chrome+Edge 双进程通过、G 已报告本机/模拟真实数据、H 通过；
+  **E 的 Android/iOS 真机、F 的两台物理设备本阶段未测**；用户接受 phase-08 真实设备证据，
+  但不得写成 phase-09 真机通过（phase-08 未提供手机 OS/浏览器型号）。
+- 遗留（用户确认保留，不在本阶段删除）：旧房间服务入口/公开房间错误（K-02/K-40/K-47/K-63/K-77）、
+  选项禁用占位（K-34）、休眠 `[公告]` 前缀（K-44）、不可达 `js/sounds.js`（K-52）。
+- 后续：phase-09 已结束；没有下一阶段。如需推送 docs，先展示范围、用户确认后再推
+  `origin/opusmc-integration`；不 force push、不合并。

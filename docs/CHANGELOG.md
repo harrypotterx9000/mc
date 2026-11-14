@@ -2,6 +2,45 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更；待验收阶段变更明确标注“工作区变更，未提交”。
 
+## phase-09 完整验收 — 2026-11-14 — docs 已提交；代码未改（仍 `ef8c540`）
+
+> 起点 HEAD `b4c66a1`（phase-08 docs 推送记录）；被验收代码 = phase-08 `ef8c540`
+> （`git diff ef8c540..HEAD` 只有 docs）。
+> **本阶段没有修改 `js/`、`server/`、`index.html`、`deploy/`，只新增/更新文档。**
+> 本机/自动化验收 **256/256 PASS**；阶段回归 **184/184 PASS**；
+> 真机 Android Chrome / iOS Safari / 两台物理设备本阶段 **NOT TESTED**；
+> **用户 2026-11-14 决定接受 phase-08 真机证据作为参考**。
+> **带条件验收通过；docs 已提交；未推送。**
+
+- 修改原因：按用户 A–H 清单做阶段 9 完整验收；确认菜单/账号/访客/存档/浏览器/多人/性能/代码质量，
+  并在验收提交上重跑 phase-05/06/08 回归，不能用历史结果代替。
+- 新增文件（4）：`docs/phases/phase-09-acceptance/{PLAN,TEST_REPORT,ACCEPTANCE,HANDOFF}.md`。
+- 修改文件（7）：`docs/STATUS.md`、`docs/CHANGELOG.md`、`docs/PROJECT_SPEC.md`、
+  `docs/ARCHITECTURE.md`、`docs/DECISIONS.md`、`docs/KNOWN_ISSUES.md`、`docs/START-HERE.md`。
+- 删除文件：无。
+- 关键变化（验证，不是功能）：
+  - 菜单：指定删除项全部不存在；首启无协议/玩家类型；标题只保留单人/多人/皮肤/帮助/选项/退出。
+  - 账号：无 B 站/Toy/账号/登录/注册/资料/绑定/账号云存档；客户端与服务端账号 endpoint 均 404。
+  - 访客：昵称 + `p_`+16 hex；同名消歧 `同名牌`/`同名牌2`；120 s 窗口内 resume 同 ID，
+    过期新 join 新 ID；错误 token 拒绝；日志无 token。
+  - 存档：IndexedDB 本地 17/17；服务器 `srv~`/`world.json`/重启恢复/刷新不丢；两类互不覆盖。
+  - 多人：Chrome+Edge 双进程 47/47（移动/双向方块/聊天/世界时间/离开重进/刷新 resume/服务器重启）。
+  - 质量：4 浏览器 + 双客户端 0 未捕获异常、`game.errLog` 空、同源资源失败 0、监听器/补丁完整；
+    3 分钟 heap 242→109 MB 后稳定；5 分钟长跑 heap 151–480 MB 锯齿无单调增长。
+  - 性能：桌面固定场景 8/8 60 FPS（GPU 5.58–15.31 ms）；Chrome/Edge 60 FPS；手机视口模拟
+    57.7/60.0 FPS（非真机）；服务器 2/5/10/30 连接 19.97–20.01 TPS。
+- 回归：phase-05 服务端 62/62 + 双浏览器 18/18 + 单人 6/6；phase-06 服务端 22/22 + 浏览器 31/31；
+  phase-08 LAN 协议 22/22 + 双浏览器 15/15 + 邀请链接 8/8；91 JS + 10 server mjs `node --check`。
+- 遗留（不在本阶段删除）：旧房间服务入口/公开房间错误（K-02/K-40/K-47/K-63/K-77）、
+  选项禁用占位（K-34）、休眠 `[公告]` 前缀（K-44）、不可达 `js/sounds.js`（K-52）。
+- 未验证：Android Chrome/iOS Safari 真机、两台不同物理设备、真实显示器/有头浏览器、手机发热/电池、
+  >1 小时长跑、真实公网 Tunnel 本轮重跑；不得写成已通过。
+- 证据：`D:\ds\REA\phase09-work\`（仓库外，不提交）。
+- 状态：**带条件验收通过（用户 2026-11-14）；docs 已提交；代码保持 phase-08 `ef8c540`；未推送。**
+  - 真机 E/F 接受 phase-08 真实设备证据，本阶段仍标 NOT TESTED；phase-08 未提供手机 OS/浏览器型号，
+    不能断言“Android Chrome 与 iOS Safari 各自通过”。
+  - 旧入口/占位保留为已知遗留（K-02/K-34/K-44/K-63/K-77）。
+
 ## phase-08 网络部署 — 2026-11-14 — 验收结束；代码 `ef8c540`；已推送
 
 > 起点 HEAD `221d4ea`（phase-07 docs 推送记录）；phase-07 代码 `508fcc8`；phase-08 代码 `ef8c540`；
