@@ -699,7 +699,7 @@ export class RoomManager {
     ctx.state = 'lobby';
     ctx.conn.send({
       t: 'hello', ok: true, v: PROTO,
-      server: { name: this.cfg.serverName, version: 'phase-07' },
+      server: { name: this.cfg.serverName, version: 'phase-08' },
       limits: { maxPlayersPerRoom: this.cfg.maxPlayersPerRoom, maxRooms: this.cfg.maxRooms, inviteCodeLength: this.cfg.inviteCodeLength, snapshotHz: this.cfg.snapshotHz },
     });
   }
@@ -879,7 +879,7 @@ export class RoomManager {
     let players = 0;
     for (const r of this.rooms.values()) players += r.onlineCount;
     return {
-      ok: true, name: this.cfg.serverName, version: 'phase-07', uptime: Math.floor((Date.now() - this.startedAt) / 1000),
+      ok: true, name: this.cfg.serverName, version: 'phase-08', uptime: Math.floor((Date.now() - this.startedAt) / 1000),
       rooms: this.rooms.size, players, maxRooms: this.cfg.maxRooms, maxPlayersPerRoom: this.cfg.maxPlayersPerRoom,
       connections: this.ctx.size, stats: { ...this.stats }, perf: this.perfStatus(),
     };

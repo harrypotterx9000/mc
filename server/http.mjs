@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { timingSafeEqual, createHash } from 'node:crypto';
+import { isLoopback, forwardedIp } from './netutil.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -28,7 +29,6 @@ const SECURITY_HEADERS = {
 };
 
 function etagOf(st) { return '"' + st.size.toString(16) + '-' + Math.floor(st.mtimeMs).toString(16) + '"'; }
-function isLoopback(ip) { const s = String(ip || '').replace(/^::ffff:/, ''); return s === '127.0.0.1' || s === '::1' || s === 'localhost'; }
 function sameToken(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false;
   const ha = createHash('sha256').update(a).digest(), hb = createHash('sha256').update(b).digest();
@@ -129,8 +129,16 @@ export function createHttpServer({ cfg, log, manager, onShutdown, onAdminStatus 
       }
 
       if (pathname.startsWith('/api/admin/')) {
-        const remote = req.socket.remoteAddress;
-        if (cfg.adminLocalhostOnly && !isLoopback(remote)) return sendJson(res, 403, { ok: false, error: 'forbidden' });
+        // Local-only admin: both the direct socket and, when a local reverse
+        // proxy/tunnel added forwarding headers, the forwarded client must be
+        // loopback. A remote request through Caddy/cloudflared arrives from
+        // 127.0.0.1 at the socket level but carries the real client address.
+        const direct = isLoopback(req.socket.remoteAddress);
+        const forwarded = forwardedIp(req);
+        if (cfg.adminLocalhostOnly && !(direct && (!forwarded || isLoopback(forwarded)))) {
+          log.debug('admin_forbidden', { path: pathname, direct, forwarded: forwarded || undefined });
+          return sendJson(res, 403, { ok: false, error: 'forbidden' });
+        }
         const token = String(req.headers['x-admin-token'] || (String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')));
         if (!sameToken(token, cfg.adminToken)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
         if (pathname === '/api/admin/status' && req.method === 'GET') return sendJson(res, 200, onAdminStatus());

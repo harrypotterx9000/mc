@@ -3,6 +3,7 @@
 // One process serves the game's static files, the room/WebSocket service and
 // the JSON room store. No npm dependencies, no game rendering.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { loadConfig } from './config.mjs';
 import { createLogger } from './log.mjs';
@@ -12,8 +13,9 @@ import { RoomManager } from './rooms.mjs';
 import { WSServer } from './ws.mjs';
 import { loadBlockIds } from './blockids.mjs';
 import { LIMITS } from './protocol.mjs';
+import { isLoopback } from './netutil.mjs';
 
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const cfg = loadConfig();
 
 let logger = null;
@@ -23,7 +25,37 @@ let httpServer = null;
 let wsServer = null;
 let shuttingDown = false;
 
-function isLoopback(ip) { const s = String(ip || '').replace(/^::ffff:/, ''); return s === '127.0.0.1' || s === '::1'; }
+// A private (RFC 1918) IPv4 is the normal home/office LAN address. Prefer one
+// as the primary address; fall back to any other non-internal IPv4 only when
+// the machine has no private address at all.
+function isPrivateIPv4(address) {
+  const p = String(address).split('.').map(Number);
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+  return p[0] === 10 || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168);
+}
+
+// Every usable non-internal IPv4 address this PC can be reached on from the
+// same network. The first entry is the primary address shown as the game
+// address; 127.0.0.1 is never used as a LAN address.
+function lanInfo(port) {
+  const all = [];
+  const seen = new Set();
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family !== 'IPv4' || net.internal || !net.address) continue;
+      if (net.address === '0.0.0.0' || net.address.startsWith('169.254.')) continue;
+      if (seen.has(net.address)) continue;
+      seen.add(net.address);
+      all.push({ address: net.address, url: `http://${net.address}:${port}/`, private: isPrivateIPv4(net.address) });
+    }
+  }
+  const primary = all.find((x) => x.private) || all[0] || null;
+  if (primary) {
+    all.sort((a, b) => (a === primary ? -1 : b === primary ? 1 : 0));
+  }
+  return { list: all, primary };
+}
 
 function originCheck(req) {
   const origin = req.headers.origin;
@@ -144,12 +176,31 @@ async function main() {
     httpServer.listen(cfg.port, cfg.host);
   });
   const addr = httpServer.address();
-  const shownHost = cfg.host === '0.0.0.0' ? '127.0.0.1' : cfg.host;
-  logger.info('server_listening', { host: addr.address, port: addr.port, url: `http://${shownHost}:${addr.port}/` });
+  const lanMode = cfg.host === '0.0.0.0' || cfg.host === '::';
+  const lan = lanMode ? lanInfo(addr.port) : { list: [], primary: null };
+  const localHost = cfg.host === '0.0.0.0' ? '127.0.0.1' : cfg.host === '::' ? '[::1]' : cfg.host;
+  const localUrl = `http://${localHost}:${addr.port}/`;
+  const primaryUrl = lan.primary ? lan.primary.url : localUrl;
+  logger.info('server_listening', {
+    host: addr.address, port: addr.port, url: primaryUrl, localUrl, lanMode,
+    lanUrls: lan.list.map((x) => x.url),
+  });
   console.log('');
   console.log('  OpusMC 自建服务器已启动');
-  console.log(`  游戏地址：http://${shownHost}:${addr.port}/`);
-  if (cfg.host === '0.0.0.0') console.log('  局域网：其他设备用本机 IP 访问（Windows 防火墙需放行该端口）');
+  if (lan.primary) {
+    console.log(`  游戏地址（局域网）：${lan.primary.url}`);
+    console.log(`  仅本机访问（服务器电脑）：${localUrl}`);
+    if (lan.list.length > 1) {
+      console.log('  其他可用的局域网地址（首选地址不通时再换）：');
+      for (const item of lan.list) if (item !== lan.primary) console.log('    ' + item.url);
+    }
+    console.log('  Windows 防火墙需放行该端口（专用网络）；详见 docs\\deployment\\LAN.md');
+  } else if (lanMode) {
+    console.log('  未发现有效的局域网 IPv4 地址：请检查电脑是否连接 Wi-Fi 或网线');
+    console.log(`  仅本机访问（服务器电脑）：${localUrl}`);
+  } else {
+    console.log(`  游戏地址：${localUrl}`);
+  }
   console.log(`  数据目录：${cfg.dataDir}`);
   console.log(`  管理令牌：${store.adminTokenPath}（只在本机使用，勿分享）`);
   console.log('  正常关闭：stop-server.bat 或 Ctrl+C');

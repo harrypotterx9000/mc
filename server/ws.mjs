@@ -4,6 +4,7 @@
 // close, masking checks and size limits. No extensions (permessage-deflate is
 // not negotiated).
 import { createHash } from 'node:crypto';
+import { clientIp } from './netutil.mjs';
 
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const OP = { CONT: 0, TEXT: 1, BINARY: 2, CLOSE: 8, PING: 9, PONG: 10 };
@@ -23,7 +24,7 @@ export class WSConnection {
     this.owner = owner;
     this.req = req;
     this.socket = socket;
-    this.ip = req.socket.remoteAddress || '';
+    this.ip = clientIp(req);
     this.origin = String(req.headers.origin || '');
     this.userAgent = String(req.headers['user-agent'] || '').slice(0, 200);
     this.closed = false;

@@ -43,6 +43,7 @@ function parseArgs(argv) {
     if (a === '--config') out.config = argv[++i];
     else if (a === '--port') out.port = argv[++i];
     else if (a === '--host') out.host = argv[++i];
+    else if (a === '--lan') out.lan = true;
     else if (a === '--help' || a === '-h') out.help = true;
   }
   return out;
@@ -51,7 +52,8 @@ function parseArgs(argv) {
 export function loadConfig(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   if (args.help) {
-    console.log('用法: node server/index.mjs [--config server/config.json] [--host 127.0.0.1] [--port 8080]');
+    console.log('用法: node server/index.mjs [--config server/config.json] [--host 127.0.0.1] [--port 8080] [--lan]');
+    console.log('  --lan  绑定 0.0.0.0，让同一局域网的其他设备访问（不用改 config.json）');
     process.exit(0);
   }
   const file = path.resolve(ROOT, args.config || path.join(SERVER_DIR, 'config.json'));
@@ -63,6 +65,7 @@ export function loadConfig(argv = process.argv.slice(2)) {
     } catch (e) { throw new Error('配置文件不是有效 JSON: ' + file + ' — ' + e.message); }
   }
   const cfg = { ...DEFAULTS, ...(raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) };
+  if (args.lan) cfg.host = '0.0.0.0';
   if (args.port !== undefined) cfg.port = Number(args.port);
   if (args.host !== undefined) cfg.host = String(args.host);
   if (process.env.OPUSMC_PORT) cfg.port = Number(process.env.OPUSMC_PORT);

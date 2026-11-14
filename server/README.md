@@ -24,8 +24,9 @@ node server\index.mjs
 看到“游戏地址：http://127.0.0.1:8080/”后，用 Chrome / Edge 打开这个地址。
 
 - 不要双击 `index.html`：`file://` 会被浏览器拦截，游戏会提示改用 http。
-- 默认只绑定 `127.0.0.1`，只有本机能访问。要让同一局域网的电脑加入，见第 5 节。
-- 默认端口 8080；被占用时改 `server/config.json` 的 `port`。
+- 默认只绑定 `127.0.0.1`，只有本机能访问。要让同一局域网的手机/电脑加入，双击
+  `start-lan.bat`（见第 5 节）；默认端口 8080。
+- 端口被占用时改 `server/config.json` 的 `port`。
 
 ## 3. 正常关闭
 
@@ -60,22 +61,45 @@ server/data/
   IndexedDB 单人存档；单人世界也不会写进 `server/data/`。两边即使世界/房间同名也互不覆盖。
   浏览器端以 `srv~<邀请码>` 标识房间世界，单人世界仍用 `mc-js-clone` IndexedDB。
 
-## 5. 局域网联机（可选）
+## 5. 局域网联机（模式 A）
 
-编辑 `server/config.json`：
+推荐双击项目根目录的 `start-lan.bat`，或在项目目录运行：
 
-```json
-"host": "0.0.0.0",
-"port": 8080
+```powershell
+node server\index.mjs --lan
 ```
 
-重启服务器，并让 Windows 防火墙放行该端口（专用网络）。其他电脑用本机 IP 访问，例如
-`http://192.168.1.20:8080/`。所有人必须访问同一台服务器。
+它会绑定 `0.0.0.0`，并打印这台电脑的局域网地址；`127.0.0.1` 只作为本机访问地址，例如：
 
-- 自建服务器默认同源连接；如果页面由别的静态服务器提供，可在游戏的“自建服务器房间”界面填写服务器地址，
-  或在 `js/netconfig.js` 的 `server` 填地址。
-- 本阶段没有 HTTPS/WSS、公网端口映射、NAT 穿透、反向代理或域名；**不要直接暴露到公网**。
-  公网部署和 TLS 属于后续部署阶段。
+```
+游戏地址（局域网）：http://192.168.1.20:8080/
+仅本机访问（服务器电脑）：http://127.0.0.1:8080/
+```
+
+- **所有设备（包括这台电脑）都打开同一个“游戏地址（局域网）”**；不要用 `127.0.0.1` 生成或分享
+  邀请链接，否则其他设备打不开。
+- 首选地址按本机有效的私有 IPv4 自动选择；如果打印了多个局域网地址，优先用 Wi-Fi 的那个。
+- 首次启动允许 Node.js 通过 Windows 防火墙的“专用网络”；也可以管理员运行
+  `deploy\windows\firewall-lan.ps1 -Port 8080`（`-Remove` 撤销）。
+- 如果 Windows 把家里的 Wi-Fi 标成“公用/Public”，脚本默认不放行；可在确认可信后
+  加 `-IncludePublic`，或把该网络改成专用。不要在公共 Wi-Fi 用 `-IncludePublic`。
+- 完整步骤、验证清单和排查：`docs\deployment\LAN.md`。
+
+也可以手动把 `server/config.json` 的 `"host"` 改成 `"0.0.0.0"`（与 `--lan` 等价）。
+自建服务器默认同源连接；如果页面由别的静态服务器提供，可在游戏的“自建服务器房间”界面填写服务器地址，
+或在 `js/netconfig.js` 的 `server` 填地址。
+
+### 5.1 外网访问（HTTPS/WSS，模式 B）
+
+- **Cloudflare Tunnel 是本阶段正式支持并通过实测的公网路径**：不需要公网 IPv4，也不需要在路由器
+  做端口转发；quick tunnel 适合临时测试，命名隧道 + 域名适合长期使用。
+- 有公网 IPv4（非 CGNAT）+ 域名时保留了 `deploy\Caddyfile`，但它是**备用模板**：
+  尚未完成实际运行验证，**不属于本阶段正式验收通过的部署路径**；不得写成 Caddy 公网已通过。
+- Node 进程本身不终止 TLS；TLS 由 Caddy 或 Cloudflare 边缘完成。
+- 管理接口和 `server/data/` 仍不暴露：Caddy 对 `/api/admin/*`、`/server/*` 等返回 404，
+  游戏服务器还会校验转发头，经代理的远程管理请求返回 403。
+- **不要把 8080 直接端口转发到公网**。本阶段没有配置任何端口转发。
+- 完整说明、NAT/CGNAT 限制与实测边界：`docs\deployment\REMOTE.md`。
 
 ## 6. 玩家与房间规则
 
@@ -107,7 +131,7 @@ server/data/
 | 项 | 默认 | 说明 |
 |---|---|---|
 | `serverName` | OpusMC 自建服务器 | `/healthz` 与界面显示 |
-| `host` | `127.0.0.1` | 局域网改为 `0.0.0.0` |
+| `host` | `127.0.0.1` | 局域网用 `start-lan.bat` / `--lan`（等价 `0.0.0.0`）；公网请保持回环并走反代/隧道 |
 | `port` | `8080` | 网页、WebSocket、管理接口共用 |
 | `dataDir` | `server/data` | 世界/备份/日志；不要放进可公开的目录 |
 | `staticRoot` | `.` | 游戏静态文件根 |
@@ -151,6 +175,9 @@ server/data/
 
 ## 10. 不在本阶段范围
 
-账号/登录、HTTPS/WSS、公网/NAT、反向代理、PWA/离线、服务器端生物 AI、完整红石/流体/战斗权威、
-真实设备性能、跨版本存档迁移。阶段边界以 `docs/PROJECT_SPEC.md`、`docs/phases/phase-05-server/` 与
-`docs/phases/phase-06-dual-save/` 为准。
+账号/登录、PWA/离线、服务器端生物 AI、完整红石/流体/战斗权威、真实设备性能、跨版本存档迁移。
+TLS 不在 Node 进程内实现（由 Cloudflare Tunnel 或备用 Caddy 终止）；本阶段没有配置路由器端口转发、
+域名或证书。**Cloudflare Tunnel 是本阶段正式支持/验收的公网路径；Caddy 只是备用模板，未运行验证，
+不属于正式验收通过的部署路径。** 阶段边界以 `docs/PROJECT_SPEC.md`、
+`docs/phases/phase-05-server/`、`docs/phases/phase-06-dual-save/` 与
+`docs/phases/phase-08-deployment/` 为准。
