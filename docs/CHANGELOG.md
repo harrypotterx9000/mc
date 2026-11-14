@@ -2,7 +2,7 @@
 
 格式：`阶段 — 日期 — 提交 — 内容`。只记录进入仓库的变更；待验收阶段变更明确标注“工作区变更，未提交”。
 
-## phase-09 完整验收 — 2026-11-14 — docs 已提交；代码未改（仍 `ef8c540`）
+## phase-09 完整验收 — 2026-11-14 — docs 已推送 `origin/opusmc-integration`（`84f858d`）；代码未改（仍 `ef8c540`）
 
 > 起点 HEAD `b4c66a1`（phase-08 docs 推送记录）；被验收代码 = phase-08 `ef8c540`
 > （`git diff ef8c540..HEAD` 只有 docs）。
@@ -10,7 +10,7 @@
 > 本机/自动化验收 **256/256 PASS**；阶段回归 **184/184 PASS**；
 > 真机 Android Chrome / iOS Safari / 两台物理设备本阶段 **NOT TESTED**；
 > **用户 2026-11-14 决定接受 phase-08 真机证据作为参考**。
-> **带条件验收通过；docs 已提交；未推送。**
+> **带条件验收通过；docs 已提交并推送 `origin/opusmc-integration`（验收文档 `84f858d`）；未合并。**
 
 - 修改原因：按用户 A–H 清单做阶段 9 完整验收；确认菜单/账号/访客/存档/浏览器/多人/性能/代码质量，
   并在验收提交上重跑 phase-05/06/08 回归，不能用历史结果代替。
@@ -36,7 +36,10 @@
 - 未验证：Android Chrome/iOS Safari 真机、两台不同物理设备、真实显示器/有头浏览器、手机发热/电池、
   >1 小时长跑、真实公网 Tunnel 本轮重跑；不得写成已通过。
 - 证据：`D:\ds\REA\phase09-work\`（仓库外，不提交）。
-- 状态：**带条件验收通过（用户 2026-11-14）；docs 已提交；代码保持 phase-08 `ef8c540`；未推送。**
+- 推送：验收文档提交 `84f858d`（`docs(phase-09): record full acceptance and conditional sign-off`）
+  已推送 `origin/opusmc-integration`（`b4c66a1..84f858d`，fast-forward）；未合并、未强推。
+- 状态：**带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`；代码保持
+  phase-08 `ef8c540`；未合并。**
   - 真机 E/F 接受 phase-08 真实设备证据，本阶段仍标 NOT TESTED；phase-08 未提供手机 OS/浏览器型号，
     不能断言“Android Chrome 与 iOS Safari 各自通过”。
   - 旧入口/占位保留为已知遗留（K-02/K-34/K-44/K-63/K-77）。

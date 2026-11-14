@@ -4,7 +4,7 @@
 > 与本文件冲突的临时需求必须先更新本文件再实施。
 >
 > 版本：1.11（2026-11-14，phase-09 完整验收：带条件验收通过；真机 E/F 接受 phase-08 证据；
-> 代码未改；docs 已提交）
+> 代码未改；docs 已推送 `origin/opusmc-integration`）
 > 状态：生效
 
 ## 1. 项目定位
@@ -361,11 +361,12 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
 - 后续：phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`；
   不自动进入 phase-09。
 
-### 11.15 phase-09 执行结果（2026-11-14，带条件验收通过；真机接受 phase-08 证据；docs 已提交）
+### 11.15 phase-09 执行结果（2026-11-14，带条件验收通过；真机接受 phase-08 证据；docs 已推送）
 
 - 状态：**带条件验收通过（用户 2026-11-14）；真实 Android Chrome / iOS Safari / 两台不同物理设备
   本阶段 NOT TESTED，接受 phase-08 真实设备证据作为参考；代码仍为 phase-08 `ef8c540`
-  （本阶段未改功能代码）；phase-09 docs 已提交、未推送。**
+  （本阶段未改功能代码）；phase-09 docs 已推送 `origin/opusmc-integration`（验收文档 `84f858d`）；
+  未合并、未强推。**
 - 范围：按用户 A–H 清单逐项验收；本阶段**只新增/更新文档**，没有修改 `js/`、`server/`、`index.html`、`deploy/`。
 - 自动化/本机（256/256 PASS）：
   - 静态审计 29/29；Chrome/Edge/Android UA/iOS UA 菜单与账号 UI 各 29/29；
@@ -381,5 +382,5 @@ Edge 157 桌面 37/37、Chrome 157 桌面 37/37、Chrome 83 旧版 9/9、Android
   但不得写成 phase-09 真机通过（phase-08 未提供手机 OS/浏览器型号）。
 - 遗留（用户确认保留，不在本阶段删除）：旧房间服务入口/公开房间错误（K-02/K-40/K-47/K-63/K-77）、
   选项禁用占位（K-34）、休眠 `[公告]` 前缀（K-44）、不可达 `js/sounds.js`（K-52）。
-- 后续：phase-09 已结束；没有下一阶段。如需推送 docs，先展示范围、用户确认后再推
-  `origin/opusmc-integration`；不 force push、不合并。
+- 后续：phase-09 已结束；没有下一阶段。docs 已推送 `origin/opusmc-integration`（`84f858d`）；
+  未合并、未 force push；如需合并到 `main`/PR，先由用户确认。

@@ -2,7 +2,8 @@
 
 > 只记录**已观察到**的问题与**明确的未知**；未测过的能力标 NOT TESTED。
 > 更新：2026-11-14（phase-09 完整验收：带条件验收通过；本机/自动化 256/256、回归 184/184；
-> 真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；代码仍为 phase-08 `ef8c540`，docs 已提交）。
+> 真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；代码仍为 phase-08 `ef8c540`，
+> docs 已推送 `origin/opusmc-integration`（验收文档 `84f858d`））。
 > K-01…K-26 沿用阶段 0 编号，K-27… 为阶段 1/2/3/4/5 新增；已豁免项仍保留，不改成“已解决”。
 
 ## 运行 / 资源
@@ -144,7 +145,7 @@
 | 浏览器实测 | Chrome 157 headless + SwiftShader（双 profile）；Edge 未在本阶段重跑；真实 GPU/真机未测 |
 | 网络 | phase-08：LAN（`--lan`/`start-lan.bat`，主地址为 LAN、127 仅本机）与 Cloudflare Tunnel HTTPS/WSS 已实测；真实手机 LAN（用户报告）与蜂窝公网（用户报告）均 PASS；Caddy + 公网 IPv4/端口转发为备用模板；防火墙脚本实际添加/删除、长期/10 人未测（K-95/K-96/K-99/K-100） |
 | 数据目录 | `server/data/`；不在静态白名单；不提交 Git |
-| 当前 Git | `develop`；phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f`、已推送 `origin/opusmc-integration`；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送；phase-06 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
+| 当前 Git | `develop`；phase-09 docs 已推送 `origin/opusmc-integration`（验收文档 `84f858d`）；phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f` 已推送；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送；phase-06 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
 | Git 推送代理 | 全局 `http.proxy`/`https.proxy` 指向 `http://127.0.0.1:7892`，本机该端口可能没有监听；本次推送使用单次 `-c http.proxy= -c https.proxy= -c http.https://github.com.proxy=` 直连 GitHub 成功。**未改全局配置**；后续推送若报 `Failed to connect ... over proxy 127.0.0.1`，先确认代理端口，再用同样的单次覆盖，不要改历史或 force push |
 
 ## 兼容性注意事项

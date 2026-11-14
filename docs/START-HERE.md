@@ -2,7 +2,7 @@
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
 > 最后更新：2026-11-14（phase-09 完整验收：带条件验收通过；本机/自动化 256/256 + 回归 184/184；
-> 真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；代码未改仍 `ef8c540`；docs 已提交、未推送）
+> 真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；代码未改仍 `ef8c540`；docs 已推送 `origin/opusmc-integration`）
 
 ## 1. 三十秒摘要
 
@@ -11,12 +11,12 @@
   本机/自动化 256/256 + 回归 184/184 PASS；Android Chrome/iOS Safari 真机与两台不同物理设备
   本阶段 NOT TESTED（用户接受 phase-08 真实设备证据作为参考）。
 - 代码：会话工作区 `D:\ds\REA\opusmc`；被验收代码 = phase-08 `ef8c540`（与 phase-08 docs 起点
-  `b4c66a1` 只有 docs 差异）；phase-09 未改功能代码；docs 已提交、未推送。
+  `b4c66a1` 只有 docs 差异）；phase-09 未改功能代码；docs 已推送 `origin/opusmc-integration`。
 - 工作区：phase-08 代码/文档已提交并推送；phase-09 docs 已提交；另有 1 个与本阶段无关的
   未跟踪文件 `REAopusmc<U+F022>`，4,988 B，误重定向输出；无 stash。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
-- 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07/08 已推送；phase-06 未推送；
-  phase-09 未推送；PR #1 未合并。
+- 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07/08/09 已推送；phase-06 未推送；
+  PR #1 未合并。
 
 > **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；
 > phase-02/03/04/05/06/07/08 只在 `D:\ds\REA\opusmc`。
@@ -49,8 +49,8 @@
 | phase-06 | **已验收（2026-11-12），代码 `b4833b8`；未推送** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
 | phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送** |
-| phase-09 | **带条件验收通过（用户 2026-11-14）；docs 已提交；代码 `ef8c540` 未改；未推送** |
-| 远程 | phase-05/07/08 已推送 `origin/opusmc-integration`；phase-06/09 未推送；PR #1 未合并；未强推 |
+| phase-09 | **带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`；代码 `ef8c540` 未改** |
+| 远程 | phase-05/07/08/09 已推送 `origin/opusmc-integration`；phase-06 未推送；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -110,7 +110,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 - phase-05 **已验收、代码已提交并推送 `817bad3`**；phase-06 **已验收（2026-11-12）、代码 `b4833b8`、未推送**；
   phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**；
   phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送**；
-  phase-09 **带条件验收通过（用户 2026-11-14）；docs 已提交；代码 `ef8c540` 未改；未推送**。
+  phase-09 **带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`；代码 `ef8c540` 未改**。
 - 不自动进入下一阶段（phase-09 是最后一个阶段）；已提交/已推送的历史不得改写；不 force push。
 - **phase-09 边界**：Android Chrome / iOS Safari 真机、两台不同物理设备本阶段 **NOT TESTED**；
   用户接受 phase-08 真实设备证据作为参考，但 phase-08 未提供手机 OS/浏览器型号，不能断言具体浏览器
@@ -134,7 +134,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 6. phase-05 / phase-06 / phase-07 / phase-08 / phase-09 已实现/验收内容
 
-### phase-09（带条件验收通过；真机接受 phase-08 证据；代码未改；docs 已提交）
+### phase-09（带条件验收通过；真机接受 phase-08 证据；代码未改；docs 已推送）
 
 1. **没有修改功能代码**：`js/`、`server/`、`index.html`、`deploy/` 与 phase-08 `ef8c540` 相同；
    只新增 `docs/phases/phase-09-acceptance/` 与文档更新。
@@ -319,13 +319,14 @@ D:\ds\REA\opusmc\
 ## 10. 下一步
 
 1. **phase-09 带条件验收通过（用户 2026-11-14）**：本机/自动化 256/256 + 回归 184/184；
-   代码仍为 phase-08 `ef8c540`（未改功能代码）；phase-09 docs 已提交；**未推送**。
+   代码仍为 phase-08 `ef8c540`（未改功能代码）；phase-09 docs 已提交并推送
+   `origin/opusmc-integration`（验收文档 `84f858d`）；未合并。
 2. **没有下一阶段**；不自动进入任何新阶段。
 3. 真机 E/F 按用户决定接受 phase-08 真实设备证据（LAN 手机 + 电脑、蜂窝手机 + 电脑），
    phase-09 本阶段仍标 NOT TESTED；phase-08 未提供手机 OS/浏览器型号，不能断言具体浏览器各自通过。
 4. 未测：真实显示器/有头浏览器、手机发热/电池、>1 小时长跑、真实公网 Tunnel 本轮重跑。
 5. 遗留：旧房间服务/`/api/skin`/管理员公告/旧 `mcjs-room-key`/选项占位（K-02/K-34/K-44/K-45/K-63/K-77）；
    `NET_CONFIG.announce=false`；旧云存档残留不删除。
-6. 如需推送 phase-09 docs：先展示范围、用户确认后再推 `origin/opusmc-integration`；不 force push、不合并。
+6. phase-09 已推送；未合并、未 force push。如需合并到 `main` 或 PR，先由用户确认。
 7. 保持 `mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`；`server/` 10 个 `.mjs`，部署时不能只复制旧 `server/`。
    `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。

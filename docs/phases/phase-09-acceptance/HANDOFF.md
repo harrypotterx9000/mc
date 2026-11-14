@@ -1,8 +1,8 @@
 # phase-09 完整验收 · 交接（HANDOFF）
 
 - 日期：2026-11-14
-- 状态：**带条件验收通过（用户 2026-11-14 确认）；phase-09 docs 已提交；代码仍为 phase-08 `ef8c540`；
-  未推送；无下一阶段**
+- 状态：**带条件验收通过（用户 2026-11-14 确认）；phase-09 docs 已提交并推送
+  `origin/opusmc-integration`（验收文档 `84f858d`）；代码仍为 phase-08 `ef8c540`；未合并；无下一阶段**
 - 仓库：`D:\ds\REA\opusmc`
 - 分支：`develop`（未新建/切换/重置）
 - 起点：HEAD `b4c66a1`；被验收代码 = phase-08 `ef8c540`（`git diff ef8c540..HEAD` 只有 docs）
@@ -13,7 +13,8 @@
 1. E/F 的真机项**接受 phase-08 真实设备证据**；phase-09 本阶段仍如实标 **NOT TESTED**，
    不写成本阶段真机通过。phase-08 未提供手机 OS/浏览器型号，不能断言“Android Chrome 与 iOS Safari 各自通过”。
 2. 旧房间服务入口/选项占位保留，记录为已知遗留，不在本阶段删除。
-3. 验收通过后只提交 docs；不推送。
+3. 验收通过后只提交 docs；随后按用户 2026-11-14 指令推送 `origin/opusmc-integration`（`84f858d`）；
+   未合并。
 
 ## 1. 本轮做了什么
 
@@ -34,12 +35,11 @@
 | 项 | 值 |
 |---|---|
 | 分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | phase-09 docs 提交为当前 HEAD（提交后）；被验收代码起点 `b4c66a1` |
+| HEAD | phase-09 docs 推送后为当前 HEAD；验收文档提交 `84f858d`；被验收代码起点 `b4c66a1` |
 | 被验收代码 | `ef8c540`（phase-08）；与 HEAD 无代码差异 |
-| 工作区 | 代码未改；phase-09 docs 已提交；另有 phase-08 遗留未跟踪文件 `REAopusmc<U+F022>`（与本阶段无关） |
-| 提交 | **phase-09 docs 已提交（只 docs）**；不推送 |
-| 远程 | 未推送；未 force push；PR #1 未合并 |
-| 远程 | 未推送；未 force push；PR #1 未合并 |
+| 工作区 | 代码未改；phase-09 docs 已提交并推送；另有 phase-08 遗留未跟踪文件 `REAopusmc<U+F022>`（与本阶段无关） |
+| 提交 | **phase-09 验收文档 `84f858d`（只 docs）已提交并推送** |
+| 远程 | 已推送 `origin/opusmc-integration`（`b4c66a1..84f858d`，fast-forward）；未合并、未强推；PR #1 未合并 |
 
 ## 3. 文档
 
@@ -129,9 +129,10 @@ phase-08 没有提供手机 OS/浏览器型号，所以不能写成“Android Ch
 
 ## 7. 下一步
 
-1. **phase-09 已完成（带条件验收通过，用户 2026-11-14）**：docs 已提交；功能代码保持 phase-08 `ef8c540`。
+1. **phase-09 已完成（带条件验收通过，用户 2026-11-14）**：docs 已推送 `origin/opusmc-integration`
+   （验收文档 `84f858d`）；功能代码保持 phase-08 `ef8c540`；未合并。
 2. **没有下一阶段**；不自动进入任何新阶段。
-3. 若用户决定推送：先展示提交范围，再推 `origin/opusmc-integration`；不 force push、不合并。
+3. 如需合并到 `main` 或创建/更新 PR：先由用户确认；不 force push。
 4. 以后若要补真机：按 §5 清单实测，把 `ACCEPTANCE.md` 的 E/F 和 `STATUS.md` 一起更新；
    若发现缺陷，只做最小修复并重跑 phase-05/06/07/08 回归与 phase-09 的 256 项。
 5. 已知遗留保持：旧房间服务入口/公开房间错误、选项占位、`[公告]` 前缀（K-02/K-34/K-44/K-63/K-77）。

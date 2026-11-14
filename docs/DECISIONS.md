@@ -413,7 +413,9 @@
   - A 的“指定删除项”通过；A 的“无残留入口/无效交互”附条件（遗留旧服务 UI 仍在）。
   - E/F 的 Windows Chrome/Edge 与双浏览器进程通过；Android/iOS 真机、两台物理设备本阶段 NOT TESTED，
     按用户决定接受 phase-08 证据。
-  - 仓库代码保持 phase-08 `ef8c540`；phase-09 docs 已提交、未推送。
+  - 仓库代码保持 phase-08 `ef8c540`；phase-09 docs 已推送 `origin/opusmc-integration`
+    （验收文档 `84f858d`）；未合并。
 - 验证：`docs/phases/phase-09-acceptance/TEST_REPORT.md`、`ACCEPTANCE.md`；
   256/256 本机/自动化 + 184/184 阶段回归。
-- 状态：**带条件验收通过（用户 2026-11-14）；docs 已提交；代码未改；未推送。**
+- 状态：**带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`；
+  代码未改；未合并。**

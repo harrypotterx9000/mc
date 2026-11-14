@@ -1,11 +1,11 @@
 # 项目状态（STATUS）
 
 - 更新时间：2026-11-14
-- 当前阶段：**phase-09 完整验收 — 带条件验收通过（用户 2026-11-14；真机 E/F 接受 phase-08 证据，本阶段 NOT TESTED）；docs 已提交；未推送**
+- 当前阶段：**phase-09 完整验收 — 带条件验收通过（用户 2026-11-14；真机 E/F 接受 phase-08 证据，本阶段 NOT TESTED）；docs 已提交并推送 `origin/opusmc-integration`（验收文档 `84f858d`）**
 - 下一阶段：**无**（phase-09 是最后一个阶段；不自动进入）
 - 代码版本：仍为 phase-08 代码 `ef8c540`；`git diff ef8c540..HEAD` 只有 docs；phase-09 **没有修改功能代码**
 - 当前分支：`develop`（未新建/切换/重置分支）
-- HEAD：phase-09 docs 提交为当前 HEAD（提交后）；被验收代码起点 `b4c66a1`；**未推送**
+- HEAD：phase-09 docs 推送后为当前 HEAD；验收文档提交 `84f858d`；被验收代码起点 `b4c66a1`
 
 ## Git
 
@@ -14,11 +14,11 @@
 | 仓库 | `D:\ds\REA\opusmc` |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
 | HEAD | phase-09 docs 提交为当前 HEAD（提交后）；被验收代码起点 `b4c66a1` |
-| phase-09 | **带条件验收通过（用户 2026-11-14）；docs 已提交；代码 `ef8c540` 未改；未推送** |
+| phase-09 | **带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`；代码 `ef8c540` 未改** |
 | phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
-| 工作区 | phase-08 代码/文档已提交；phase-09 docs 已提交；另有 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`；无 stash |
-| 远程 | phase-07/08 已推送 `origin/opusmc-integration`；phase-09 未推送；未合并、未强推；PR #1 未合并 |
+| 工作区 | phase-08 代码/文档已提交；phase-09 docs 已提交并推送；另有 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`；无 stash |
+| 远程 | phase-07/08/09 已推送 `origin/opusmc-integration`；未合并、未强推；PR #1 未合并 |
 | 历史代码 | phase-06 `b4833b8`；phase-05 `817bad3`；phase-04 `553ceed`；phase-03 `025cba8`；phase-02 `a9dc47b`；phase-01 `15154bd`；基线 `2798c08` |
 
 > `D:\Projects\OpusMC` 仍是 phase-01 副本；phase-02/03/04/05/06/07/08 只在 `D:\ds\REA\opusmc`。如以那份为准，
@@ -28,7 +28,7 @@
 
 - **阶段**：phase-00…08 完成并验收；**phase-09 完整验收：带条件验收通过（用户 2026-11-14），
   本机/自动化 256/256 + 回归 184/184；真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED；
-  代码仍为 `ef8c540`；docs 已提交、未推送**。
+  代码仍为 `ef8c540`；docs 已推送 `origin/opusmc-integration`（验收文档 `84f858d`）**。
 - **运行方式（本机多人）**：双击 `start-server.bat` 或 `node server\index.mjs` → 浏览器打开
   `http://127.0.0.1:8080/` → 多人游戏 → 自建服务器房间。
 - **运行方式（局域网）**：双击 `start-lan.bat`（或 `node server\index.mjs --lan`）→ 所有设备
@@ -70,7 +70,7 @@
   用户 2026-11-14 决定接受 phase-08 真实设备证据作为参考；phase-08 未提供手机 OS/浏览器型号，
   不能写成“Android Chrome 与 iOS Safari 各自通过”。
 
-## phase-09 已实现内容（带条件验收通过；真机接受 phase-08 证据；代码未改；docs 已提交）
+## phase-09 已实现内容（带条件验收通过；真机接受 phase-08 证据；代码未改；docs 已推送）
 
 ### 验收范围
 
@@ -428,12 +428,13 @@
 | phase-06 双存档 | **已验收（2026-11-12）；代码 `b4833b8`；docs 收尾为当前 HEAD** | 单人 IndexedDB 与服务器世界隔离、旧存档保护、损坏恢复、同名不覆盖 |
 | phase-07 性能 | **验收结束（2026-11-13）；代码 `508fcc8`；已推送** | 帧预算/动态分辨率/画质建议/实体粒子内存/网络诊断/20 TPS 调度/K-39；K-93/K-94 保留 |
 | phase-08 部署 | **验收结束（真实设备用户实测）；代码 `ef8c540`；已推送** | LAN 主地址/邀请链接修复 + Cloudflare Tunnel HTTPS/WSS（正式验收路径，手机蜂窝实测）+ Caddy 备用模板；代理感知管理边界 |
-| phase-09 验收 | **带条件验收通过（用户 2026-11-14）；docs 已提交；未推送** | 全阶段回归、菜单/账号/访客/存档/浏览器/多人/性能/代码质量验收；真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED |
+| phase-09 验收 | **带条件验收通过（用户 2026-11-14）；docs 已推送 `origin/opusmc-integration`** | 全阶段回归、菜单/账号/访客/存档/浏览器/多人/性能/代码质量验收；真机 E/F 接受 phase-08 证据、本阶段 NOT TESTED |
 
 ## 交接与下一阶段前置
 
 1. **phase-09 带条件验收通过（用户 2026-11-14）**：本机/自动化 256/256 + 阶段回归 184/184 PASS；
-   代码仍是 phase-08 `ef8c540`（本阶段未改功能代码）；phase-09 docs 已提交；**未推送**。
+   代码仍是 phase-08 `ef8c540`（本阶段未改功能代码）；phase-09 docs 已提交并推送
+   `origin/opusmc-integration`（验收文档 `84f858d`）；未合并。
 2. **真机处理**：用户接受 phase-08 真实设备证据作为 E/F 参考；phase-09 本阶段仍标 NOT TESTED；
    phase-08 未提供手机 OS/浏览器型号，不能断言“Android Chrome 与 iOS Safari 各自通过”。
 3. **没有下一阶段**；不自动进入任何新阶段。
@@ -443,8 +444,8 @@
    选项禁用占位（K-34）、休眠 `[公告]` 前缀（K-44）、不可达 `js/sounds.js`（K-52）。
 6. phase-08 前置保持：`mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`、87 页面脚本/91 JS 未改；
    `server/` 10 个 `.mjs`，部署时不能只复制旧 `server/`。
-7. 如需推送 phase-09 docs：先展示范围、用户确认后再推 `origin/opusmc-integration`；不 force push、不合并。
-   `D:\Projects\OpusMC` 未同步；如以那份为准，需要用户确认后单独同步。
+7. phase-09 已推送；未合并、未 force push。`D:\Projects\OpusMC` 未同步；如以那份为准，
+   需要用户确认后单独同步。
 
 ## phase-04 历史（已完成并验收；代码 `553ceed`）
 
