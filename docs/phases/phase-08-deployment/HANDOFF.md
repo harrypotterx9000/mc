@@ -146,16 +146,20 @@
 | 远程 | phase-08 未推送；未合并；未 force push |
 | 验收 | **验收结束（真实设备用户实测）**；代码 `ef8c540`；docs 收尾 |
 
-## 7. 下一阶段前置条件
+## 7. 下一阶段前置条件（phase-09，只检查不实现）
 
-- 下一阶段是 **phase-09 验收**；本阶段不自动进入。
+- 下一阶段是 **phase-09 验收/发布准备**；本阶段不自动进入，不提前修改 phase-09 功能。
 - phase-08 代码 `ef8c540`、docs 收尾为当前 HEAD；已提交、未推送；不要 reset/clean 丢弃历史。
+- **推送/合并决定**：phase-08 尚未推送；是否 push/merge 由用户决定，禁止 force push。
+- **工作区**：除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>` 外应干净；提交/发布前先确认该文件是否删除。
+- **全量回归**：在确切提交上重跑 phase-05/06/07/08 测试、`node --check`、`git diff --check`，不能只用历史结果。
 - 保持：87 个页面脚本、91 个 `js/*.js`、服务器零 npm 依赖、`mc-js-clone`/`srv~` 存档边界。
 - 服务器与客户端必须同版本部署；`server/netutil.mjs` 是新增模块，部署时不能只复制旧 `server/`。
 - `start-lan.bat` 保持 ASCII/CRLF；`server/status.ps1` 保持 UTF-8 BOM + LF；`server/data` 不提交。
 - 不要把未测项写成已完成：Caddy 公网入站、端口转发、Windows 防火墙脚本实际添加/删除、
   长期公网稳定性、10 人并发、手机型号/性能/截图。真实手机 LAN/蜂窝功能已由用户报告通过。
 - Quick Tunnel URL 已失效；测试报告保留的是历史证据，不能当长期地址。
+- **验收范围**：Cloudflare Tunnel 是正式路径；Caddy 是备用模板，不纳入正式验收；不要因发布准备而改写为已通过。
 
 ## 8. 下一阶段需要特别检查的文件/依赖
 
@@ -172,6 +176,8 @@
 | `deploy/windows/firewall-lan.ps1` | 需管理员；默认 Private；`-IncludePublic` 仅可信网络 |
 | `docs/deployment/LAN.md` / `REMOTE.md` | 与实测/未测状态一致 |
 | `docs/STATUS.md` / `START-HERE.md` | 当前阶段、Git、未测项一致 |
+| `docs/KNOWN_ISSUES.md` | K-95…K-100 的真实设备/邮箱验证/Caddy/防火墙边界 |
+| `server/data/` | 测试房间 E7UDCMQT / XF6BT4YQ 与日志保留；不提交、不随发布打包 |
 
 ## 9. 已知遗留 / 风险
 
