@@ -144,6 +144,7 @@
 | 网络 | phase-08：LAN（`--lan`/`start-lan.bat`，主地址为 LAN、127 仅本机）与 Cloudflare Tunnel HTTPS/WSS 已实测；真实手机 LAN（用户报告）与蜂窝公网（用户报告）均 PASS；Caddy + 公网 IPv4/端口转发为备用模板；防火墙脚本实际添加/删除、长期/10 人未测（K-95/K-96/K-99/K-100） |
 | 数据目录 | `server/data/`；不在静态白名单；不提交 Git |
 | 当前 Git | `develop`；phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f`、已推送 `origin/opusmc-integration`；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送；phase-06 `b4833b8` 未推送；phase-05 `817bad3` 已推送；新会话不得 reset/clean/切换分支丢弃历史 |
+| Git 推送代理 | 全局 `http.proxy`/`https.proxy` 指向 `http://127.0.0.1:7892`，本机该端口可能没有监听；本次推送使用单次 `-c http.proxy= -c https.proxy= -c http.https://github.com.proxy=` 直连 GitHub 成功。**未改全局配置**；后续推送若报 `Failed to connect ... over proxy 127.0.0.1`，先确认代理端口，再用同样的单次覆盖，不要改历史或 force push |
 
 ## 兼容性注意事项
 

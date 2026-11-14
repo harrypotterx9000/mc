@@ -192,4 +192,7 @@
 - 同一 NAT/同一出口 IP 的玩家共享限流桶（K-78）；隧道后按真实公网 IP 计。
 - 公网长期运行、带宽、抖动、10 人并发、DDoS、证书续期未测。
 - 手机真实功能已测，但型号/OS/GPU/帧率/发热/电池未提供，不写成性能达标。
+- **Git 推送环境**：全局 `http.proxy`/`https.proxy` 指向 `http://127.0.0.1:7892`，该端口可能无监听；
+  本次用单次 `-c http.proxy= -c https.proxy= -c http.https://github.com.proxy=` 直连推送成功。
+  未改全局配置；后续推送失败先检查代理，不要 force push、不要改历史。
 - `server/data` 保留真实设备测试房间/日志（E7UDCMQT、XF6BT4YQ），不提交；不要删除。
