@@ -1,9 +1,9 @@
 # 项目状态（STATUS）
 
 - 更新时间：2026-11-14
-- 当前阶段：**phase-08 网络部署 — 验收结束；代码已提交；docs 收尾**
+- 当前阶段：**phase-08 网络部署 — 验收结束；已提交并推送 `origin/opusmc-integration`**
 - 下一阶段：**phase-09 验收**（未开始；不自动进入）
-- 代码版本：phase-08 代码 `ef8c540`；docs 收尾为当前 HEAD；未推送
+- 代码版本：phase-08 代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送（远程 tip `597a15f`；推送记录为当前 HEAD）
 - 当前分支：`develop`（未新建/切换/重置分支）
 
 ## Git
@@ -12,11 +12,11 @@
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc` |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | docs 收尾为当前 HEAD；phase-08 代码 `ef8c540` |
-| phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送** |
+| HEAD | 推送记录为当前 HEAD（`docs: record phase-08 push`）；phase-08 内容 tip `597a15f`；代码 `ef8c540` |
+| phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
-| 工作区 | phase-08 代码/文档已提交；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`）；无 stash |
-| 远程 | phase-07 已推送；phase-08 未推送；未合并、未强推 |
+| 工作区 | phase-08 代码/文档已提交并推送；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`）；无 stash |
+| 远程 | phase-07/08 已推送 `origin/opusmc-integration`；未合并、未强推；PR #1 未合并 |
 | 历史代码 | phase-06 `b4833b8`；phase-05 `817bad3`；phase-04 `553ceed`；phase-03 `025cba8`；phase-02 `a9dc47b`；phase-01 `15154bd`；基线 `2798c08` |
 
 > `D:\Projects\OpusMC` 仍是 phase-01 副本；phase-02/03/04/05/06/07/08 只在 `D:\ds\REA\opusmc`。如以那份为准，
@@ -24,7 +24,7 @@
 
 ## 整体状态
 
-- **阶段**：phase-00/01/02/03/04/05/06 完成并验收；phase-07 验收结束；**phase-08 验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾；未推送**。
+- **阶段**：phase-00/01/02/03/04/05/06 完成并验收；phase-07 验收结束；**phase-08 验收结束（真实设备用户实测）；代码 `ef8c540`；已推送 `origin/opusmc-integration`**。
 - **运行方式（本机多人）**：双击 `start-server.bat` 或 `node server\index.mjs` → 浏览器打开
   `http://127.0.0.1:8080/` → 多人游戏 → 自建服务器房间。
 - **运行方式（局域网）**：双击 `start-lan.bat`（或 `node server\index.mjs --lan`）→ 所有设备
@@ -51,9 +51,10 @@
   check-host.net 外部节点 5/6 200（1 个超时）；公网管理接口（含令牌）403；
   phase-05/06 回归全部 PASS；91 JS + 10 mjs `node --check` PASS。
 - **验收**：phase-07 **验收结束（2026-11-13）**；phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；
-  docs 收尾为当前 HEAD；未推送**。Caddy 公网路径为备用模板，未运行验证，不属于正式验收路径。
+  docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`**。Caddy 公网路径为备用模板，
+  未运行验证，不属于正式验收路径。
 
-## phase-08 已实现内容（验收结束；代码 `ef8c540`；docs 收尾）
+## phase-08 已实现内容（验收结束；代码 `ef8c540`；已推送）
 
 ### 任务 1：局域网部署（模式 A）
 
@@ -357,8 +358,8 @@
 
 ## 交接与下一阶段前置
 
-1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs 收尾为当前 HEAD；未推送。
-   不自动进入 phase-09。
+1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs `d8b237a`/`597a15f`；
+   已推送 `origin/opusmc-integration`；不自动进入 phase-09。
 2. phase-08 前置保持：`mc-js-clone` 结构、`srv~` 拦截、服务器 `seed + 覆盖层`、87 页面脚本/91 JS 未改；
    服务端新增 `netutil.mjs`（10 个 `.mjs`），部署时不能只复制旧 `server/`。
 3. 已实测（修复后）：LAN 启动输出/邀请链接 8/8、LAN 协议 22/22、LAN 浏览器 15/15；

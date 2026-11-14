@@ -1,7 +1,7 @@
 # phase-08 网络部署 · 交接（HANDOFF）
 
 - 日期：2026-11-13（2026-11-14 增补真实设备测试与提交）
-- 状态：**验收结束（真实设备用户实测，2026-11-14）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送；未进入 phase-09**
+- 状态：**验收结束（真实设备用户实测，2026-11-14）；代码 `ef8c540`；已推送 `origin/opusmc-integration`；未进入 phase-09**
 - 仓库：`D:\ds\REA\opusmc`
 - 分支：`develop`（未新建/切换/重置）
 - 起点：HEAD `221d4ea`（phase-07 docs 推送记录）；phase-07 代码 `508fcc8`
@@ -141,16 +141,16 @@
 | 项 | 值 |
 |---|---|
 | 分支 | `develop`（未切换/未重置） |
-| HEAD | docs 收尾为当前 HEAD；phase-08 代码 `ef8c540` |
-| 工作区 | phase-08 代码/文档已提交；除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>` 外干净 |
-| 远程 | phase-08 未推送；未合并；未 force push |
-| 验收 | **验收结束（真实设备用户实测）**；代码 `ef8c540`；docs 收尾 |
+| HEAD | 推送记录为当前 HEAD；phase-08 内容 tip `597a15f`；代码 `ef8c540` |
+| 工作区 | phase-08 代码/文档已提交并推送；除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>` 外干净 |
+| 远程 | **已推送 `origin/opusmc-integration`（远程 tip `597a15f`）**；未合并；未 force push |
+| 验收 | **验收结束（真实设备用户实测）**；代码 `ef8c540`；docs `d8b237a`/`597a15f` |
 
 ## 7. 下一阶段前置条件（phase-09，只检查不实现）
 
 - 下一阶段是 **phase-09 验收/发布准备**；本阶段不自动进入，不提前修改 phase-09 功能。
-- phase-08 代码 `ef8c540`、docs 收尾为当前 HEAD；已提交、未推送；不要 reset/clean 丢弃历史。
-- **推送/合并决定**：phase-08 尚未推送；是否 push/merge 由用户决定，禁止 force push。
+- phase-08 代码 `ef8c540`、docs `d8b237a`/`597a15f`；已推送 `origin/opusmc-integration`；不要 reset/clean 丢弃历史。
+- **推送/合并决定**：phase-08 已推送；未合并；PR #1 仍未合并；禁止 force push。
 - **工作区**：除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>` 外应干净；提交/发布前先确认该文件是否删除。
 - **全量回归**：在确切提交上重跑 phase-05/06/07/08 测试、`node --check`、`git diff --check`，不能只用历史结果。
 - 保持：87 个页面脚本、91 个 `js/*.js`、服务器零 npm 依赖、`mc-js-clone`/`srv~` 存档边界。

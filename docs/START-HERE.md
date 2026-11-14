@@ -1,17 +1,18 @@
 # OpusMC — 从这里开始（新会话入口）
 
 > 这是给下一次 DeepSeek Harness 会话的**第一份必读文件**。读完本页即可接管项目。
-> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送）
+> 最后更新：2026-11-14（phase-08 验收结束；代码 `ef8c540`；已推送 `origin/opusmc-integration`；远程 tip `597a15f`）
 
 ## 1. 三十秒摘要
 
 - 项目：把 B 站 Toy 版浏览器体素游戏 OpusMC 改造成**独立运行、无账号访客、自建服务器**的版本。
-- 现状：phase-00…07 完成并验收；**phase-08 网络部署验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。
-- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-08 代码 `ef8c540`；phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送。
-- 工作区：phase-08 代码/文档已提交；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`，
+- 现状：phase-00…07 完成并验收；**phase-08 网络部署验收结束（真实设备用户实测）；代码 `ef8c540`；已推送 `origin/opusmc-integration`**。
+- 代码：会话工作区 `D:\ds\REA\opusmc`；phase-08 代码 `ef8c540`；docs `d8b237a`/`597a15f`；
+  phase-07 代码 `508fcc8`、docs `a2bdb0e` 已推送。
+- 工作区：phase-08 代码/文档已提交并推送；工作区干净（除 1 个与本阶段无关的未跟踪文件 `REAopusmc<U+F022>`，
   4,988 B，误重定向输出）；无 stash、无临时分支。
 - 分支：按用户指令**未创建/切换/重置 `phase/*` 分支**；全部阶段在 `develop`。
-- 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07 已推送；phase-06/08 未推送；
+- 远程：`https://github.com/harrypotterx9000/mc`；phase-05/07/08 已推送；phase-06 未推送；
   PR #1 未合并。
 
 > **路径注意**：`D:\Projects\OpusMC` 是 phase-01 的同内容副本；
@@ -37,14 +38,14 @@
 |---|---|
 | 仓库 | `D:\ds\REA\opusmc`（会话工作区） |
 | 当前分支 | `develop`（跟踪 `origin/opusmc-integration`） |
-| HEAD | docs 收尾为当前 HEAD；phase-08 代码 `ef8c540` |
+| HEAD | 推送记录为当前 HEAD；phase-08 内容 tip `597a15f`；代码 `ef8c540` |
 | 代码基线 | `2798c08`（`v0.1.0-integration`） |
 | phase-01/02/03/04 代码 | `15154bd` / `a9dc47b` / `025cba8` / `553ceed` |
 | phase-05 | **已验收（2026-11-12），代码 `817bad3`** |
 | phase-06 | **已验收（2026-11-12），代码 `b4833b8`；未推送** |
 | phase-07 | **验收结束（2026-11-13）；代码 `508fcc8`；docs `a2bdb0e`；已推送** |
-| phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送** |
-| 远程 | phase-05/07 已推送 `origin/opusmc-integration`；phase-06/08 未推送；PR #1 未合并；未强推 |
+| phase-08 | **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送** |
+| 远程 | phase-05/07/08 已推送 `origin/opusmc-integration`；phase-06 未推送；PR #1 未合并；未强推 |
 | 标签 | `v0.1.1-context`、`v0.1.0-integration`、`v0.1.0-preproject`、`v0.0.0-original` |
 
 ## 4. 运行方式
@@ -100,7 +101,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 - phase-05 **已验收、代码已提交并推送 `817bad3`**；phase-06 **已验收（2026-11-12）、代码 `b4833b8`、未推送**；
   phase-07 **验收结束（2026-11-13）；代码 `508fcc8`、docs `a2bdb0e`、已推送**；
-  phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs 收尾为当前 HEAD；未推送**。
+  phase-08 **验收结束（真实设备用户实测）；代码 `ef8c540`；docs `d8b237a`/`597a15f`；已推送**。
 - 不自动进入 phase-09；已提交/已推送的历史不得改写；不 force push。
 - 不新增强制账号/登录；不引入永久账号体系。
 - 没有实测的功能一律标 **NOT TESTED**；推断不得写成事实。
@@ -120,7 +121,7 @@ node scripts\serve.mjs      # 默认 127.0.0.1:8080
 
 ## 6. phase-05 / phase-06 / phase-07 / phase-08 已实现内容
 
-### phase-08（验收结束；代码 `ef8c540`；docs 收尾）
+### phase-08（验收结束；代码 `ef8c540`；已推送）
 
 1. **LAN**：`--lan` / `start-lan.bat` 绑定 `0.0.0.0`；主地址优先选择有效私有 IPv4，
    `127.0.0.1` 单独标为“仅本机访问”；邀请链接专项 8/8（多次建房、刷新/恢复、多邀请码）；
@@ -269,8 +270,8 @@ D:\ds\REA\opusmc\
 
 ## 10. 下一步
 
-1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs 收尾为当前 HEAD；未推送。
-   不自动进入 phase-09。
+1. **phase-08 验收结束（真实设备用户实测）**：代码 `ef8c540`；docs `d8b237a`/`597a15f`；
+   已推送 `origin/opusmc-integration`；不自动进入 phase-09。
 2. 未测：Caddy + 公网 IPv4/域名/端口转发、Windows 防火墙脚本实际添加/删除、公网长期稳定性/带宽/
    10 人并发、手机型号/OS/GPU/发热/帧率（用户不提供设备信息）；发布前重新评估（K-95…K-100）。
    Caddy 是备用模板，不属于正式验收路径。
