@@ -1,0 +1,20 @@
+# Cloudflare 命名隧道（需要 Cloudflare 账号 + 已接入 Cloudflare 的域名）。
+#
+# 本文件是模板，不能直接运行：把 REPLACE_* 换成自己的值。
+# 一次性创建（在任意目录执行）：
+#   cloudflared tunnel login
+#   cloudflared tunnel create opusmc
+#   cloudflared tunnel route dns opusmc mc.example.com
+# 然后（本模板放到 %USERPROFILE%\.cloudflared\config.yml）：
+#   cloudflared tunnel run opusmc
+#
+# Cloudflare 提供 HTTPS/WSS；源站只监听 127.0.0.1:8080，不需要任何端口转发。
+# 管理接口由游戏服务器拒绝（转发头校验），也可以在 Cloudflare Access/WAF 再加一层。
+
+tunnel: REPLACE_WITH_TUNNEL_ID
+credentials-file: C:\Users\REPLACE_WITH_YOUR_USERNAME\.cloudflared\REPLACE_WITH_TUNNEL_ID.json
+
+ingress:
+  - hostname: mc.example.com
+    service: http://127.0.0.1:8080
+  - service: http_status:404

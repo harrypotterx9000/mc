@@ -1,0 +1,48 @@
+# OpusMC 的 HTTPS/WSS 反向代理（Caddy 2）—— 备用部署模板。
+#
+# 验收范围：本阶段正式支持/验收的公网路径是 Cloudflare Tunnel。
+# 本文件尚未完成实际运行验证，不属于 phase-08 正式验收通过的部署路径；
+# 不得宣称 Caddy 公网部署已经通过验收。使用前必须自行完成 caddy validate、
+# DNS、80/443 转发和实际入站测试。
+#
+# 适用：家里有公网 IPv4（或公网 IPv6），并且有一个域名。
+# 需要做、但本仓库不会替你做：
+#   1. DNS：把 mc.example.com 的 A/AAAA 记录指向公网地址。
+#   2. 路由器：把 TCP 80 和 443 转发到运行本文件的这台电脑。
+#      （80 用于 ACME 证书签发/续期，443 用于 HTTPS/WSS。）
+#   3. Windows 防火墙：只放行 80/443，不要放行 8080 到公网。
+#   4. 游戏服务器只监听 127.0.0.1（默认）或内网，不直接暴露 8080。
+#
+# 启动（管理员或普通用户均可，Caddy 需要能监听 443）：
+#   set OPUSMC_DOMAIN=mc.example.com
+#   set OPUSMC_ACME_EMAIL=you@example.com
+#   caddy run --config deploy\Caddyfile
+#
+# 说明：管理接口在代理层直接 404；游戏服务器还会校验转发头，双重保护。
+# 没有公网 IPv4 / 处于 CGNAT 时，请改用 Cloudflare Tunnel（见 docs\deployment\REMOTE.md）。
+
+{
+	email {$OPUSMC_ACME_EMAIL:admin@example.com}
+}
+
+{$OPUSMC_DOMAIN:mc.example.com} {
+	encode zstd gzip
+
+	# 数据库、文档、脚本、版本库和管理接口都不应该出现在公网。
+	@blocked path /api/admin/* /server/* /docs/* /scripts/* /.git/*
+	respond @blocked 404
+
+	reverse_proxy 127.0.0.1:8080 {
+		# 覆盖客户端自带的转发头，避免伪造 127.0.0.1 或别的客户端 IP。
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up CF-Connecting-IP {remote_host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+}
